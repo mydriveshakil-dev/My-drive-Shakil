@@ -92,6 +92,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       name: newMemberName.trim(),
       email: newMemberPhone.trim(),
       phone: newMemberPhone.trim(),
+      mobileNumber: newMemberPhone.trim(),
       avatar: initials,
       daysPresent: 30,
       active: true,

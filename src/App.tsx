@@ -659,6 +659,11 @@ export default function App() {
     };
     setGroup(updatedGroup);
     saveGroupToFirestore(updatedGroup);
+
+    const updatedAll = allGroups.map((g) => (g.id === group.id ? updatedGroup : g));
+    setAllGroups(updatedAll);
+    localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
+
     triggerSheetsSync();
   };
 
@@ -669,6 +674,11 @@ export default function App() {
     };
     setGroup(updatedGroup);
     saveGroupToFirestore(updatedGroup);
+
+    const updatedAll = allGroups.map((g) => (g.id === group.id ? updatedGroup : g));
+    setAllGroups(updatedAll);
+    localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
+
     triggerSheetsSync();
   };
 
@@ -679,6 +689,11 @@ export default function App() {
     };
     setGroup(updatedGroup);
     saveGroupToFirestore(updatedGroup);
+
+    const updatedAll = allGroups.map((g) => (g.id === group.id ? updatedGroup : g));
+    setAllGroups(updatedAll);
+    localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
+
     triggerSheetsSync();
   };
 

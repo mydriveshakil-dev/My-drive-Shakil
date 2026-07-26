@@ -48,7 +48,14 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentMember = group.members.find((m) => m.id === selectedSenderId) || group.members[0];
+  const currentMember = (group?.members || []).find((m) => m?.id === selectedSenderId) || group?.members?.[0] || {
+    id: 'm3',
+    name: 'Member',
+    role: 'MEMBER',
+    avatar: '👨‍💼',
+    active: true,
+    daysPresent: 30,
+  };
 
   const handleSend = (e?: React.FormEvent) => {
     if (e) e.preventDefault();

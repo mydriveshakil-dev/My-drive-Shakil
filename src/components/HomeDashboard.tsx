@@ -62,7 +62,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   const avgPerPerson = totalExpenses / activeMembersCount;
 
   // "My Contribution" (Finding Shakil or m3)
-  const myMember = group.members.find((m) => m.name.includes('Shakil') || m.id === 'm3') || group.members[0];
+  const myMember = (group?.members || []).find((m) => m?.name?.includes('Shakil') || m?.id === 'm3') || group?.members?.[0] || {
+    id: 'm3',
+    name: 'Shakil Hossain',
+    role: 'MEMBER',
+    avatar: '👨‍💼',
+    active: true,
+    daysPresent: 30,
+  };
   const mySpent = expenses
     .filter((e) => e.paidById === myMember.id)
     .reduce((sum, e) => sum + e.amount, 0);

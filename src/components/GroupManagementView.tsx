@@ -42,6 +42,7 @@ interface GroupManagementViewProps {
   onToggleHoldGroup?: (groupId: string) => void;
   onRemoveGroup?: (groupId: string) => void;
   onChangeBaseCurrency?: (newCurrency: string) => void;
+  onUpdateSpreadsheetConfig?: (spreadsheetId: string, webAppUrl?: string) => void;
 }
 
 export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
@@ -62,6 +63,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   onToggleHoldGroup,
   onRemoveGroup,
   onChangeBaseCurrency,
+  onUpdateSpreadsheetConfig,
 }) => {
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
@@ -74,7 +76,23 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
   const [deleteConfirmGroup, setDeleteConfirmGroup] = useState<Group | null>(null);
 
+  // Google Sheet Config States
+  const [isEditingSheetConfig, setIsEditingSheetConfig] = useState(false);
+  const [sheetIdInput, setSheetIdInput] = useState(group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM');
+  const [webAppUrlInput, setWebAppUrlInput] = useState(sheetsConfig.webAppUrl || localStorage.getItem('uae_sheets_webapp_url') || '');
+  const [showAppsScriptModal, setShowAppsScriptModal] = useState(false);
+  const [copiedScript, setCopiedScript] = useState(false);
+
   const isAdmin = currentUser?.role === 'admin';
+
+  const handleSaveSheetConfigSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onUpdateSpreadsheetConfig) {
+      onUpdateSpreadsheetConfig(sheetIdInput.trim(), webAppUrlInput.trim());
+    }
+    setIsEditingSheetConfig(false);
+    triggerHaptic(hapticPatterns.success);
+  };
 
   const handleAddMemberSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -392,29 +410,101 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       {/* SECTION 1: Google Sheets Direct Integration Panel (Admin Only) */}
       {isAdmin && (
         <GlassContainer variant="card" className="p-5 border border-white/30 shadow-2xl space-y-4">
-          <div className="flex items-center justify-between border-b border-white/15 pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/15 pb-3 gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold border border-emerald-400/30">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold border border-emerald-400/30 shrink-0">
                 <FileSpreadsheet className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-bold text-white">Master Google Sheet Storage</h3>
                   <span className="bg-emerald-950/80 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-400/40">
-                    Connected
+                    Connected Live
                   </span>
                 </div>
                 <p className="text-xs text-emerald-100/80">
-                  Shared Gmail Account: <strong className="text-white">mydriveshakil@gmail.com</strong>
+                  Shared Account: <strong className="text-white">mydriveshakil@gmail.com</strong>
                 </p>
               </div>
             </div>
 
-            <div className="bg-emerald-950/70 text-emerald-200 text-xs font-extrabold px-3.5 py-2 rounded-2xl border border-emerald-400/40 backdrop-blur-md flex items-center gap-1.5 shadow-md">
-              <RefreshCw className={`w-3.5 h-3.5 text-emerald-400 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'Auto-Syncing...' : 'Auto-Synced'}</span>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic(hapticPatterns.sync);
+                  onSyncSheetsNow();
+                }}
+                disabled={isSyncing}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic(hapticPatterns.click);
+                  setIsEditingSheetConfig(!isEditingSheetConfig);
+                }}
+                className="bg-white/15 hover:bg-white/25 text-white font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all border border-white/20 active:scale-95 cursor-pointer"
+              >
+                <Edit className="w-3.5 h-3.5" />
+                <span>{isEditingSheetConfig ? 'Close Settings' : 'Edit Sheet ID'}</span>
+              </button>
             </div>
           </div>
+
+          {/* Edit Sheet Config Form */}
+          {isEditingSheetConfig && (
+            <form onSubmit={handleSaveSheetConfigSubmit} className="bg-emerald-950/80 p-4 rounded-2xl border border-emerald-400/40 space-y-3">
+              <h4 className="text-xs font-bold text-emerald-300 uppercase tracking-wider">Configure Google Sheet & Web App Script</h4>
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-[11px] text-emerald-200 font-semibold mb-1">Google Spreadsheet ID:</label>
+                  <input
+                    type="text"
+                    value={sheetIdInput}
+                    onChange={(e) => setSheetIdInput(e.target.value)}
+                    placeholder="e.g. 1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM"
+                    className="w-full bg-black/40 border border-emerald-500/40 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-400"
+                  />
+                  <p className="text-[10px] text-emerald-200/60 mt-0.5">Found in your Google Sheet URL between /d/ and /edit</p>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] text-emerald-200 font-semibold mb-1">Google Apps Script Web App URL (Optional for Direct Live Auto-Push):</label>
+                  <input
+                    type="text"
+                    value={webAppUrlInput}
+                    onChange={(e) => setWebAppUrlInput(e.target.value)}
+                    placeholder="e.g. https://script.google.com/macros/s/AKfycb.../exec"
+                    className="w-full bg-black/40 border border-emerald-500/40 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-400"
+                  />
+                  <p className="text-[10px] text-emerald-200/60 mt-0.5">Optional Apps Script URL to push data live directly into your sheet on every edit.</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowAppsScriptModal(true)}
+                  className="text-xs text-[#F9A826] underline font-bold flex items-center gap-1 hover:text-amber-300"
+                >
+                  <Code className="w-3.5 h-3.5" />
+                  Get 1-Click Apps Script Code
+                </button>
+
+                <button
+                  type="submit"
+                  className="bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black px-4 py-1.5 rounded-xl text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+                >
+                  Save & Sync Sheet
+                </button>
+              </div>
+            </form>
+          )}
 
           {/* Config details */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
@@ -446,17 +536,143 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               Central DB Linked: Expenses, Members, and Utilities auto-sync to this Google Sheet.
             </span>
 
-            <a
-              href={`https://docs.google.com/spreadsheets/d/${group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}/edit`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black px-3.5 py-1.5 rounded-xl transition-all shadow-md active:scale-95 text-xs self-start sm:self-auto cursor-pointer"
-            >
-              <span>Open Linked Google Sheet</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAppsScriptModal(true)}
+                className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-emerald-200 font-bold px-3 py-1.5 rounded-xl border border-white/20 transition-all text-xs cursor-pointer"
+              >
+                <Code className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Apps Script Code</span>
+              </button>
+
+              <a
+                href={`https://docs.google.com/spreadsheets/d/${group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}/edit`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black px-3.5 py-1.5 rounded-xl transition-all shadow-md active:scale-95 text-xs self-start sm:self-auto cursor-pointer"
+              >
+                <span>Open Linked Google Sheet</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
         </GlassContainer>
+      )}
+
+      {/* Apps Script Guide Modal */}
+      {showAppsScriptModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <GlassContainer variant="card" className="max-w-2xl w-full p-6 space-y-4 border border-emerald-400/40 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/15 pb-3">
+              <div className="flex items-center gap-2 text-emerald-300 font-bold text-base">
+                <Code className="w-5 h-5 text-[#F9A826]" />
+                <span>Google Apps Script Auto-Save Setup</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAppsScriptModal(false)}
+                className="text-white/60 hover:text-white font-extrabold text-sm px-2 py-1 bg-white/10 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-emerald-100 leading-relaxed">
+              To connect your own Google Sheet for live auto-save without setup limits:
+            </p>
+
+            <ol className="list-decimal list-inside text-xs text-emerald-200 space-y-1.5 font-medium">
+              <li>Open your Google Sheet and click <strong>Extensions &gt; Apps Script</strong>.</li>
+              <li>Delete any existing code, paste the script below, and click <strong>Save</strong>.</li>
+              <li>Click <strong>Deploy &gt; New deployment &gt; Select type: Web App</strong>.</li>
+              <li>Set <i>Execute as: Me</i> and <i>Who has access: Anyone</i>.</li>
+              <li>Click <strong>Deploy</strong> and copy the generated Web App URL into the <strong>Google Sheet Settings</strong> input above.</li>
+            </ol>
+
+            <div className="relative bg-black/80 p-3 rounded-xl border border-emerald-500/30">
+              <pre className="text-[11px] font-mono text-emerald-300 whitespace-pre-wrap overflow-x-auto leading-tight">
+{`function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Expenses") || ss.insertSheet("Expenses");
+
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["ID", "Type", "Title", "Amount (AED)", "Paid By ID", "Shared With", "Date", "Note", "Cycle"]);
+    }
+
+    if (data.expenses && data.expenses.length > 0) {
+      // Clear existing rows except header and append latest
+      var lastRow = sheet.getLastRow();
+      if (lastRow > 1) {
+        sheet.getRange(2, 1, lastRow - 1, 9).clearContent();
+      }
+      data.expenses.forEach(function(exp) {
+        sheet.appendRow([
+          exp.id, exp.type, exp.title, exp.amount, exp.paidById,
+          (exp.sharedWithIds || []).join(","), exp.date, exp.note || "", exp.cycle
+        ]);
+      });
+    }
+    return ContentService.createTextOutput(JSON.stringify({result: "success"})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({result: "error", message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}`}
+              </pre>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const code = `function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Expenses") || ss.insertSheet("Expenses");
+
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["ID", "Type", "Title", "Amount (AED)", "Paid By ID", "Shared With", "Date", "Note", "Cycle"]);
+    }
+
+    if (data.expenses && data.expenses.length > 0) {
+      var lastRow = sheet.getLastRow();
+      if (lastRow > 1) {
+        sheet.getRange(2, 1, lastRow - 1, 9).clearContent();
+      }
+      data.expenses.forEach(function(exp) {
+        sheet.appendRow([
+          exp.id, exp.type, exp.title, exp.amount, exp.paidById,
+          (exp.sharedWithIds || []).join(","), exp.date, exp.note || "", exp.cycle
+        ]);
+      });
+    }
+    return ContentService.createTextOutput(JSON.stringify({result: "success"})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({result: "error", message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+                  navigator.clipboard.writeText(code);
+                  setCopiedScript(true);
+                  setTimeout(() => setCopiedScript(false), 2500);
+                }}
+                className="absolute top-3 right-3 bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-extrabold px-3 py-1 rounded-lg text-xs cursor-pointer shadow-md active:scale-95"
+              >
+                {copiedScript ? 'Copied Code!' : 'Copy Apps Script'}
+              </button>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAppsScriptModal(false)}
+                className="bg-emerald-600 text-white font-bold px-4 py-1.5 rounded-xl text-xs hover:bg-emerald-500 cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </GlassContainer>
+        </div>
       )}
 
       {/* SECTION 2: Global Display Currency & Conversion Rates (Admin Only) */}

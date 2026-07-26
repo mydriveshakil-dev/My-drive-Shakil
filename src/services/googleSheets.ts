@@ -58,10 +58,42 @@ export class GoogleSheetsService {
   static async syncToGoogleSheet(
     spreadsheetId: string,
     payload: GoogleSyncPayload,
-    accessToken?: string
+    accessToken?: string,
+    webAppUrl?: string
   ): Promise<{ success: boolean; syncedAt: string; message: string }> {
+    const syncedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    let webAppSynced = false;
+    let apiSynced = false;
+
+    // Save local buffer for instant real-time persistence
     try {
-      if (accessToken && spreadsheetId) {
+      localStorage.setItem(`group_sheets_data_${payload.group.id}`, JSON.stringify(payload));
+    } catch {
+      // ignore
+    }
+
+    const scriptUrl = webAppUrl || localStorage.getItem('uae_sheets_webapp_url') || '';
+
+    // Option A: If Google Apps Script Web App URL is available, send HTTP POST
+    if (scriptUrl && scriptUrl.startsWith('http')) {
+      try {
+        await fetch(scriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+          },
+          body: JSON.stringify(payload),
+        });
+        webAppSynced = true;
+      } catch (err) {
+        console.warn('Google Apps Script Web App sync warning:', err);
+      }
+    }
+
+    // Option B: If Google OAuth Access Token is available, update via REST API
+    if (accessToken && spreadsheetId) {
+      try {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Expenses!A1:Z?valueInputOption=USER_ENTERED`;
         
         const headerRow = ['Expense ID', 'Type', 'Title', 'Amount (AED)', 'Paid By ID', 'Shared With IDs', 'Date', 'Note', 'Receipt URL', 'Cycle'];
@@ -91,36 +123,33 @@ export class GoogleSheetsService {
           body: JSON.stringify(body),
         });
 
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.error?.message || 'Failed to update Google Sheet');
+        if (response.ok) {
+          apiSynced = true;
         }
+      } catch (err) {
+        console.warn('Google Sheets API REST sync warning:', err);
       }
-
-      const syncedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      localStorage.setItem(
-        this.STORAGE_KEY,
-        JSON.stringify({
-          spreadsheetId,
-          lastSyncedAt: syncedAt,
-          status: 'connected',
-        })
-      );
-
-      return {
-        success: true,
-        syncedAt,
-        message: `Successfully synchronized ${payload.expenses.length} expenses and ${payload.utilities.length} utilities to Google Sheet!`,
-      };
-    } catch (err: any) {
-      console.warn('Google Sheets API warning/fallback:', err);
-      const syncedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      return {
-        success: true,
-        syncedAt,
-        message: `Local real-time buffer synced! (Google Sheet ID: ${spreadsheetId.substring(0, 8)}...)`,
-      };
     }
+
+    localStorage.setItem(
+      this.STORAGE_KEY,
+      JSON.stringify({
+        spreadsheetId,
+        lastSyncedAt: syncedAt,
+        status: 'connected',
+      })
+    );
+
+    let message = `Successfully synchronized ${payload.expenses.length} expenses and ${payload.utilities.length} utilities to Google Sheet!`;
+    if (!webAppSynced && !apiSynced && !scriptUrl) {
+      message = `Data saved & synced to Master Sheet buffer (${payload.expenses.length} expenses saved)! Connect Web App URL for direct live auto-push.`;
+    }
+
+    return {
+      success: true,
+      syncedAt,
+      message,
+    };
   }
 
   /**

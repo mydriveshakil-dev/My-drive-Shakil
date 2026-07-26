@@ -96,6 +96,7 @@ export interface GoogleSheetsConfig {
   lastSyncedAt: string | null;
   status: 'connected' | 'disconnected' | 'syncing' | 'error';
   errorMessage?: string;
+  webAppUrl?: string;
 }
 
 export interface UaeVisaIdentity {

@@ -348,15 +348,31 @@ export default function App() {
     }
   };
 
-  const triggerSheetsSync = async (silent = false) => {
+  const triggerSheetsSync = async (
+    silent = false,
+    customExpenses?: Expense[],
+    customUtilities?: UtilityBill[],
+    customRent?: RentContribution,
+    customGroup?: Group
+  ) => {
     if (!silent) setIsSyncing(true);
 
-    const result = await GoogleSheetsService.syncToGoogleSheet(group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM', {
-      group,
-      expenses,
-      utilities,
-      rent,
-    });
+    const activeExpenses = customExpenses || expenses;
+    const activeUtilities = customUtilities || utilities;
+    const activeRent = customRent || rent;
+    const activeGroup = customGroup || group;
+
+    const result = await GoogleSheetsService.syncToGoogleSheet(
+      activeGroup.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM',
+      {
+        group: activeGroup,
+        expenses: activeExpenses,
+        utilities: activeUtilities,
+        rent: activeRent,
+      },
+      undefined,
+      sheetsConfig.webAppUrl
+    );
 
     setSheetsConfig((prev) => ({
       ...prev,
@@ -370,6 +386,28 @@ export default function App() {
       triggerHaptic(hapticPatterns.sync);
       setTimeout(() => setSyncNotification(null), 3500);
     }
+  };
+
+  const handleUpdateSpreadsheetConfig = (newSheetId: string, newWebAppUrl?: string) => {
+    const trimmedSheetId = newSheetId.trim();
+    const trimmedWebAppUrl = (newWebAppUrl || '').trim();
+
+    const updatedG = { ...group, spreadsheetId: trimmedSheetId };
+    setGroup(updatedG);
+    saveGroupToFirestore(updatedG);
+
+    localStorage.setItem('uae_sheets_webapp_url', trimmedWebAppUrl);
+    setSheetsConfig((prev) => ({
+      ...prev,
+      spreadsheetId: trimmedSheetId,
+      webAppUrl: trimmedWebAppUrl,
+    }));
+
+    const updatedAll = allGroups.map((g) => (g.id === group.id ? updatedG : g));
+    setAllGroups(updatedAll);
+    localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
+
+    triggerSheetsSync(false, expenses, utilities, rent, updatedG);
   };
 
   // Handlers for Expenses
@@ -418,7 +456,7 @@ export default function App() {
     setChatMessages((prev) => [...prev, chatNotification]);
     saveChatMessageToFirestore(group.id, chatNotification);
 
-    triggerSheetsSync();
+    triggerSheetsSync(false, updatedExpenses);
   };
 
   const handleSendMessage = (data: { text: string; senderId: string }) => {
@@ -612,7 +650,7 @@ export default function App() {
     const filtered = expenses.filter((e) => e.id !== id);
     setExpenses(filtered);
     deleteExpenseFromFirestore(id);
-    triggerSheetsSync();
+    triggerSheetsSync(false, filtered);
   };
 
   // Handlers for Utilities & Rent
@@ -626,7 +664,7 @@ export default function App() {
       return u;
     });
     setUtilities(updated);
-    triggerSheetsSync();
+    triggerSheetsSync(false, expenses, updated);
   };
 
   const handleAddUtility = (newUtil: Omit<UtilityBill, 'id'>) => {
@@ -637,14 +675,14 @@ export default function App() {
     const updated = [...utilities, util];
     setUtilities(updated);
     saveUtilityToFirestore(util);
-    triggerSheetsSync();
+    triggerSheetsSync(false, expenses, updated);
   };
 
   const handleUpdateRentStatus = (status: 'paid' | 'pending') => {
     const updatedRent = { ...rent, status };
     setRent(updatedRent);
     saveRentToFirestore(group.id, updatedRent);
-    triggerSheetsSync();
+    triggerSheetsSync(false, expenses, utilities, updatedRent);
   };
 
   // Handlers for Members & Group
@@ -664,7 +702,7 @@ export default function App() {
     setAllGroups(updatedAll);
     localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
 
-    triggerSheetsSync();
+    triggerSheetsSync(true, expenses, utilities, rent, updatedGroup);
   };
 
   const handleUpdateMemberDays = (id: string, daysPresent: number) => {
@@ -679,7 +717,7 @@ export default function App() {
     setAllGroups(updatedAll);
     localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
 
-    triggerSheetsSync();
+    triggerSheetsSync(true, expenses, utilities, rent, updatedGroup);
   };
 
   const handleRemoveMember = (id: string) => {
@@ -694,7 +732,7 @@ export default function App() {
     setAllGroups(updatedAll);
     localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
 
-    triggerSheetsSync();
+    triggerSheetsSync(true, expenses, utilities, rent, updatedGroup);
   };
 
   return (
@@ -870,6 +908,7 @@ export default function App() {
                   onToggleHoldGroup={handleToggleHoldGroup}
                   onRemoveGroup={handleRemoveGroup}
                   onChangeBaseCurrency={handleChangeBaseCurrency}
+                  onUpdateSpreadsheetConfig={handleUpdateSpreadsheetConfig}
                 />
               )}
             </motion.div>

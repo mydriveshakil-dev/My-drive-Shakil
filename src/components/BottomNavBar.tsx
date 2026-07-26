@@ -4,7 +4,7 @@ import { GlassContainer } from './GlassContainer';
 import { motion } from 'motion/react';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 
-export type AppTabType = 'dashboard' | 'home' | 'expenses' | 'utilities' | 'report' | 'group';
+export type AppTabType = 'dashboard' | 'home' | 'utilities' | 'report' | 'group';
 
 interface BottomNavBarProps {
   activeTab: AppTabType;
@@ -61,7 +61,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
               <button
                 key={tab.id}
                 onClick={() => handleTabClick(tab.id)}
-                className={`flex flex-col items-center justify-center py-1.5 px-2.5 sm:px-3.5 rounded-full transition-all relative cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-1.5 px-2 sm:px-3 rounded-full transition-all relative cursor-pointer ${
                   isActive ? 'text-[#0B4A3F] font-black' : 'text-emerald-100/70 hover:text-white'
                 }`}
               >

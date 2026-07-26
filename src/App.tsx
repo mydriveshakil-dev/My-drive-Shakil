@@ -191,7 +191,7 @@ export default function App() {
     return !userAuth.isLoggedIn;
   });
 
-  const [activeTab, setActiveTab] = useState<AppTabType>('dashboard');
+  const [activeTab, setActiveTab] = useState<AppTabType>('home');
   const [billingCycleType, setBillingCycleType] = useState<BillingCycleType>('current');
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isArchGuideOpen, setIsArchGuideOpen] = useState(false);
@@ -653,26 +653,12 @@ export default function App() {
                 isSyncing={isSyncing}
                 preferredCurrency={preferredCurrency}
                 customRates={customRates}
+                currentUser={userAuth}
                 onNavigateTab={(tab) => setActiveTab(tab as AppTabType)}
               />
             )}
 
             {activeTab === 'home' && (
-              <HomeDashboard
-                group={group}
-                expenses={expenses}
-                utilities={utilities}
-                rent={rent}
-                onOpenAddExpense={() => setIsAddExpenseOpen(true)}
-                onNavigateTab={(tab) => setActiveTab(tab as AppTabType)}
-                onDeleteExpense={handleDeleteExpense}
-                preferredCurrency={preferredCurrency}
-                customRates={customRates}
-                onOpenGroupChat={() => setIsChatOpen(true)}
-              />
-            )}
-
-            {activeTab === 'expenses' && (
               <HomeDashboard
                 group={group}
                 expenses={expenses}
@@ -788,7 +774,7 @@ export default function App() {
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.92 }}
           onClick={() => setIsChatOpen(true)}
-          className="fixed bottom-3.5 right-3 sm:right-6 z-50 w-13 h-13 sm:w-14 sm:h-14 bg-gradient-to-tr from-[#F9A826] to-amber-300 hover:from-amber-400 hover:to-amber-200 text-[#0B4A3F] rounded-full shadow-2xl shadow-amber-500/60 border-2 border-white/90 flex items-center justify-center cursor-pointer backdrop-blur-xl transition-all ring-4 ring-emerald-950/40"
+          className="fixed bottom-[76px] sm:bottom-[82px] right-3 sm:right-6 z-50 w-13 h-13 sm:w-14 sm:h-14 bg-gradient-to-tr from-[#F9A826] to-amber-300 hover:from-amber-400 hover:to-amber-200 text-[#0B4A3F] rounded-full shadow-2xl shadow-amber-500/60 border-2 border-white/90 flex items-center justify-center cursor-pointer backdrop-blur-xl transition-all ring-4 ring-emerald-950/40"
           title="Open Room Group Chat"
         >
           <div className="relative flex items-center justify-center">

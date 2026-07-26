@@ -8,7 +8,18 @@ export const INITIAL_GROUP: Group = {
   cycleId: '2026-07',
   status: 'pending',
   createdAt: new Date().toISOString().split('T')[0],
-  members: [],
+  members: [
+    {
+      id: 'm3',
+      name: 'Kazi Md Shakil',
+      email: 'mydriveshakil@gmail.com',
+      phone: '+971 50 892 4102',
+      mobileNumber: '+971 50 892 4102',
+      avatar: 'KS',
+      daysPresent: 30,
+      active: true,
+    },
+  ],
 };
 
 // No demo expenses - clean sheet state

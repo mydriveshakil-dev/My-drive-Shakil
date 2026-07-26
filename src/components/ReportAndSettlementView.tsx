@@ -528,7 +528,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                       ROOM SUITE SETTLEMENT STATEMENT
                     </h1>
                     <p className="text-xs text-slate-500 font-semibold">
-                      UNITED ARAB EMIRATES • GDRFA & ICP RESIDENCE ROOM MESS
+                      UNITED ARAB EMIRATES • MESS EXPENSE MANAGEMENT SYSTEM
                     </p>
                   </div>
                 </div>

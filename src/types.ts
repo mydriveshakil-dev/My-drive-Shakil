@@ -6,6 +6,8 @@ export interface Member {
   id: string;
   name: string;
   email?: string;
+  phone?: string;
+  mobileNumber?: string;
   avatar: string;
   daysPresent: number; // For mess calculation
   active: boolean;
@@ -111,12 +113,15 @@ export interface UaeVisaIdentity {
 }
 
 export interface UserAuthProfile {
+  name?: string;
   email: string;
   mobileNumber: string;
-  idNumber: string;
-  identity: UaeVisaIdentity | null;
+  password?: string;
+  idNumber?: string;
+  identity?: UaeVisaIdentity | null;
   isLoggedIn: boolean;
   role: 'admin' | 'user';
+  linkedGroupId?: string | null;
 }
 
 export interface ChatMessage {

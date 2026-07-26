@@ -100,10 +100,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     <button
                       onClick={onOpenLoginModal}
                       className="inline-flex items-center gap-1.5 bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] text-xs font-black px-3.5 py-1.5 rounded-2xl transition-all shadow-lg shadow-amber-500/20 active:scale-95 border border-white/40"
-                      title="UAE Visa Login & Verification Status"
+                      title="Member & Admin Account Portal"
                     >
                       <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
-                      <span>{currentUser?.isLoggedIn ? 'UAE Verified' : 'UAE Visa Login'}</span>
+                      <span>{currentUser?.isLoggedIn ? 'Logged In' : 'Member Login'}</span>
                     </button>
                   )}
 

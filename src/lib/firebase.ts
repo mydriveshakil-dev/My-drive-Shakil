@@ -168,10 +168,11 @@ export function subscribeToExpenses(
   );
 }
 
-export async function saveExpenseToFirestore(expense: Expense) {
+export async function saveExpenseToFirestore(expense: Expense, activeGroupId?: string) {
   try {
     const expenseRef = doc(db, 'expenses', expense.id);
-    await setDoc(expenseRef, expense, { merge: true });
+    const targetGroupId = expense.groupId || activeGroupId || 'group-room-3';
+    await setDoc(expenseRef, { ...expense, groupId: targetGroupId }, { merge: true });
   } catch (err) {
     console.error('Error saving expense to Firestore:', err);
   }
@@ -209,10 +210,11 @@ export function subscribeToUtilities(
   );
 }
 
-export async function saveUtilityToFirestore(utility: UtilityBill) {
+export async function saveUtilityToFirestore(utility: UtilityBill, activeGroupId?: string) {
   try {
     const utilRef = doc(db, 'utilities', utility.id);
-    await setDoc(utilRef, utility, { merge: true });
+    const targetGroupId = utility.groupId || activeGroupId || 'group-room-3';
+    await setDoc(utilRef, { ...utility, groupId: targetGroupId }, { merge: true });
   } catch (err) {
     console.error('Error saving utility to Firestore:', err);
   }

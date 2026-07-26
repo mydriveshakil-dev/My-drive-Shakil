@@ -127,6 +127,7 @@ export interface UserAuthProfile {
 
 export interface ChatMessage {
   id: string;
+  groupId?: string;
   senderId: string;
   senderName: string;
   senderAvatar: string;

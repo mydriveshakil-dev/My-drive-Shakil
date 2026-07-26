@@ -167,33 +167,42 @@ export default function App() {
       }
     });
 
-    // 2. Expenses subscription
+    // 2. Expenses subscription - Instant multi-device sync
     const unsubExp = subscribeToExpenses(group.id, (remoteExpenses) => {
       if (remoteExpenses && remoteExpenses.length > 0) {
         setExpenses(remoteExpenses);
+      } else if (remoteExpenses && remoteExpenses.length === 0) {
+        INITIAL_EXPENSES.forEach((exp) => saveExpenseToFirestore({ ...exp, groupId: group.id }, group.id));
+        setExpenses(INITIAL_EXPENSES.map((exp) => ({ ...exp, groupId: group.id })));
       }
     });
 
-    // 3. Utilities subscription
+    // 3. Utilities subscription - Instant multi-device sync
     const unsubUtil = subscribeToUtilities(group.id, (remoteUtilities) => {
       if (remoteUtilities && remoteUtilities.length > 0) {
         setUtilities(remoteUtilities);
+      } else if (remoteUtilities && remoteUtilities.length === 0) {
+        INITIAL_UTILITIES.forEach((util) => saveUtilityToFirestore({ ...util, groupId: group.id }, group.id));
+        setUtilities(INITIAL_UTILITIES.map((util) => ({ ...util, groupId: group.id })));
       }
     });
 
-    // 4. Rent subscription
+    // 4. Rent subscription - Instant multi-device sync
     const unsubRent = subscribeToRent(group.id, (remoteRent) => {
       if (remoteRent) {
         setRent(remoteRent);
       } else {
-        saveRentToFirestore(group.id, rent);
+        saveRentToFirestore(group.id, { ...rent, groupId: group.id });
       }
     });
 
-    // 5. Chat messages subscription
+    // 5. Chat messages subscription - Instant multi-device sync
     const unsubChat = subscribeToChatMessages(group.id, (remoteMsgs) => {
       if (remoteMsgs && remoteMsgs.length > 0) {
         setChatMessages(remoteMsgs);
+      } else if (remoteMsgs && remoteMsgs.length === 0) {
+        INITIAL_CHAT_MESSAGES.forEach((msg) => saveChatMessageToFirestore(group.id, { ...msg, groupId: group.id }));
+        setChatMessages(INITIAL_CHAT_MESSAGES);
       }
     });
 
@@ -326,15 +335,7 @@ export default function App() {
     }
   }, [allGroups, userAuth.isLoggedIn, userAuth.role, userAuth.mobileNumber]);
   useEffect(() => {
-    fetchFromSheet(true);
-  }, [group.spreadsheetId]);
-
-  // Auto real-time background sync simulation every 30s
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchFromSheet(true);
-    }, 30000);
-    return () => clearInterval(interval);
+    // Initial optional check from sheet if needed, but do not override live Firestore
   }, [group.spreadsheetId]);
 
   // Automatic backend data synchronization whenever ANY button in the app is clicked
@@ -368,9 +369,11 @@ export default function App() {
     if (fetched.success) {
       if (fetched.expenses && fetched.expenses.length > 0) {
         setExpenses(fetched.expenses);
+        fetched.expenses.forEach((e) => saveExpenseToFirestore({ ...e, groupId: group.id }, group.id));
       }
       if (fetched.utilities && fetched.utilities.length > 0) {
         setUtilities(fetched.utilities);
+        fetched.utilities.forEach((u) => saveUtilityToFirestore({ ...u, groupId: group.id }, group.id));
       }
     }
 

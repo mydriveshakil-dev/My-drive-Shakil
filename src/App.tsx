@@ -12,7 +12,9 @@ import { GoogleSheetsService } from './services/googleSheets';
 import { triggerHaptic, hapticPatterns } from './utils/haptics';
 import {
   subscribeToGroup,
+  subscribeToAllGroups,
   saveGroupToFirestore,
+  saveUserProfileToFirestore,
   subscribeToExpenses,
   saveExpenseToFirestore,
   deleteExpenseFromFirestore,
@@ -22,7 +24,9 @@ import {
   subscribeToRent,
   saveRentToFirestore,
   subscribeToChatMessages,
-  saveChatMessageToFirestore
+  saveChatMessageToFirestore,
+  auth,
+  onAuthStateChanged,
 } from './lib/firebase';
 
 import { HeaderBar } from './components/HeaderBar';
@@ -119,6 +123,40 @@ export default function App() {
 
   // Realtime Firestore synchronization for Group, Expenses, Utilities, Rent, Chat
   useEffect(() => {
+    // 0. All Groups subscription for multi-device group sync
+    const unsubAllGroups = subscribeToAllGroups((remoteGroups) => {
+      if (remoteGroups && remoteGroups.length > 0) {
+        setAllGroups(remoteGroups);
+        localStorage.setItem('all_room_groups', JSON.stringify(remoteGroups));
+        const matchingCurrent = remoteGroups.find((g) => g.id === group.id);
+        if (matchingCurrent) {
+          setGroup(matchingCurrent);
+        }
+      }
+    });
+
+    // 0b. Firebase Auth session listener for multi-device auto-login
+    const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser && firebaseUser.email) {
+        const emailLower = firebaseUser.email.toLowerCase();
+        const isAdmin = emailLower === 'mydriveshakil@gmail.com';
+        const userProf: UserAuthProfile = {
+          name: firebaseUser.displayName || (isAdmin ? 'KAZI MD SHAKIL (App Admin)' : 'Mess Member'),
+          email: firebaseUser.email,
+          mobileNumber: isAdmin ? '+971544874028' : '+971500000000',
+          password: 'GoogleAuth',
+          idNumber: isAdmin ? 'ADMIN-01' : '',
+          identity: null,
+          isLoggedIn: true,
+          role: isAdmin ? 'admin' : 'user',
+        };
+        setUserAuth(userProf);
+        localStorage.setItem('uae_user_auth', JSON.stringify(userProf));
+        saveUserProfileToFirestore(userProf);
+        setIsLoginModalOpen(false);
+      }
+    });
+
     // 1. Group subscription
     const unsubGroup = subscribeToGroup(group.id, (remoteGroup) => {
       if (remoteGroup) {
@@ -160,6 +198,8 @@ export default function App() {
     });
 
     return () => {
+      unsubAllGroups();
+      unsubAuth();
       unsubGroup();
       unsubExp();
       unsubUtil();
@@ -477,6 +517,7 @@ export default function App() {
 
   const handleLoginSuccess = (authData: UserAuthProfile) => {
     triggerHaptic(hapticPatterns.success);
+    saveUserProfileToFirestore(authData);
 
     if (authData.role === 'admin') {
       const updatedAuth: UserAuthProfile = {

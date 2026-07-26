@@ -324,7 +324,7 @@ class GoogleSheetsApiManager {
                     Single Shared Account Architecture Strategy
                   </h3>
                   <p className="text-xs text-emerald-100/80 mt-1">
-                    All group members (up to 10 room members) log in on their respective mobile devices using <strong>one single shared Master Gmail account</strong> (e.g. <code>mydriveshakil@gmail.com</code>). The app directly reads and writes to a central Master Google Sheet created inside this account's Google Drive.
+                    All group members (up to 10 room members) log in on their respective mobile devices using <strong>one single shared Master Account</strong>. The app directly reads and writes to a central Master Google Sheet created inside this account's Google Drive.
                   </p>
                 </div>
               </div>

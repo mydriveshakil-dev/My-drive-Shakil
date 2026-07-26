@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserAuthProfile } from '../types';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
+import { loginWithGoogleAuth, getUserProfileFromFirestore } from '../lib/firebase';
 import {
   ShieldCheck,
   Smartphone,
@@ -11,6 +12,7 @@ import {
   Info,
   CheckSquare,
   Square,
+  Globe,
 } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
 
@@ -29,11 +31,13 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
 }) => {
   // Form State
   const [fullName, setFullName] = useState('');
-  const [mobileNumber, setMobileNumber] = useState('+971544874028');
+  const [mobileNumber, setMobileNumber] = useState('');
   const [userPassword, setUserPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
+  const [isSearchingCloud, setIsSearchingCloud] = useState(false);
 
   // Load saved credentials on mount / open
   useEffect(() => {
@@ -53,7 +57,35 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleLogin = (e?: React.FormEvent) => {
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoadingGoogle(true);
+      setLoginError(null);
+      const googleUser = await loginWithGoogleAuth();
+      if (googleUser && googleUser.email) {
+        triggerHaptic(hapticPatterns.success);
+        const isAdmin = googleUser.email.toLowerCase() === 'mydriveshakil@gmail.com';
+        onLoginSuccess({
+          name: googleUser.displayName || (isAdmin ? 'KAZI MD SHAKIL (App Admin)' : 'Mess Member'),
+          email: googleUser.email,
+          mobileNumber: mobileNumber.trim() || (isAdmin ? '+971544874028' : '+971500000000'),
+          password: userPassword.trim() || 'GoogleAuth',
+          idNumber: isAdmin ? 'ADMIN-01' : '',
+          identity: null,
+          isLoggedIn: true,
+          role: isAdmin ? 'admin' : 'user',
+        });
+      }
+    } catch (err: any) {
+      console.error('Google Sign In error:', err);
+      triggerHaptic(hapticPatterns.error);
+      setLoginError(err.message || 'Google Sign-In failed. Please try again.');
+    } finally {
+      setIsLoadingGoogle(false);
+    }
+  };
+
+  const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
     const trimmedMobile = mobileNumber.trim();
@@ -96,7 +128,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
     if (isAdminMobile) {
       if (trimmedPass !== 'UAE@@2024') {
         triggerHaptic(hapticPatterns.error);
-        setLoginError('Incorrect Admin Password for +971544874028! Required: UAE@@2024');
+        setLoginError('Incorrect password entered.');
         return;
       }
 
@@ -117,19 +149,31 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
       return;
     }
 
+    // Cloud Lookup check for multi-device cross login
+    setIsSearchingCloud(true);
+    const cloudProfile = await getUserProfileFromFirestore(trimmedMobile);
+    setIsSearchingCloud(false);
+
+    if (cloudProfile && cloudProfile.password && cloudProfile.password !== trimmedPass) {
+      triggerHaptic(hapticPatterns.error);
+      setLoginError('Incorrect password for this mobile number.');
+      return;
+    }
+
     // General Member Login
     setLoginError(null);
     triggerHaptic(hapticPatterns.success);
 
     onLoginSuccess({
-      name: fullName.trim() || undefined,
-      email: defaultEmail || 'user@mess.com',
+      name: fullName.trim() || cloudProfile?.name || undefined,
+      email: defaultEmail || cloudProfile?.email || 'user@mess.com',
       mobileNumber: trimmedMobile,
       password: trimmedPass,
-      idNumber: '',
+      idNumber: cloudProfile?.idNumber || '',
       identity: null,
       isLoggedIn: true,
-      role: 'user',
+      role: cloudProfile?.role || 'user',
+      linkedGroupId: cloudProfile?.linkedGroupId,
     });
   };
 
@@ -161,7 +205,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                 Member & Admin Portal Access
               </h2>
               <p className="text-[11px] sm:text-xs text-emerald-200/80 font-medium truncate">
-                Log in using your Mobile Number & Password
+                Log in using Google or Mobile & Password across any device
               </p>
             </div>
           </div>
@@ -169,10 +213,32 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleLogin} className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-white max-w-full">
-          <div className="bg-emerald-950/70 border border-emerald-400/30 p-3.5 rounded-2xl text-xs text-emerald-200 leading-relaxed flex items-start gap-2.5">
+          {/* Google Sign-In Quick Action */}
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={isLoadingGoogle}
+            className="w-full bg-white hover:bg-slate-100 text-slate-800 font-extrabold py-3.5 px-4 rounded-2xl shadow-xl transition-all text-xs sm:text-sm flex items-center justify-center gap-3 border border-slate-300 active:scale-98 cursor-pointer group"
+          >
+            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+            </svg>
+            <span>{isLoadingGoogle ? 'Signing in with Google...' : '1-Click Sign in with Google Account'}</span>
+          </button>
+
+          <div className="flex items-center my-2">
+            <div className="flex-1 border-t border-white/20"></div>
+            <span className="px-3 text-[11px] font-bold text-emerald-200/60 uppercase">OR Login with Credentials</span>
+            <div className="flex-1 border-t border-white/20"></div>
+          </div>
+
+          <div className="bg-emerald-950/70 border border-emerald-400/30 p-3 rounded-2xl text-xs text-emerald-200 leading-relaxed flex items-start gap-2">
             <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div>
-              Enter your registered <strong>Mobile Number</strong> and <strong>Password</strong> to access your mess group. New members can optionally enter their Full Name.
+              Enter your <strong>Mobile Number</strong> and <strong>Password</strong> to access your group. Data automatically syncs across all devices logged into the same account.
             </div>
           </div>
 
@@ -202,7 +268,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
             </label>
             <input
               type="tel"
-              placeholder="e.g. +971544874028"
+              placeholder="e.g. +971501234567"
               value={mobileNumber}
               onChange={(e) => {
                 setMobileNumber(e.target.value);
@@ -276,11 +342,12 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
         <div className="p-4 sm:p-5 bg-emerald-950/80 border-t border-white/20 backdrop-blur-2xl shrink-0">
           <button
             type="button"
-            onClick={handleLogin}
-            className="w-full bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black py-4 rounded-2xl shadow-xl transition-all text-sm flex items-center justify-center gap-2 border border-white/30 active:scale-98 cursor-pointer ring-2 ring-amber-400/50"
+            onClick={() => handleLogin()}
+            disabled={isSearchingCloud}
+            className="w-full bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black py-4 rounded-2xl shadow-xl transition-all text-sm flex items-center justify-center gap-2 border border-white/30 active:scale-98 cursor-pointer ring-2 ring-amber-400/50 disabled:opacity-50"
           >
             <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
-            <span>Login to Mess Portal</span>
+            <span>{isSearchingCloud ? 'Connecting Cloud...' : 'Login to Mess Portal'}</span>
             <ArrowRight className="w-5 h-5 stroke-[3]" />
           </button>
         </div>

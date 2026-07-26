@@ -4,6 +4,7 @@ import {
   doc,
   setDoc,
   getDoc,
+  getDocs,
   collection,
   onSnapshot,
   query,
@@ -11,8 +12,15 @@ import {
   deleteDoc,
   addDoc
 } from 'firebase/firestore';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
-import { Group, Expense, UtilityBill, RentContribution, ChatMessage } from '../types';
+import { Group, Expense, UtilityBill, RentContribution, ChatMessage, UserAuthProfile } from '../types';
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -22,7 +30,88 @@ export const db = firebaseConfig.firestoreDatabaseId
   ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
   : getFirestore(app);
 
+// Initialize Auth & Google Provider
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
+export { onAuthStateChanged, signOut };
+
 // Firestore Realtime listeners and persistence helpers
+
+// 0. Sync All Groups Across Devices
+export function subscribeToAllGroups(onUpdate: (groups: Group[]) => void) {
+  const groupsRef = collection(db, 'groups');
+  return onSnapshot(
+    groupsRef,
+    (snapshot) => {
+      const items: Group[] = [];
+      snapshot.forEach((docSnap) => {
+        items.push({ ...docSnap.data(), id: docSnap.id } as Group);
+      });
+      if (items.length > 0) {
+        onUpdate(items);
+      }
+    },
+    (err) => {
+      console.warn('Firestore all groups listener warning:', err);
+    }
+  );
+}
+
+// User Profiles Cloud Sync for Multi-Device Login
+export async function saveUserProfileToFirestore(profile: UserAuthProfile) {
+  try {
+    const rawId = profile.mobileNumber || profile.email || 'user';
+    const cleanDocId = rawId.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    const userRef = doc(db, 'users', cleanDocId);
+    await setDoc(userRef, { ...profile, updatedAt: new Date().toISOString() }, { merge: true });
+  } catch (err) {
+    console.error('Error saving user profile to Firestore:', err);
+  }
+}
+
+export async function getUserProfileFromFirestore(identifier: string): Promise<UserAuthProfile | null> {
+  try {
+    const cleanDocId = identifier.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    const userRef = doc(db, 'users', cleanDocId);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      return snap.data() as UserAuthProfile;
+    }
+
+    const usersRef = collection(db, 'users');
+    const qEmail = query(usersRef, where('email', '==', identifier));
+    const snapEmail = await getDocs(qEmail);
+    if (!snapEmail.empty) {
+      return snapEmail.docs[0].data() as UserAuthProfile;
+    }
+
+    const qMobile = query(usersRef, where('mobileNumber', '==', identifier));
+    const snapMobile = await getDocs(qMobile);
+    if (!snapMobile.empty) {
+      return snapMobile.docs[0].data() as UserAuthProfile;
+    }
+  } catch (err) {
+    console.warn('Firestore fetch user profile warning:', err);
+  }
+  return null;
+}
+
+export async function loginWithGoogleAuth(): Promise<{ email: string; displayName?: string; photoURL?: string } | null> {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    if (result.user) {
+      return {
+        email: result.user.email || '',
+        displayName: result.user.displayName || undefined,
+        photoURL: result.user.photoURL || undefined,
+      };
+    }
+  } catch (err) {
+    console.error('Google Sign-In Error:', err);
+    throw err;
+  }
+  return null;
+}
 
 // 1. Sync Group Data
 export function subscribeToGroup(

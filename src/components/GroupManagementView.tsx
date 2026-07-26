@@ -423,7 +423,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-emerald-100/80">
-                  Shared Account: <strong className="text-white">mydriveshakil@gmail.com</strong>
+                  Shared Account: <strong className="text-white">Master Cloud Account (Connected)</strong>
                 </p>
               </div>
             </div>

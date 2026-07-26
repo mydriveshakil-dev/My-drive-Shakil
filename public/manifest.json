@@ -1,0 +1,18 @@
+{
+  "short_name": "UAE MESS",
+  "name": "UAE MESS SYSTEM",
+  "description": "Official UAE Room & Mess Expense Tracker & Settlement Portal",
+  "icons": [
+    {
+      "src": "/src/assets/images/uae_mess_logo_1785022712689.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0B4A3F",
+  "theme_color": "#0B4A3F",
+  "display": "standalone",
+  "orientation": "portrait"
+}

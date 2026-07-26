@@ -1,5 +1,5 @@
 import React from 'react';
-import { Group, Expense, UtilityBill, RentContribution } from '../types';
+import { Group, Expense, UtilityBill, RentContribution, UserAuthProfile } from '../types';
 import {
   Wallet,
   Zap,
@@ -16,6 +16,7 @@ import {
   Receipt,
   Trash2,
   MessageCircle,
+  UserCheck,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
@@ -32,6 +33,7 @@ interface HomeDashboardProps {
   preferredCurrency?: string;
   customRates?: Record<string, number>;
   onOpenGroupChat?: () => void;
+  currentUser?: UserAuthProfile | null;
 }
 
 const COLORS = ['#F9A826', '#0B4A3F', '#10B981', '#3B82F6', '#EC4899'];
@@ -47,6 +49,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   preferredCurrency = 'USD',
   customRates,
   onOpenGroupChat,
+  currentUser,
 }) => {
   // Calculations
   const messTotal = expenses
@@ -103,14 +106,21 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         <div className="absolute -left-12 -top-12 w-40 h-40 rounded-full bg-amber-400/20 blur-2xl pointer-events-none"></div>
 
         <div className="relative z-10 space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-emerald-200 bg-white/15 px-3.5 py-1 rounded-full border border-white/20 backdrop-blur-md">
-              {group.name}
-            </span>
-            <span className="text-xs text-emerald-100/90 flex items-center gap-1 font-semibold bg-black/20 px-3 py-1 rounded-full border border-white/10">
-              <Calendar className="w-3.5 h-3.5 text-[#F9A826]" />
-              Cycle: {group.billingCycle}
-            </span>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-200 bg-white/15 px-3.5 py-1 rounded-full border border-white/20 backdrop-blur-md">
+                {group.name}
+              </span>
+              <span className="text-xs text-emerald-100/90 flex items-center gap-1 font-semibold bg-black/20 px-3 py-1 rounded-full border border-white/10">
+                <Calendar className="w-3.5 h-3.5 text-[#F9A826]" />
+                Cycle: {group.billingCycle}
+              </span>
+            </div>
+            {/* Logged in User Name under Group Name */}
+            <div className="text-xs text-amber-300 font-bold flex items-center gap-1.5 px-1 pt-0.5">
+              <UserCheck className="w-3.5 h-3.5 text-amber-400" />
+              <span>Logged in as: <strong className="text-white font-extrabold">{currentUser?.name || 'Member'}</strong></span>
+            </div>
           </div>
 
           <div>
@@ -129,10 +139,6 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
           <div className="pt-2 border-t border-white/15 flex items-center justify-between text-xs text-emerald-100">
             <span>Created: {group.createdAt}</span>
-            <span className="flex items-center gap-1.5 text-[#F9A826] font-bold bg-white/10 px-2.5 py-1 rounded-xl">
-              <Sparkles className="w-3.5 h-3.5" />
-              Direct Google Sheet Sync
-            </span>
           </div>
         </div>
       </GlassContainer>
@@ -510,15 +516,6 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           })}
         </div>
       </div>
-
-      {/* Floating Action Button (FAB) */}
-      <button
-        onClick={onOpenAddExpense}
-        className="fixed bottom-20 right-6 z-40 bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 border-2 border-white focus:outline-none"
-        title="Add New Expense"
-      >
-        <Plus className="w-7 h-7 stroke-[3]" />
-      </button>
     </div>
   );
 };

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Group, ExpenseCategory } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Group, ExpenseCategory, UserAuthProfile } from '../types';
 import { X, Utensils, ShoppingBag, Upload, Calendar as CalendarIcon, UserCheck, DollarSign, Check, Calculator } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
 import { evaluateMathExpression } from '../utils/mathEvaluator';
@@ -9,6 +9,7 @@ interface AddExpenseModalProps {
   group: Group;
   isOpen: boolean;
   onClose: () => void;
+  currentUser?: UserAuthProfile | null;
   onSaveExpense: (expenseData: {
     type: ExpenseCategory;
     title: string;
@@ -25,16 +26,35 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   group,
   isOpen,
   onClose,
+  currentUser,
   onSaveExpense,
 }) => {
+  // Identify logged in member in the active group
+  const loggedInMember = group.members.find(
+    (m) =>
+      (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
+      (currentUser?.mobileNumber && m.phone?.includes(currentUser.mobileNumber.slice(-7))) ||
+      (currentUser?.name && m.name.toLowerCase() === currentUser.name.toLowerCase())
+  ) || group.members[0];
+
   const [category, setCategory] = useState<ExpenseCategory>('mess');
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
-  const [paidById, setPaidById] = useState(group.members[0]?.id || 'm1');
+  const [paidById, setPaidById] = useState(loggedInMember?.id || 'm1');
   const [selectedMembers, setSelectedMembers] = useState<string[]>(group.members.map((m) => m.id));
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState('');
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Default to select ALL members when modal opens
+      setSelectedMembers(group.members.map((m) => m.id));
+      if (loggedInMember) {
+        setPaidById(loggedInMember.id);
+      }
+    }
+  }, [isOpen, group.members, loggedInMember]);
 
   if (!isOpen) return null;
 
@@ -133,11 +153,11 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 overflow-y-auto">
       <GlassContainer
         variant="modal"
         blur="3xl"
-        className="w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-white/40 my-auto relative box-border"
+        className="w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[88vh] sm:max-h-[85vh] flex flex-col border border-white/40 my-auto relative box-border shrink-0"
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-[#0B4A3F] to-[#145C4E] text-white p-5 flex items-center justify-between border-b border-white/20">
@@ -334,11 +354,17 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               onChange={(e) => setPaidById(e.target.value)}
               className="w-full px-4 py-3 bg-slate-900/90 border border-white/25 rounded-xl text-sm font-bold text-white focus:ring-2 focus:ring-amber-400 focus:outline-none cursor-pointer"
             >
-              {group.members.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name} ({m.avatar})
+              {loggedInMember ? (
+                <option value={loggedInMember.id}>
+                  {loggedInMember.name} ({loggedInMember.avatar}) - Logged In User
                 </option>
-              ))}
+              ) : (
+                group.members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.avatar})
+                  </option>
+                ))
+              )}
             </select>
           </div>
 

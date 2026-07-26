@@ -32,22 +32,6 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
 
   return (
     <div className="fixed bottom-3 left-0 right-0 z-40 px-2 sm:px-4 flex flex-col items-center pointer-events-none">
-      {/* Central circular floating action button (+) aligned centrally with 'Bills/Rent' tab */}
-      <div className="pointer-events-auto mb-2 relative z-50">
-        <motion.button
-          whileHover={{ scale: 1.12 }}
-          whileTap={{ scale: 0.92 }}
-          onClick={() => {
-            triggerHaptic(hapticPatterns.click);
-            onOpenAddExpense();
-          }}
-          className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#F9A826] to-amber-300 hover:from-amber-400 hover:to-amber-200 text-[#0B4A3F] shadow-2xl shadow-amber-500/60 border-2 border-white/90 flex items-center justify-center transition-all cursor-pointer ring-4 ring-emerald-950/40"
-          title="Add New Expense"
-        >
-          <Plus className="w-7 h-7 sm:w-8 sm:h-8 stroke-[3.2]" />
-        </motion.button>
-      </div>
-
       <GlassContainer
         variant="emerald"
         blur="3xl"

@@ -520,14 +520,17 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               {/* Header Stamp & Title */}
               <div className="border-b-2 border-slate-900 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-[#0B4A3F] text-[#F9A826] font-black flex items-center justify-center text-xl shadow-md border border-slate-200">
-                    <ShieldCheck className="w-7 h-7" />
+                  <div className="w-12 h-12 rounded-2xl bg-[#0B4A3F] text-[#F9A826] font-black flex items-center justify-center text-xl shadow-md border border-slate-200 shrink-0">
+                    <Receipt className="w-7 h-7" />
                   </div>
                   <div>
-                    <h1 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-                      ROOM SUITE SETTLEMENT STATEMENT
+                    <h1 className="text-lg sm:text-xl font-black text-slate-900 uppercase tracking-tight">
+                      ROOM EXPENSE SUITE
                     </h1>
-                    <p className="text-xs text-slate-500 font-semibold">
+                    <p className="text-xs text-emerald-800 font-extrabold uppercase">
+                      {group.name} • SETTLEMENT STATEMENT
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-semibold">
                       UNITED ARAB EMIRATES • MESS EXPENSE MANAGEMENT SYSTEM
                     </p>
                   </div>

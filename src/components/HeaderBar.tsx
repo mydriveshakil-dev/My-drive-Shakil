@@ -145,16 +145,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 </>
               )}
 
-              {/* Login / Switch to Admin button for normal users if needed */}
-              {!isAdmin && onOpenLoginModal && (
-                <button
-                  onClick={onOpenLoginModal}
-                  className="inline-flex items-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-emerald-950 text-xs font-black px-3.5 py-1.5 rounded-2xl transition-all shadow-md active:scale-95 cursor-pointer"
-                >
-                  <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
-                  <span>Admin Switch</span>
-                </button>
-              )}
+
 
               {/* Top Corner Logout Button */}
               {onLogout && (

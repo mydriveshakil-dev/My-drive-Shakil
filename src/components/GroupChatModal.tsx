@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Group, Member, ChatMessage } from '../types';
+import { Group, Member, ChatMessage, UserAuthProfile } from '../types';
 import {
   MessageCircle,
   X,
@@ -20,6 +20,7 @@ interface GroupChatModalProps {
   group: Group;
   messages: ChatMessage[];
   onSendMessage: (msg: { text: string; senderId: string }) => void;
+  currentUser?: UserAuthProfile | null;
 }
 
 export const GroupChatModal: React.FC<GroupChatModalProps> = ({
@@ -28,11 +29,17 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
   group,
   messages,
   onSendMessage,
+  currentUser,
 }) => {
+  const loggedInMember = group.members.find(
+    (m) =>
+      (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
+      (currentUser?.mobileNumber && m.phone?.includes(currentUser.mobileNumber.slice(-7))) ||
+      (currentUser?.name && m.name.toLowerCase() === currentUser.name.toLowerCase())
+  ) || group.members[0];
+
   const [inputText, setInputText] = useState('');
-  const [selectedSenderId, setSelectedSenderId] = useState<string>(
-    group.members.find((m) => m.name.includes('Shakil') || m.id === 'm3')?.id || group.members[0]?.id || 'm3'
-  );
+  const [selectedSenderId, setSelectedSenderId] = useState<string>(loggedInMember?.id || 'm3');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -42,13 +49,16 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      if (loggedInMember) {
+        setSelectedSenderId(loggedInMember.id);
+      }
       scrollToBottom();
     }
-  }, [isOpen, messages]);
+  }, [isOpen, messages, loggedInMember]);
 
   if (!isOpen) return null;
 
-  const currentMember = (group?.members || []).find((m) => m?.id === selectedSenderId) || group?.members?.[0] || {
+  const currentMember = (group?.members || []).find((m) => m?.id === selectedSenderId) || loggedInMember || group?.members?.[0] || {
     id: 'm3',
     name: 'Member',
     role: 'MEMBER',
@@ -76,11 +86,15 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
+    >
       <GlassContainer
+        onClick={(e) => e.stopPropagation()}
         variant="emerald"
         blur="3xl"
-        className="w-full max-w-2xl h-[90vh] sm:h-[82vh] rounded-3xl border border-white/30 shadow-2xl flex flex-col overflow-hidden relative"
+        className="w-full max-w-2xl h-[90vh] sm:h-[82vh] rounded-3xl border border-white/30 shadow-2xl flex flex-col overflow-hidden relative cursor-default"
       >
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-white/20 bg-emerald-950/40 flex items-center justify-between backdrop-blur-xl shrink-0">
@@ -224,11 +238,17 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
                 onChange={(e) => setSelectedSenderId(e.target.value)}
                 className="bg-slate-900 border border-white/30 text-white text-xs font-bold rounded-xl px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer"
               >
-                {group.members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} ({m.avatar})
+                {loggedInMember ? (
+                  <option value={loggedInMember.id}>
+                    {loggedInMember.name} ({loggedInMember.avatar}) - Logged In User
                   </option>
-                ))}
+                ) : (
+                  group.members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} ({m.avatar})
+                    </option>
+                  ))
+                )}
               </select>
             </div>
             <span className="text-[10px] text-emerald-300 font-semibold hidden sm:inline">

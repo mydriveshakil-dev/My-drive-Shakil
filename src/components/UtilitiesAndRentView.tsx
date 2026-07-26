@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Group, UtilityBill, RentContribution } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Group, UtilityBill, RentContribution, UserAuthProfile } from '../types';
 import { Zap, Home as HomeIcon, Plus, CheckCircle2, Clock, Edit2, AlertCircle, DollarSign, Calculator } from 'lucide-react';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 import { GlassContainer } from './GlassContainer';
@@ -14,6 +14,7 @@ interface UtilitiesAndRentViewProps {
   onAddUtility: (utility: Omit<UtilityBill, 'id'>) => void;
   preferredCurrency?: string;
   customRates?: Record<string, number>;
+  currentUser?: UserAuthProfile | null;
 }
 
 export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
@@ -25,12 +26,26 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
   onAddUtility,
   preferredCurrency = 'USD',
   customRates,
+  currentUser,
 }) => {
+  const loggedInMember = group.members.find(
+    (m) =>
+      (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
+      (currentUser?.mobileNumber && m.phone?.includes(currentUser.mobileNumber.slice(-7))) ||
+      (currentUser?.name && m.name.toLowerCase() === currentUser.name.toLowerCase())
+  ) || group.members[0];
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUtilName, setNewUtilName] = useState('');
   const [newUtilAmount, setNewUtilAmount] = useState('');
-  const [newUtilPayer, setNewUtilPayer] = useState(group.members[0]?.id || 'm1');
+  const [newUtilPayer, setNewUtilPayer] = useState(loggedInMember?.id || 'm1');
   const [newUtilCategory, setNewUtilCategory] = useState<'electricity' | 'internet' | 'water' | 'gas' | 'cleaner' | 'other'>('electricity');
+
+  useEffect(() => {
+    if (showAddModal && loggedInMember) {
+      setNewUtilPayer(loggedInMember.id);
+    }
+  }, [showAddModal, loggedInMember]);
 
   const totalUtilities = utilities.reduce((sum, u) => sum + u.amount, 0);
   const perMemberUtil = totalUtilities / (group.members.length || 1);
@@ -389,11 +404,17 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   onChange={(e) => setNewUtilPayer(e.target.value)}
                   className="w-full px-4 py-2.5 bg-slate-900/90 border border-white/25 rounded-xl text-sm font-semibold text-white focus:ring-2 focus:ring-amber-400 focus:outline-none cursor-pointer"
                 >
-                  {group.members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
+                  {loggedInMember ? (
+                    <option value={loggedInMember.id}>
+                      {loggedInMember.name} - Logged In User
                     </option>
-                  ))}
+                  ) : (
+                    group.members.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 

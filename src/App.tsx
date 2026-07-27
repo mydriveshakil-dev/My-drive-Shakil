@@ -502,13 +502,16 @@ export default function App() {
     triggerSheetsSync(false, updatedExpenses);
   };
 
-  const handleSendMessage = (data: { text: string; senderId: string }) => {
+  const handleSendMessage = (data: { text: string; senderId: string; senderName?: string }) => {
     const sender = group.members.find((m) => m.id === data.senderId) || group.members[0];
+    const nameToUse = data.senderName || sender?.name || userAuth?.name || 'User';
+    const avatarToUse = sender?.avatar || nameToUse.slice(0, 2).toUpperCase();
+
     const newMsg: ChatMessage = {
       id: `msg-${Date.now()}`,
       senderId: sender?.id || 'm1',
-      senderName: sender?.name || 'User',
-      senderAvatar: sender?.avatar || 'US',
+      senderName: nameToUse,
+      senderAvatar: avatarToUse,
       text: data.text,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       type: 'text',
@@ -523,13 +526,15 @@ export default function App() {
     saveUserProfileToFirestore(authData);
 
     if (authData.role === 'admin') {
+      const targetGroup = group.id ? group : (allGroups[0] || group);
       const updatedAuth: UserAuthProfile = {
         ...authData,
-        linkedGroupId: group.id || allGroups[0]?.id || 'group-room-1',
+        linkedGroupId: targetGroup.id,
       };
       setUserAuth(updatedAuth);
       localStorage.setItem('uae_user_auth', JSON.stringify(updatedAuth));
-      setActiveTab('group'); // Redirect directly to Admin Panel
+      setGroup(targetGroup);
+      setActiveTab('dashboard'); // Open user group's Dashboard view
       setIsLoginModalOpen(false);
 
       const welcomeMsg: ChatMessage = {
@@ -537,7 +542,7 @@ export default function App() {
         senderId: 'm3',
         senderName: authData.name || 'App Admin',
         senderAvatar: 'AD',
-        text: `👑 Logged in as App Administrator with full group control privileges.`,
+        text: `👑 Logged in as App Administrator. Redirected to ${targetGroup.name} Dashboard.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         type: 'text',
       };
@@ -547,46 +552,43 @@ export default function App() {
 
     // General User login logic
     const userMobile = authData.mobileNumber;
+    const userEmail = authData.email;
+    const userName = authData.name;
     const matchedGroup = allGroups.find((g) =>
       (g.members || []).some(
         (m) =>
           isPhoneMatch(m.mobileNumber, userMobile) ||
           isPhoneMatch(m.phone, userMobile) ||
-          isPhoneMatch(m.email, userMobile)
+          isPhoneMatch(m.email, userMobile) ||
+          (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase()) ||
+          (userName && m.name && m.name.toLowerCase().includes(userName.toLowerCase())) ||
+          (userName && m.name && userName.toLowerCase().includes(m.name.toLowerCase()))
       )
-    );
+    ) || group || allGroups[0];
+
+    const updatedAuth: UserAuthProfile = {
+      ...authData,
+      linkedGroupId: matchedGroup ? matchedGroup.id : null,
+    };
+    setUserAuth(updatedAuth);
+    localStorage.setItem('uae_user_auth', JSON.stringify(updatedAuth));
 
     if (matchedGroup) {
-      const updatedAuth: UserAuthProfile = {
-        ...authData,
-        linkedGroupId: matchedGroup.id,
-      };
-      setUserAuth(updatedAuth);
-      localStorage.setItem('uae_user_auth', JSON.stringify(updatedAuth));
       setGroup(matchedGroup);
-      setActiveTab('home'); // Automatically redirect to that group's page
-      setIsLoginModalOpen(false);
-
-      const welcomeMsg: ChatMessage = {
-        id: `msg-${Date.now()}`,
-        senderId: 'm3',
-        senderName: authData.name || 'Member',
-        senderAvatar: 'MB',
-        text: `📱 Member logged in with mobile ${authData.mobileNumber} and redirected to ${matchedGroup.name}.`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'text',
-      };
-      setChatMessages((prev) => [...prev, welcomeMsg]);
-    } else {
-      // Mobile number is not associated with any group
-      const updatedAuth: UserAuthProfile = {
-        ...authData,
-        linkedGroupId: null,
-      };
-      setUserAuth(updatedAuth);
-      localStorage.setItem('uae_user_auth', JSON.stringify(updatedAuth));
-      setIsLoginModalOpen(false);
     }
+    setActiveTab('dashboard'); // Open that user group's Dashboard view
+    setIsLoginModalOpen(false);
+
+    const welcomeMsg: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      senderId: 'm3',
+      senderName: authData.name || 'Member',
+      senderAvatar: 'MB',
+      text: `📱 Logged in successfully. Redirected to ${matchedGroup?.name || 'Group'} Dashboard.`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: 'text',
+    };
+    setChatMessages((prev) => [...prev, welcomeMsg]);
   };
 
   // Admin Group Handlers
@@ -915,6 +917,7 @@ export default function App() {
                   onAddUtility={handleAddUtility}
                   preferredCurrency={preferredCurrency}
                   customRates={customRates}
+                  currentUser={userAuth}
                 />
               )}
 
@@ -993,6 +996,7 @@ export default function App() {
         group={group}
         messages={chatMessages}
         onSendMessage={handleSendMessage}
+        currentUser={userAuth}
       />
 
       {/* UAE Residence Visa Login Modal */}

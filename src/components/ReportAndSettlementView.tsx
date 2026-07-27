@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import html2pdf from 'html2pdf.js';
 import { Group, Expense, UtilityBill, RentContribution } from '../types';
 import { calculateSettlement } from '../utils/settlementCalculator';
 import { GlassContainer } from './GlassContainer';
@@ -20,6 +21,9 @@ import {
   Check,
   ShieldCheck,
   Building2,
+  Receipt,
+  Download,
+  Loader2,
 } from 'lucide-react';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 
@@ -46,6 +50,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   const [toDate, setToDate] = useState('2026-07-31');
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   // Category filter checkboxes
   const [includeCategories, setIncludeCategories] = useState({
@@ -70,8 +75,30 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     });
   };
 
-  const handlePrintPdf = () => {
-    window.print();
+  const handlePrintPdf = async () => {
+    const element = document.getElementById('pdf-report-document');
+    if (!element) {
+      window.print();
+      return;
+    }
+
+    try {
+      setIsGeneratingPdf(true);
+      const opt = {
+        margin: 6,
+        filename: `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+      };
+
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error('PDF export error, using fallback print():', err);
+      window.print();
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   const handleShareReport = async () => {
@@ -470,14 +497,24 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Save / Print PDF Button */}
+              {/* Save / Download PDF Button */}
               <button
                 type="button"
                 onClick={handlePrintPdf}
-                className="bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black px-4 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer"
+                disabled={isGeneratingPdf}
+                className="bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black px-4 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-60"
               >
-                <Printer className="w-4 h-4" />
-                <span>Save / Print PDF</span>
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Downloading PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 stroke-[2.5]" />
+                    <span>Download PDF</span>
+                  </>
+                )}
               </button>
 
               {/* Share Button */}

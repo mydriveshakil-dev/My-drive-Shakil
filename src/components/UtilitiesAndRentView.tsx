@@ -47,9 +47,13 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
     }
   }, [showAddModal, loggedInMember]);
 
-  const [totalRentInput, setTotalRentInput] = useState(rent.totalRent.toString());
-  const parsedTotalRent = parseFloat(totalRentInput) || rent.totalRent || 0;
-  const currentMemberRentShare = (parsedTotalRent / (group.members.length || 1));
+  const [totalRentInput, setTotalRentInput] = useState((rent?.totalRent || 0).toString());
+  const parsedTotalRent = parseFloat(totalRentInput) || rent?.totalRent || 0;
+  const currentMemberRentShare = (parsedTotalRent / (group.members?.length || 1));
+
+  const totalUtilities = (utilities || []).reduce((sum, u) => sum + (u.amount || 0), 0);
+  const perMemberUtil = totalUtilities / (group.members?.length || 1);
+  const perMemberRent = parsedTotalRent / (group.members?.length || 1);
 
   const [paidRentMembers, setPaidRentMembers] = useState<string[]>(rent.paidMemberIds || []);
 

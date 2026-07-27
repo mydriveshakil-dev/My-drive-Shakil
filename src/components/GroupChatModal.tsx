@@ -19,7 +19,7 @@ interface GroupChatModalProps {
   onClose: () => void;
   group: Group;
   messages: ChatMessage[];
-  onSendMessage: (msg: { text: string; senderId: string }) => void;
+  onSendMessage: (msg: { text: string; senderId: string; senderName?: string }) => void;
   currentUser?: UserAuthProfile | null;
 }
 
@@ -31,15 +31,24 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
   onSendMessage,
   currentUser,
 }) => {
-  const loggedInMember = group.members.find(
+  const loggedInMember = (group?.members || []).find(
     (m) =>
       (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
-      (currentUser?.mobileNumber && m.phone?.includes(currentUser.mobileNumber.slice(-7))) ||
-      (currentUser?.name && m.name.toLowerCase() === currentUser.name.toLowerCase())
-  ) || group.members[0];
+      (currentUser?.mobileNumber && m.phone?.replace(/\D/g, '').includes(currentUser.mobileNumber.replace(/\D/g, '').slice(-7))) ||
+      (currentUser?.name && m.name.toLowerCase().includes(currentUser.name.toLowerCase())) ||
+      (currentUser?.name && currentUser.name.toLowerCase().includes(m.name.toLowerCase()))
+  );
+
+  const activeSenderName =
+    currentUser?.name ||
+    currentUser?.identity?.fullName ||
+    loggedInMember?.name ||
+    group?.members?.[0]?.name ||
+    'Logged In User';
+
+  const activeSenderId = loggedInMember?.id || 'm3';
 
   const [inputText, setInputText] = useState('');
-  const [selectedSenderId, setSelectedSenderId] = useState<string>(loggedInMember?.id || 'm3');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -49,23 +58,11 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      if (loggedInMember) {
-        setSelectedSenderId(loggedInMember.id);
-      }
       scrollToBottom();
     }
-  }, [isOpen, messages, loggedInMember]);
+  }, [isOpen, messages]);
 
   if (!isOpen) return null;
-
-  const currentMember = (group?.members || []).find((m) => m?.id === selectedSenderId) || loggedInMember || group?.members?.[0] || {
-    id: 'm3',
-    name: 'Member',
-    role: 'MEMBER',
-    avatar: '👨‍💼',
-    active: true,
-    daysPresent: 30,
-  };
 
   const handleSend = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -73,7 +70,8 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
 
     onSendMessage({
       text: inputText.trim(),
-      senderId: selectedSenderId,
+      senderId: activeSenderId,
+      senderName: activeSenderName,
     });
     setInputText('');
   };
@@ -81,7 +79,8 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
   const handleQuickChipClick = (chipText: string) => {
     onSendMessage({
       text: chipText,
-      senderId: selectedSenderId,
+      senderId: activeSenderId,
+      senderName: activeSenderName,
     });
   };
 
@@ -233,7 +232,7 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
           <div className="flex items-center justify-between text-xs text-emerald-200/90 px-1">
             <div className="flex items-center gap-1.5 font-bold text-[11px]">
               <span className="text-emerald-300/80">Chatting as:</span>
-              <span className="text-amber-300 font-black">{currentMember.name}</span>
+              <span className="text-amber-300 font-black">{activeSenderName}</span>
             </div>
             <span className="text-[10px] text-emerald-300/80 font-semibold">
               Logged In User
@@ -244,7 +243,7 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
           <form onSubmit={handleSend} className="flex items-center gap-2">
             <input
               type="text"
-              placeholder={`Send message as ${currentMember.name.split(' ')[0]}...`}
+              placeholder={`Send message as ${activeSenderName.split(' ')[0]}...`}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               className="flex-1 bg-white/10 border border-white/25 rounded-2xl px-4 py-3 text-xs sm:text-sm font-medium text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-400 backdrop-blur-xl"

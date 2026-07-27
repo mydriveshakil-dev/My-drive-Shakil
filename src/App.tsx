@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Group, Expense, UtilityBill, RentContribution, GoogleSheetsConfig, BillingCycleType, Member, ChatMessage, UserAuthProfile } from './types';
 import {
   INITIAL_GROUP,
@@ -153,7 +153,27 @@ export default function App() {
     return INITIAL_CHAT_MESSAGES;
   });
 
-  // Realtime Firestore synchronization for Group, Expenses, Utilities, Rent, Chat
+  // Keep state refs updated for global async handlers
+  const expensesRef = useRef(expenses);
+  const utilitiesRef = useRef(utilities);
+  const rentRef = useRef(rent);
+  const groupRef = useRef(group);
+
+  useEffect(() => {
+    expensesRef.current = expenses;
+  }, [expenses]);
+
+  useEffect(() => {
+    utilitiesRef.current = utilities;
+  }, [utilities]);
+
+  useEffect(() => {
+    rentRef.current = rent;
+  }, [rent]);
+
+  useEffect(() => {
+    groupRef.current = group;
+  }, [group]);
   useEffect(() => {
     // 0. All Groups subscription for multi-device group sync
     const unsubAllGroups = subscribeToAllGroups((remoteGroups) => {
@@ -237,79 +257,17 @@ export default function App() {
 
     // 2. Expenses subscription - Instant multi-device sync
     const unsubExp = subscribeToExpenses(group.id, (remoteExpenses) => {
-      if (remoteExpenses && remoteExpenses.length > 0) {
+      if (Array.isArray(remoteExpenses)) {
         setExpenses(remoteExpenses);
         localStorage.setItem(`room_expenses_${group.id}`, JSON.stringify(remoteExpenses));
-      } else if (remoteExpenses && remoteExpenses.length === 0) {
-        const saved = localStorage.getItem(`room_expenses_${group.id}`);
-        let localExpenses: Expense[] = [];
-        if (saved !== null) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) {
-              localExpenses = parsed;
-            }
-          } catch (e) {
-            // Fallback
-          }
-        }
-
-        if (saved !== null) {
-          if (localExpenses.length > 0) {
-            localExpenses.forEach((exp) => saveExpenseToFirestore({ ...exp, groupId: group.id }, group.id));
-            setExpenses(localExpenses);
-          } else {
-            setExpenses([]);
-          }
-        } else {
-          if (group.id === 'group-room-3') {
-            INITIAL_EXPENSES.forEach((exp) => saveExpenseToFirestore({ ...exp, groupId: group.id }, group.id));
-            setExpenses(INITIAL_EXPENSES.map((exp) => ({ ...exp, groupId: group.id })));
-            localStorage.setItem(`room_expenses_${group.id}`, JSON.stringify(INITIAL_EXPENSES));
-          } else {
-            setExpenses([]);
-            localStorage.setItem(`room_expenses_${group.id}`, JSON.stringify([]));
-          }
-        }
       }
     });
 
     // 3. Utilities subscription - Instant multi-device sync
     const unsubUtil = subscribeToUtilities(group.id, (remoteUtilities) => {
-      if (remoteUtilities && remoteUtilities.length > 0) {
+      if (Array.isArray(remoteUtilities)) {
         setUtilities(remoteUtilities);
         localStorage.setItem(`room_utilities_${group.id}`, JSON.stringify(remoteUtilities));
-      } else if (remoteUtilities && remoteUtilities.length === 0) {
-        const saved = localStorage.getItem(`room_utilities_${group.id}`);
-        let localUtils: UtilityBill[] = [];
-        if (saved !== null) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) {
-              localUtils = parsed;
-            }
-          } catch (e) {
-            // Fallback
-          }
-        }
-
-        if (saved !== null) {
-          if (localUtils.length > 0) {
-            localUtils.forEach((util) => saveUtilityToFirestore({ ...util, groupId: group.id }, group.id));
-            setUtilities(localUtils);
-          } else {
-            setUtilities([]);
-          }
-        } else {
-          if (group.id === 'group-room-3') {
-            INITIAL_UTILITIES.forEach((util) => saveUtilityToFirestore({ ...util, groupId: group.id }, group.id));
-            setUtilities(INITIAL_UTILITIES.map((util) => ({ ...util, groupId: group.id })));
-            localStorage.setItem(`room_utilities_${group.id}`, JSON.stringify(INITIAL_UTILITIES));
-          } else {
-            setUtilities([]);
-            localStorage.setItem(`room_utilities_${group.id}`, JSON.stringify([]));
-          }
-        }
       }
     });
 
@@ -318,58 +276,14 @@ export default function App() {
       if (remoteRent) {
         setRent(remoteRent);
         localStorage.setItem(`room_rent_${group.id}`, JSON.stringify(remoteRent));
-      } else {
-        const saved = localStorage.getItem(`room_rent_${group.id}`);
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (parsed) {
-              setRent(parsed);
-              saveRentToFirestore(group.id, { ...parsed, groupId: group.id });
-              return;
-            }
-          } catch (e) {}
-        }
-        saveRentToFirestore(group.id, { ...rent, groupId: group.id });
       }
     });
 
     // 5. Chat messages subscription - Instant multi-device sync
     const unsubChat = subscribeToChatMessages(group.id, (remoteMsgs) => {
-      if (remoteMsgs && remoteMsgs.length > 0) {
+      if (Array.isArray(remoteMsgs)) {
         setChatMessages(remoteMsgs);
         localStorage.setItem(`room_chat_messages_${group.id}`, JSON.stringify(remoteMsgs));
-      } else if (remoteMsgs && remoteMsgs.length === 0) {
-        const saved = localStorage.getItem(`room_chat_messages_${group.id}`);
-        let localMsgs: ChatMessage[] = [];
-        if (saved !== null) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) {
-              localMsgs = parsed;
-            }
-          } catch (e) {
-            // Fallback
-          }
-        }
-
-        if (saved !== null) {
-          if (localMsgs.length > 0) {
-            localMsgs.forEach((msg) => saveChatMessageToFirestore(group.id, { ...msg, groupId: group.id }));
-            setChatMessages(localMsgs);
-          } else {
-            setChatMessages([]);
-          }
-        } else {
-          if (group.id === 'group-room-3') {
-            INITIAL_CHAT_MESSAGES.forEach((msg) => saveChatMessageToFirestore(group.id, { ...msg, groupId: group.id }));
-            setChatMessages(INITIAL_CHAT_MESSAGES);
-            localStorage.setItem(`room_chat_messages_${group.id}`, JSON.stringify(INITIAL_CHAT_MESSAGES));
-          } else {
-            setChatMessages([]);
-            localStorage.setItem(`room_chat_messages_${group.id}`, JSON.stringify([]));
-          }
-        }
       }
     });
 
@@ -580,10 +494,10 @@ export default function App() {
   ) => {
     if (!silent) setIsSyncing(true);
 
-    const activeExpenses = customExpenses || expenses;
-    const activeUtilities = customUtilities || utilities;
-    const activeRent = customRent || rent;
-    const activeGroup = customGroup || group;
+    const activeExpenses = customExpenses || expensesRef.current;
+    const activeUtilities = customUtilities || utilitiesRef.current;
+    const activeRent = customRent || rentRef.current;
+    const activeGroup = customGroup || groupRef.current;
 
     const result = await GoogleSheetsService.syncToGoogleSheet(
       activeGroup.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM',

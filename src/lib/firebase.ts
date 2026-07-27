@@ -145,6 +145,15 @@ export async function saveGroupToFirestore(group: Group) {
   }
 }
 
+export async function deleteGroupFromFirestore(groupId: string) {
+  try {
+    const groupRef = doc(db, 'groups', groupId);
+    await deleteDoc(groupRef);
+  } catch (err) {
+    console.error('Error deleting group from Firestore:', err);
+  }
+}
+
 // 2. Sync Expenses
 export function subscribeToExpenses(
   groupId: string,

@@ -75,6 +75,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   const [newGroupCurrency, setNewGroupCurrency] = useState('AED');
 
   const [deleteConfirmGroup, setDeleteConfirmGroup] = useState<Group | null>(null);
+  const [deleteConfirmMember, setDeleteConfirmMember] = useState<Member | null>(null);
 
   // Google Sheet Config States
   const [isEditingSheetConfig, setIsEditingSheetConfig] = useState(false);
@@ -401,6 +402,45 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-lg transition-all cursor-pointer"
               >
                 Confirm & Delete
+              </button>
+            </div>
+          </GlassContainer>
+        </div>
+      )}
+
+      {/* DELETE MEMBER CONFIRMATION MODAL */}
+      {deleteConfirmMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
+          <GlassContainer
+            variant="card"
+            blur="3xl"
+            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border border-rose-500/50 shadow-2xl space-y-4 text-white my-auto relative box-border max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex items-center gap-3 text-rose-400 border-b border-white/15 pb-3">
+              <Trash2 className="w-6 h-6 shrink-0 text-rose-400" />
+              <h3 className="text-lg font-black text-white">Delete Room Member</h3>
+            </div>
+            <p className="text-xs text-emerald-100 font-medium leading-relaxed">
+              Are you sure you want to delete member <strong className="text-amber-300">{deleteConfirmMember.name}</strong> ({deleteConfirmMember.phone || deleteConfirmMember.email || 'No contact info'}) from <strong className="text-emerald-200">{group.name}</strong>?
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmMember(null)}
+                className="px-4 py-2 bg-white/15 hover:bg-white/25 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onRemoveMember(deleteConfirmMember.id);
+                  setDeleteConfirmMember(null);
+                  triggerHaptic(hapticPatterns.error);
+                }}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-lg transition-all cursor-pointer"
+              >
+                Confirm & Delete Member
               </button>
             </div>
           </GlassContainer>
@@ -772,13 +812,14 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   )}
                 </div>
 
-                {isAdmin && group.members.length > 2 && (
+                {isAdmin && (
                   <button
-                    onClick={() => onRemoveMember(member.id)}
-                    className="p-1.5 text-rose-300 hover:text-rose-100 hover:bg-rose-500/20 rounded-xl transition-colors border border-rose-400/30 cursor-pointer"
-                    title="Remove member"
+                    onClick={() => setDeleteConfirmMember(member)}
+                    className="p-1.5 px-2.5 text-rose-300 hover:text-white hover:bg-rose-600/30 rounded-xl transition-all border border-rose-400/40 cursor-pointer flex items-center gap-1 text-xs font-bold shadow-sm"
+                    title="Delete member"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 text-rose-400" />
+                    <span>Delete</span>
                   </button>
                 )}
               </div>

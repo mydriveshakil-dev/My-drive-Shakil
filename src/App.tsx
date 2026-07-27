@@ -14,6 +14,7 @@ import {
   subscribeToGroup,
   subscribeToAllGroups,
   saveGroupToFirestore,
+  deleteGroupFromFirestore,
   saveUserProfileToFirestore,
   subscribeToExpenses,
   saveExpenseToFirestore,
@@ -131,6 +132,8 @@ export default function App() {
         const matchingCurrent = remoteGroups.find((g) => g.id === group.id);
         if (matchingCurrent) {
           setGroup(matchingCurrent);
+        } else if (remoteGroups.length > 0) {
+          setGroup(remoteGroups[0]);
         }
       }
     });
@@ -631,7 +634,7 @@ export default function App() {
     triggerHaptic(hapticPatterns.click);
   };
 
-  const handleRemoveGroup = (groupId: string) => {
+  const handleRemoveGroup = async (groupId: string) => {
     if (userAuth.role !== 'admin') {
       setIsLoginModalOpen(true);
       return;
@@ -647,17 +650,27 @@ export default function App() {
         cycleId: '2026-07',
         status: 'pending',
         createdAt: new Date().toISOString(),
-        members: [],
+        members: [
+          {
+            id: 'm1',
+            name: 'Admin User',
+            email: 'admin@mess.com',
+            phone: '+971 50 123 4567',
+            avatar: 'AD',
+            active: true,
+            daysPresent: 30,
+          },
+        ],
       };
       filtered.push(defaultNewGroup);
       nextGroup = defaultNewGroup;
+      saveGroupToFirestore(defaultNewGroup);
     }
     setAllGroups(filtered);
-    if (group.id === groupId) {
-      setGroup(nextGroup);
-      saveGroupToFirestore(nextGroup);
-    }
+    setGroup(nextGroup);
+    saveGroupToFirestore(nextGroup);
     localStorage.setItem('all_room_groups', JSON.stringify(filtered));
+    await deleteGroupFromFirestore(groupId);
     triggerHaptic(hapticPatterns.error);
   };
 

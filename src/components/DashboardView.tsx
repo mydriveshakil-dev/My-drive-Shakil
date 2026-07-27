@@ -133,6 +133,59 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </GlassContainer>
 
+      {/* QUICK NAVIGATION & CATEGORY ACTIONS (Placed directly after 1st Box) */}
+      <div>
+        <h3 className="text-xs font-black text-emerald-200 uppercase tracking-wider mb-2.5 px-1 drop-shadow-xs flex items-center justify-between">
+          <span>Quick Navigation & Category Actions</span>
+          <span className="text-[10px] text-amber-300 font-bold">1-Click Direct Access</span>
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+          <button
+            onClick={() => onNavigateTab('report')}
+            className="flex flex-col items-center justify-center p-3 sm:p-3.5 bg-white/10 hover:bg-white/20 border border-white/30 rounded-3xl shadow-xl backdrop-blur-2xl transition-all group text-center active:scale-95 cursor-pointer"
+          >
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform border border-emerald-400/30">
+              <Wallet className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold text-white">Expenses</span>
+            <span className="text-[10px] text-emerald-200/80 font-medium">{expenses.length} Added</span>
+          </button>
+
+          <button
+            onClick={() => onNavigateTab('utilities')}
+            className="flex flex-col items-center justify-center p-3 sm:p-3.5 bg-white/10 hover:bg-white/20 border border-white/30 rounded-3xl shadow-xl backdrop-blur-2xl transition-all group text-center active:scale-95 cursor-pointer"
+          >
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-500/20 text-amber-300 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform border border-amber-400/30">
+              <Zap className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold text-white">Utilities</span>
+            <span className="text-[10px] text-amber-200/80 font-medium">DEWA, WiFi</span>
+          </button>
+
+          <button
+            onClick={() => onNavigateTab('utilities')}
+            className="flex flex-col items-center justify-center p-3 sm:p-3.5 bg-white/10 hover:bg-white/20 border border-white/30 rounded-3xl shadow-xl backdrop-blur-2xl transition-all group text-center active:scale-95 cursor-pointer"
+          >
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-blue-500/20 text-blue-300 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform border border-blue-400/30">
+              <HomeIcon className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold text-white">Rent</span>
+            <span className="text-[10px] text-blue-200/80 font-medium">{rent.totalRent} AED</span>
+          </button>
+
+          <button
+            onClick={() => onNavigateTab('report')}
+            className="flex flex-col items-center justify-center p-3 sm:p-3.5 bg-white/10 hover:bg-white/20 border border-white/30 rounded-3xl shadow-xl backdrop-blur-2xl transition-all group text-center active:scale-95 cursor-pointer"
+          >
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-purple-500/20 text-purple-300 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform border border-purple-400/30">
+              <PieChart className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold text-white">Settlement</span>
+            <span className="text-[10px] text-purple-200/80 font-medium">Report</span>
+          </button>
+        </div>
+      </div>
+
       {/* 4 Primary Category KPI Glass Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {/* Mess Expense Card */}

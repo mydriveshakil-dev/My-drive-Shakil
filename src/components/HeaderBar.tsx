@@ -62,7 +62,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     <span className="text-[10px] font-black tracking-widest text-amber-300 uppercase">
                       UAE MESS SYSTEM
                     </span>
-                    {isAdmin ? (
+                    {isAdmin && (
                       <span
                         onClick={onOpenLoginModal}
                         className="inline-flex items-center gap-1 bg-amber-400 text-emerald-950 text-[10px] font-black px-2 py-0.5 rounded-full border border-white/40 shadow-md cursor-pointer transition-all"
@@ -70,13 +70,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                       >
                         <ShieldCheck className="w-3.5 h-3.5" />
                         APP ADMIN
-                      </span>
-                    ) : (
-                      <span
-                        onClick={onOpenLoginModal}
-                        className="inline-flex items-center gap-1 bg-white/15 text-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/20"
-                      >
-                        Member Mode
                       </span>
                     )}
                     {group.isHeld && (
@@ -88,6 +81,14 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2 drop-shadow-sm mt-0.5">
                     {group.name}
                   </h1>
+                  {currentUser?.name && (
+                    <p className="text-xs font-bold text-amber-300/90 mt-0.5 flex items-center gap-1">
+                      <span>Logged in as:</span>
+                      <strong className="text-white bg-white/10 px-2 py-0.5 rounded-md border border-white/20">
+                        {currentUser.name}
+                      </strong>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -235,27 +236,48 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             )}
 
             {/* Billing Cycle Toggle: Previous / Current */}
-            <div className="flex items-center bg-black/25 p-1 rounded-2xl border border-white/20 backdrop-blur-xl self-start sm:self-auto">
-              <button
-                onClick={() => onToggleCycle('current')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
-                  billingCycleType === 'current'
-                    ? 'bg-[#F9A826] text-[#0B4A3F] shadow-lg shadow-amber-500/20'
-                    : 'text-emerald-100 hover:text-white'
-                }`}
-              >
-                Current Cycle ({group.billingCycle.split('-')[0].trim()})
-              </button>
-              <button
-                onClick={() => onToggleCycle('previous')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
-                  billingCycleType === 'previous'
-                    ? 'bg-[#F9A826] text-[#0B4A3F] shadow-lg shadow-amber-500/20'
-                    : 'text-emerald-100 hover:text-white'
-                }`}
-              >
-                Previous Cycle (Jun 2026)
-              </button>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="flex items-center bg-black/25 p-1 rounded-2xl border border-white/20 backdrop-blur-xl self-start sm:self-auto">
+                <button
+                  onClick={() => onToggleCycle('current')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                    billingCycleType === 'current'
+                      ? 'bg-[#F9A826] text-[#0B4A3F] shadow-lg shadow-amber-500/20'
+                      : 'text-emerald-100 hover:text-white'
+                  }`}
+                >
+                  Current Cycle
+                </button>
+                <button
+                  onClick={() => onToggleCycle('previous')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                    billingCycleType === 'previous'
+                      ? 'bg-[#F9A826] text-[#0B4A3F] shadow-lg shadow-amber-500/20'
+                      : 'text-emerald-100 hover:text-white'
+                  }`}
+                >
+                  Previous Cycles
+                </button>
+              </div>
+
+              {billingCycleType === 'previous' && (
+                <select
+                  value={group.billingCycle}
+                  onChange={(e) => {
+                    onToggleCycle('previous');
+                  }}
+                  className="bg-slate-900 text-amber-300 font-extrabold text-xs px-3 py-1.5 rounded-xl border border-amber-400/50 focus:outline-none cursor-pointer shadow-md"
+                >
+                  <option value="01 Jun - 30 Jun 2026">Jun 2026 (Previous Cycle)</option>
+                  <option value="01 May - 31 May 2026">May 2026</option>
+                  <option value="01 Apr - 30 Apr 2026">Apr 2026</option>
+                  <option value="01 Mar - 31 Mar 2026">Mar 2026</option>
+                  <option value="01 Feb - 28 Feb 2026">Feb 2026</option>
+                  <option value="01 Jan - 31 Jan 2026">Jan 2026</option>
+                  <option value="01 Dec - 31 Dec 2025">Dec 2025</option>
+                  <option value="01 Nov - 30 Nov 2025">Nov 2025</option>
+                </select>
+              )}
             </div>
           </div>
         </div>

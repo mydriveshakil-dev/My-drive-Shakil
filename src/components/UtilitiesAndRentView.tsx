@@ -47,9 +47,21 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
     }
   }, [showAddModal, loggedInMember]);
 
-  const totalUtilities = utilities.reduce((sum, u) => sum + u.amount, 0);
-  const perMemberUtil = totalUtilities / (group.members.length || 1);
-  const perMemberRent = rent.totalRent / (group.members.length || 1);
+  const [totalRentInput, setTotalRentInput] = useState(rent.totalRent.toString());
+  const parsedTotalRent = parseFloat(totalRentInput) || rent.totalRent || 0;
+  const currentMemberRentShare = (parsedTotalRent / (group.members.length || 1));
+
+  const [paidRentMembers, setPaidRentMembers] = useState<string[]>(rent.paidMemberIds || []);
+
+  const toggleMemberRentPaid = (memberId: string) => {
+    let updated: string[];
+    if (paidRentMembers.includes(memberId)) {
+      updated = paidRentMembers.filter((id) => id !== memberId);
+    } else {
+      updated = [...paidRentMembers, memberId];
+    }
+    setPaidRentMembers(updated);
+  };
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,6 +195,9 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
           {utilities.map((util) => {
             const payer = group.members.find((m) => m.id === util.paidById);
             const isPaid = util.status === 'paid';
+            const isAdmin = currentUser?.role === 'admin';
+            const isPayer = loggedInMember?.id === util.paidById;
+            const canToggle = isAdmin || isPayer;
 
             return (
               <div
@@ -200,12 +215,18 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                     </div>
 
                     <button
-                      onClick={() => onUpdateUtilityStatus(util.id, isPaid ? 'pending' : 'paid')}
+                      onClick={() => {
+                        if (canToggle) {
+                          onUpdateUtilityStatus(util.id, isPaid ? 'pending' : 'paid');
+                        }
+                      }}
+                      disabled={!canToggle}
+                      title={!canToggle ? 'Only bill creator or App Admin can toggle bill status' : ''}
                       className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border transition-all ${
                         isPaid
                           ? 'bg-emerald-950/70 text-emerald-300 border-emerald-400/40 hover:bg-emerald-900/80'
                           : 'bg-amber-950/70 text-amber-300 border-amber-400/40 hover:bg-amber-900/80'
-                      }`}
+                      } ${!canToggle ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {isPaid ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
                       <span>{isPaid ? 'Paid' : 'Pending'}</span>
@@ -232,9 +253,9 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
       {/* SECTION 2: Room Rent Contribution Card */}
       <GlassContainer variant="card" className="p-5 border border-white/30 shadow-2xl space-y-4">
-        <div className="flex items-center justify-between border-b border-white/15 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/15 pb-3 gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-300 flex items-center justify-center font-bold border border-blue-400/30">
+            <div className="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-300 flex items-center justify-center font-bold border border-blue-400/30 shrink-0">
               <HomeIcon className="w-5 h-5" />
             </div>
             <div>
@@ -260,34 +281,77 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
           </button>
         </div>
 
-        {/* Member rent status list */}
+        {/* Total Rent Input Field & Per-Member Share Calculation */}
+        <div className="bg-white/10 p-4 rounded-2xl border border-white/20 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex-1">
+              <label className="block text-xs font-black text-amber-300 uppercase tracking-wider mb-1">
+                Total Rent Amount (AED)
+              </label>
+              <div className="relative max-w-xs">
+                <input
+                  type="number"
+                  value={totalRentInput}
+                  onChange={(e) => setTotalRentInput(e.target.value)}
+                  placeholder="e.g. 3500"
+                  className="w-full bg-slate-900 border border-amber-400/50 rounded-xl px-3.5 py-2 text-sm font-black text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+            </div>
+
+            <div className="bg-blue-950/60 p-3 rounded-xl border border-blue-400/30 text-right">
+              <span className="text-[10px] font-bold text-blue-200 uppercase block">
+                Calculated Per-Member Share
+              </span>
+              <span className="text-lg font-black text-[#F9A826]">
+                {currentMemberRentShare.toFixed(2)} AED
+              </span>
+              <span className="text-[10px] text-blue-100/70 block">
+                Split equally among {group.members.length || 1} members
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Member rent status list with checkboxes */}
         <div>
           <h4 className="text-xs font-bold text-emerald-200 uppercase tracking-wider mb-2">
-            Per-Member Rent Contribution ({perMemberRent.toFixed(2)} AED / person)
+            Member Rent Payment Status ({currentMemberRentShare.toFixed(2)} AED / person)
           </h4>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
             {group.members.map((member) => {
-              const hasPaid = rent.paidMemberIds.includes(member.id);
+              const isPaid = paidRentMembers.includes(member.id);
               return (
                 <div
                   key={member.id}
-                  className={`p-3 rounded-2xl border flex items-center justify-between text-xs font-semibold backdrop-blur-xl ${
-                    hasPaid
-                      ? 'bg-emerald-950/40 border-emerald-400/40 text-white'
-                      : 'bg-amber-950/40 border-amber-400/40 text-white'
+                  className={`p-3 rounded-2xl border flex items-center justify-between text-xs font-semibold backdrop-blur-xl transition-all ${
+                    isPaid
+                      ? 'bg-emerald-950/60 border-emerald-400/50 text-white'
+                      : 'bg-rose-950/40 border-rose-500/40 text-white'
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-[#F9A826] text-[#0B4A3F] flex items-center justify-center text-[10px] font-black">
+                    <input
+                      type="checkbox"
+                      checked={isPaid}
+                      onChange={() => toggleMemberRentPaid(member.id)}
+                      className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-400 cursor-pointer accent-emerald-500"
+                    />
+                    <span className="w-6 h-6 rounded-full bg-[#F9A826] text-[#0B4A3F] flex items-center justify-center text-[10px] font-black shrink-0">
                       {member.avatar}
                     </span>
-                    <span>{member.name}</span>
+                    <span className="truncate max-w-[90px]">{member.name}</span>
                   </div>
 
-                  <span className={`font-bold ${hasPaid ? 'text-emerald-300' : 'text-amber-300'}`}>
-                    {hasPaid ? 'Paid' : 'Pending'}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[11px] font-mono text-emerald-200/80">
+                      {currentMemberRentShare.toFixed(0)} AED
+                    </span>
+                    <span className={`text-xs font-extrabold ${isPaid ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {isPaid ? 'Paid' : 'Pending'}
+                    </span>
+                  </div>
                 </div>
               );
             })}

@@ -229,30 +229,14 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
 
         {/* Footer Input Controls */}
         <div className="p-3 sm:p-4 bg-emerald-950/80 border-t border-white/20 backdrop-blur-2xl shrink-0 space-y-2">
-          {/* Sender Switcher */}
+          {/* Logged in sender identity label */}
           <div className="flex items-center justify-between text-xs text-emerald-200/90 px-1">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-[11px]">Chatting as:</span>
-              <select
-                value={selectedSenderId}
-                onChange={(e) => setSelectedSenderId(e.target.value)}
-                className="bg-slate-900 border border-white/30 text-white text-xs font-bold rounded-xl px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer"
-              >
-                {loggedInMember ? (
-                  <option value={loggedInMember.id}>
-                    {loggedInMember.name} ({loggedInMember.avatar}) - Logged In User
-                  </option>
-                ) : (
-                  group.members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} ({m.avatar})
-                    </option>
-                  ))
-                )}
-              </select>
+            <div className="flex items-center gap-1.5 font-bold text-[11px]">
+              <span className="text-emerald-300/80">Chatting as:</span>
+              <span className="text-amber-300 font-black">{currentMember.name}</span>
             </div>
-            <span className="text-[10px] text-emerald-300 font-semibold hidden sm:inline">
-              Active Sender: {currentMember.name}
+            <span className="text-[10px] text-emerald-300/80 font-semibold">
+              Logged In User
             </span>
           </div>
 

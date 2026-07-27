@@ -33,9 +33,16 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   const loggedInMember = group.members.find(
     (m) =>
       (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
-      (currentUser?.mobileNumber && m.phone?.includes(currentUser.mobileNumber.slice(-7))) ||
-      (currentUser?.name && m.name.toLowerCase() === currentUser.name.toLowerCase())
-  ) || group.members[0];
+      (currentUser?.mobileNumber && (m.phone?.includes(currentUser.mobileNumber.slice(-7)) || m.mobileNumber?.includes(currentUser.mobileNumber.slice(-7)))) ||
+      (currentUser?.name && m.name.toLowerCase() === currentUser.name.toLowerCase()) ||
+      (currentUser?.name && m.name.toLowerCase().includes(currentUser.name.toLowerCase())) ||
+      (currentUser?.name && currentUser.name.toLowerCase().includes(m.name.toLowerCase()))
+  ) || group.members[0] || {
+    id: 'm1',
+    name: currentUser?.name || 'Logged In User',
+    avatar: (currentUser?.name || 'US').slice(0, 2).toUpperCase(),
+    active: true,
+  };
 
   const [category, setCategory] = useState<ExpenseCategory>('mess');
   const [title, setTitle] = useState('');
@@ -344,28 +351,27 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             />
           </div>
 
-          {/* Paid By Dropdown */}
+          {/* Paid By Box - Restricted ONLY to Logged In User */}
           <div>
-            <label className="block text-xs font-bold text-emerald-200 uppercase tracking-wider mb-1.5">
-              Paid By (Who paid out of pocket?) *
+            <label className="block text-xs font-bold text-emerald-200 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+              <span>Paid By (Who paid out of pocket?) *</span>
+              <span className="text-[10px] text-amber-300 font-semibold bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
+                Logged In User
+              </span>
             </label>
-            <select
-              value={paidById}
-              onChange={(e) => setPaidById(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-900/90 border border-white/25 rounded-xl text-sm font-bold text-white focus:ring-2 focus:ring-amber-400 focus:outline-none cursor-pointer"
-            >
-              {loggedInMember ? (
-                <option value={loggedInMember.id}>
-                  {loggedInMember.name} ({loggedInMember.avatar}) - Logged In User
-                </option>
-              ) : (
-                group.members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} ({m.avatar})
-                  </option>
-                ))
-              )}
-            </select>
+            <div className="w-full px-4 py-3 bg-slate-900/90 border border-amber-400/50 rounded-xl text-sm font-bold text-amber-300 flex items-center justify-between shadow-inner">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-[#F9A826] text-[#0B4A3F] flex items-center justify-center font-black text-xs shadow-md shrink-0">
+                  {loggedInMember?.avatar || (currentUser?.name || 'US').slice(0, 2).toUpperCase()}
+                </div>
+                <span className="text-white text-sm font-black">
+                  {currentUser?.name || loggedInMember?.name || 'Logged In User'}
+                </span>
+              </div>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full font-bold border border-emerald-500/30 uppercase tracking-wider shrink-0">
+                Logged In User
+              </span>
+            </div>
           </div>
 
           {/* Shared With Members Checkboxes */}
@@ -471,12 +477,9 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
           <div className="pt-3">
             <button
               type="submit"
-              className="w-full bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black py-4 rounded-2xl shadow-xl transition-all text-sm flex items-center justify-center gap-2 active:scale-98 border border-white/30"
+              className="w-full bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black py-4 rounded-2xl shadow-xl transition-all text-sm flex items-center justify-center gap-2 active:scale-98 border border-white/30 tracking-wider uppercase"
             >
-              <span>Save & Sync to Google Sheet</span>
-              <span className="bg-[#0B4A3F] text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                Auto-Sync
-              </span>
+              <span>SAVE YOUR EXPENSE</span>
             </button>
           </div>
         </form>

@@ -74,7 +74,38 @@ export default function App() {
     return [INITIAL_GROUP];
   });
 
-  const [group, setGroup] = useState<Group>(() => allGroups[0] || INITIAL_GROUP);
+  const [group, setGroup] = useState<Group>(() => {
+    const savedAuth = localStorage.getItem('uae_user_auth');
+    if (savedAuth) {
+      try {
+        const auth: UserAuthProfile = JSON.parse(savedAuth);
+        if (auth.isLoggedIn) {
+          if (auth.linkedGroupId) {
+            const match = allGroups.find((g) => g.id === auth.linkedGroupId);
+            if (match) return match;
+          }
+          const userMobile = auth.mobileNumber;
+          const userEmail = auth.email;
+          const userName = auth.name;
+          const matched = allGroups.find((g) =>
+            (g.members || []).some(
+              (m) =>
+                isPhoneMatch(m.mobileNumber, userMobile) ||
+                isPhoneMatch(m.phone, userMobile) ||
+                isPhoneMatch(m.email, userMobile) ||
+                (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase()) ||
+                (userName && m.name && m.name.toLowerCase().includes(userName.toLowerCase())) ||
+                (userName && m.name && userName.toLowerCase().includes(m.name.toLowerCase()))
+            )
+          );
+          if (matched) return matched;
+        }
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return allGroups[0] || INITIAL_GROUP;
+  });
 
   // Group-specific data isolation helper
   const [expenses, setExpenses] = useState<Expense[]>(() => {
@@ -129,6 +160,39 @@ export default function App() {
       if (remoteGroups && remoteGroups.length > 0) {
         setAllGroups(remoteGroups);
         localStorage.setItem('all_room_groups', JSON.stringify(remoteGroups));
+
+        const savedAuth = localStorage.getItem('uae_user_auth');
+        let authObj: UserAuthProfile | null = null;
+        if (savedAuth) {
+          try {
+            authObj = JSON.parse(savedAuth);
+          } catch (e) {
+            // Fallback
+          }
+        }
+
+        if (authObj && authObj.isLoggedIn) {
+          const userMobile = authObj.mobileNumber;
+          const userEmail = authObj.email;
+          const userName = authObj.name;
+          const matched = remoteGroups.find((g) =>
+            (g.members || []).some(
+              (m) =>
+                isPhoneMatch(m.mobileNumber, userMobile) ||
+                isPhoneMatch(m.phone, userMobile) ||
+                isPhoneMatch(m.email, userMobile) ||
+                (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase()) ||
+                (userName && m.name && m.name.toLowerCase().includes(userName.toLowerCase())) ||
+                (userName && m.name && userName.toLowerCase().includes(m.name.toLowerCase()))
+            )
+          ) || (authObj.linkedGroupId ? remoteGroups.find((g) => g.id === authObj.linkedGroupId) : null);
+
+          if (matched) {
+            setGroup(matched);
+            return;
+          }
+        }
+
         const matchingCurrent = remoteGroups.find((g) => g.id === group.id);
         if (matchingCurrent) {
           setGroup(matchingCurrent);
@@ -157,6 +221,7 @@ export default function App() {
         localStorage.setItem('uae_user_auth', JSON.stringify(userProf));
         saveUserProfileToFirestore(userProf);
         setIsLoginModalOpen(false);
+        setActiveTab('dashboard');
       }
     });
 
@@ -257,7 +322,20 @@ export default function App() {
     return !userAuth.isLoggedIn;
   });
 
-  const [activeTab, setActiveTab] = useState<AppTabType>('home');
+  const [activeTab, setActiveTab] = useState<AppTabType>(() => {
+    const saved = localStorage.getItem('uae_user_auth');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.isLoggedIn) {
+          return 'dashboard';
+        }
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return 'home';
+  });
   const [billingCycleType, setBillingCycleType] = useState<BillingCycleType>('current');
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isArchGuideOpen, setIsArchGuideOpen] = useState(false);
@@ -981,6 +1059,7 @@ export default function App() {
         group={group}
         isOpen={isAddExpenseOpen}
         onClose={() => setIsAddExpenseOpen(false)}
+        currentUser={userAuth}
         onSaveExpense={handleSaveExpense}
       />
 

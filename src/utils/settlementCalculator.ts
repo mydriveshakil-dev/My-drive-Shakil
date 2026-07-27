@@ -27,6 +27,14 @@ export function calculateSettlement(
   const activeMembers = members.filter((m) => m.active);
   const activeMemberCount = activeMembers.length || 1;
 
+  // Helper to check if a category is included for a member
+  const isCategoryIncluded = (member: Member, category: string): boolean => {
+    if (!member.includedCategories || member.includedCategories.length === 0) {
+      return true; // Default: include all categories
+    }
+    return member.includedCategories.includes(category);
+  };
+
   // 1. Filter expenses based on selected categories
   const messExpenses = includeCategories.mess ? expenses.filter((e) => e.type === 'mess') : [];
   const generalExpenses = includeCategories.general ? expenses.filter((e) => e.type === 'general') : [];
@@ -39,31 +47,53 @@ export function calculateSettlement(
   const totalRent = includeCategories.rent && rent ? rent.totalRent : 0;
   const grandTotalExpenses = totalMessExpenses + totalGeneralExpenses + totalUtilities + totalRent;
 
-  // 3. Mess daily rate calculation
-  const totalMessDays = activeMembers.reduce((sum, m) => sum + (m.daysPresent || 0), 0) || 1;
+  // 3. Mess daily rate calculation (only among members who have 'mess' category enabled)
+  const messMembers = activeMembers.filter((m) => isCategoryIncluded(m, 'mess'));
+  const totalMessDays = messMembers.reduce((sum, m) => sum + (m.daysPresent || 0), 0) || 1;
   const dailyMealRate = totalMessExpenses / totalMessDays;
+
+  // Rent participating members count
+  const rentMembers = activeMembers.filter((m) => isCategoryIncluded(m, 'rent'));
+  const rentMemberCount = rentMembers.length || activeMemberCount;
 
   // 4. Per member summaries
   const memberSummaries: MemberSummary[] = activeMembers.map((member) => {
-    // Mess Share based on days present
-    const messExpenseShare = includeCategories.mess ? (member.daysPresent || 0) * dailyMealRate : 0;
+    // Mess Share based on days present (0 if member is excluded from mess)
+    const isMessIncluded = isCategoryIncluded(member, 'mess');
+    const messExpenseShare = includeCategories.mess && isMessIncluded ? (member.daysPresent || 0) * dailyMealRate : 0;
 
-    // General Expense Share (split equally among shared members for each expense)
+    // General Expense Share
     let generalExpenseShare = 0;
-    if (includeCategories.general) {
+    if (includeCategories.general && isCategoryIncluded(member, 'general')) {
       generalExpenses.forEach((exp) => {
         const sharedWith = exp.sharedWithIds.length > 0 ? exp.sharedWithIds : activeMembers.map((m) => m.id);
-        if (sharedWith.includes(member.id)) {
-          generalExpenseShare += exp.amount / sharedWith.length;
+        const validSharedWith = sharedWith.filter((id) => {
+          const targetM = activeMembers.find((m) => m.id === id);
+          return targetM ? isCategoryIncluded(targetM, 'general') : true;
+        });
+        const count = validSharedWith.length || 1;
+        if (validSharedWith.includes(member.id)) {
+          generalExpenseShare += exp.amount / count;
         }
       });
     }
 
-    // Utilities Share (split equally among active members)
-    const utilitiesShare = includeCategories.utilities ? totalUtilities / activeMemberCount : 0;
+    // Utilities Share (calculated per utility bill category matching member's inclusions)
+    let utilitiesShare = 0;
+    if (includeCategories.utilities) {
+      filteredUtilities.forEach((u) => {
+        const uCat = u.category;
+        const participatingForUtil = activeMembers.filter((m) => isCategoryIncluded(m, uCat));
+        const pCount = participatingForUtil.length || activeMemberCount;
+        if (participatingForUtil.some((m) => m.id === member.id) || pCount === 0) {
+          utilitiesShare += u.amount / pCount;
+        }
+      });
+    }
 
-    // Rent Share
-    const rentShare = includeCategories.rent && rent ? rent.totalRent / activeMemberCount : 0;
+    // Rent Share (split only among members included in rent)
+    const isRentIncluded = isCategoryIncluded(member, 'rent');
+    const rentShare = includeCategories.rent && rent && isRentIncluded ? rent.totalRent / rentMemberCount : 0;
 
     // Total actual expense member SHOULD pay
     const totalActualExpense = messExpenseShare + generalExpenseShare + utilitiesShare + rentShare;

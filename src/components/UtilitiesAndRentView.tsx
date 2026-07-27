@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Group, UtilityBill, RentContribution, UserAuthProfile } from '../types';
-import { Zap, Home as HomeIcon, Plus, CheckCircle2, Clock, Edit2, AlertCircle, DollarSign, Calculator } from 'lucide-react';
+import { Zap, Home as HomeIcon, Plus, CheckCircle2, Clock, Edit2, AlertCircle, DollarSign, Calculator, Trash2 } from 'lucide-react';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 import { GlassContainer } from './GlassContainer';
 import { evaluateMathExpression } from '../utils/mathEvaluator';
@@ -11,7 +11,9 @@ interface UtilitiesAndRentViewProps {
   rent: RentContribution;
   onUpdateUtilityStatus: (id: string, status: 'paid' | 'pending') => void;
   onUpdateRentStatus: (status: 'paid' | 'pending') => void;
+  onUpdateRent?: (rent: RentContribution) => void;
   onAddUtility: (utility: Omit<UtilityBill, 'id'>) => void;
+  onDeleteUtility?: (id: string) => void;
   preferredCurrency?: string;
   customRates?: Record<string, number>;
   currentUser?: UserAuthProfile | null;
@@ -23,11 +25,14 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
   rent,
   onUpdateUtilityStatus,
   onUpdateRentStatus,
+  onUpdateRent,
   onAddUtility,
+  onDeleteUtility,
   preferredCurrency = 'USD',
   customRates,
   currentUser,
 }) => {
+  const [deleteConfirmUtilId, setDeleteConfirmUtilId] = useState<string | null>(null);
   const loggedInMember = group.members.find(
     (m) =>
       (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
@@ -48,14 +53,43 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
   }, [showAddModal, loggedInMember]);
 
   const [totalRentInput, setTotalRentInput] = useState((rent?.totalRent || 0).toString());
+  const [paidRentMembers, setPaidRentMembers] = useState<string[]>(rent?.paidMemberIds || []);
+
+  useEffect(() => {
+    if (rent) {
+      setTotalRentInput((rent.totalRent || 0).toString());
+      setPaidRentMembers(rent.paidMemberIds || []);
+    }
+  }, [rent?.totalRent, rent?.paidMemberIds]);
+
+  const rentParticipatingMembers = group.members.filter(
+    (m) => !m.includedCategories || m.includedCategories.length === 0 || m.includedCategories.includes('rent')
+  );
+  const rentParticipatingCount = rentParticipatingMembers.length || 1;
+
+  const totalUtilities = utilities.reduce((sum, u) => sum + u.amount, 0);
+  const activeMembersCount = group.members.filter((m) => m.active !== false).length || 1;
+  const perMemberUtil = totalUtilities / activeMembersCount;
+  const perMemberRent = (rent?.totalRent || 0) / rentParticipatingCount;
+
   const parsedTotalRent = parseFloat(totalRentInput) || rent?.totalRent || 0;
-  const currentMemberRentShare = (parsedTotalRent / (group.members?.length || 1));
+  const currentMemberRentShare = parsedTotalRent / rentParticipatingCount;
 
-  const totalUtilities = (utilities || []).reduce((sum, u) => sum + (u.amount || 0), 0);
-  const perMemberUtil = totalUtilities / (group.members?.length || 1);
-  const perMemberRent = parsedTotalRent / (group.members?.length || 1);
-
-  const [paidRentMembers, setPaidRentMembers] = useState<string[]>(rent.paidMemberIds || []);
+  const handleRentInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setTotalRentInput(val);
+    const parsed = parseFloat(val);
+    if (!isNaN(parsed) && parsed >= 0) {
+      const updatedRent: RentContribution = {
+        ...rent,
+        totalRent: parsed,
+        perMemberAmount: parsed / rentParticipatingCount,
+      };
+      if (onUpdateRent) {
+        onUpdateRent(updatedRent);
+      }
+    }
+  };
 
   const toggleMemberRentPaid = (memberId: string) => {
     let updated: string[];
@@ -65,6 +99,12 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
       updated = [...paidRentMembers, memberId];
     }
     setPaidRentMembers(updated);
+    if (onUpdateRent) {
+      onUpdateRent({
+        ...rent,
+        paidMemberIds: updated,
+      });
+    }
   };
 
   const handleAddSubmit = (e: React.FormEvent) => {
@@ -245,9 +285,47 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
                 <div className="mt-3 pt-2 border-t border-white/15 flex items-center justify-between text-xs text-emerald-100/80">
                   <span>Each member pays:</span>
-                  <span className="font-bold text-[#F9A826]">
-                    {(util.amount / (group.members.length || 1)).toFixed(2)} AED
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-[#F9A826]">
+                      {(util.amount / (group.members.length || 1)).toFixed(2)} AED
+                    </span>
+                    {onDeleteUtility && (
+                      <div>
+                        {deleteConfirmUtilId === util.id ? (
+                          <div className="flex items-center gap-1 bg-rose-950/90 p-1 rounded-xl border border-rose-400/60 shadow-md">
+                            <span className="text-[10px] text-rose-200 font-bold px-1">Delete?</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onDeleteUtility(util.id);
+                                setDeleteConfirmUtilId(null);
+                              }}
+                              className="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-[10px] rounded-lg shadow-sm cursor-pointer"
+                            >
+                              Yes
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteConfirmUtilId(null)}
+                              className="px-1.5 py-0.5 bg-white/20 hover:bg-white/30 text-white font-bold text-[10px] rounded-lg cursor-pointer"
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirmUtilId(util.id)}
+                            className="p-1 text-rose-300 hover:text-white bg-rose-500/10 hover:bg-rose-600/30 rounded-lg transition-all border border-rose-400/30 flex items-center gap-1 cursor-pointer font-bold text-[10px]"
+                            title="Delete utility bill"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                            <span>Delete</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -296,7 +374,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 <input
                   type="number"
                   value={totalRentInput}
-                  onChange={(e) => setTotalRentInput(e.target.value)}
+                  onChange={handleRentInputChange}
                   placeholder="e.g. 3500"
                   className="w-full bg-slate-900 border border-amber-400/50 rounded-xl px-3.5 py-2 text-sm font-black text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
@@ -311,7 +389,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 {currentMemberRentShare.toFixed(2)} AED
               </span>
               <span className="text-[10px] text-blue-100/70 block">
-                Split equally among {group.members.length || 1} members
+                Split equally among {rentParticipatingCount} participating member(s)
               </span>
             </div>
           </div>

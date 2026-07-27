@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Group, Expense, UtilityBill, RentContribution, UserAuthProfile } from '../types';
 import {
   Wallet,
@@ -51,6 +51,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   onOpenGroupChat,
   currentUser,
 }) => {
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [showAllExpenses, setShowAllExpenses] = useState(false);
+
   // Calculations
   const messTotal = expenses
     .filter((e) => e.type === 'mess')
@@ -436,26 +439,33 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       {/* 7. Recent Expenses Vertical List */}
       <div>
         <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="text-xs font-black text-emerald-200 uppercase tracking-wider">
-            Recent Expenses ({expenses.length})
+          <h3 className="text-xs font-black text-emerald-200 uppercase tracking-wider flex items-center gap-2">
+            <span>Expenses Data ({expenses.length})</span>
+            {currentUser?.role === 'admin' && (
+              <span className="text-[10px] text-amber-300 font-bold bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/30">
+                Admin Control
+              </span>
+            )}
           </h3>
-          <button
-            onClick={() => onNavigateTab('expenses')}
-            className="text-xs font-extrabold text-[#F9A826] hover:underline"
-          >
-            View All
-          </button>
+          {expenses.length > 5 && (
+            <button
+              onClick={() => setShowAllExpenses(!showAllExpenses)}
+              className="text-xs font-extrabold text-[#F9A826] hover:underline cursor-pointer"
+            >
+              {showAllExpenses ? 'Show Less' : `View All (${expenses.length})`}
+            </button>
+          )}
         </div>
 
         <div className="space-y-3">
-          {expenses.slice(0, 5).map((exp) => {
+          {(showAllExpenses ? expenses : expenses.slice(0, 5)).map((exp) => {
             const payer = group.members.find((m) => m.id === exp.paidById);
             const isMess = exp.type === 'mess';
 
             return (
               <div
                 key={exp.id}
-                className="bg-white/10 backdrop-blur-2xl border border-white/30 rounded-3xl p-4 shadow-xl flex items-center justify-between gap-3 hover:border-white/50 hover:bg-white/15 transition-all text-white"
+                className="bg-white/10 backdrop-blur-2xl border border-white/30 rounded-3xl p-4 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-white/50 hover:bg-white/15 transition-all text-white"
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -488,8 +498,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
+                <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t sm:border-0 pt-2 sm:pt-0 border-white/15">
+                  <div className="text-left sm:text-right">
                     <DualCurrencyDisplay
                       amount={exp.amount}
                       baseCurrency={group.currency}
@@ -503,13 +513,40 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => onDeleteExpense(exp.id)}
-                    className="p-2 text-rose-300/70 hover:text-rose-200 hover:bg-rose-500/20 rounded-xl transition-colors border border-transparent hover:border-rose-400/30"
-                    title="Delete Expense"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div>
+                    {deleteConfirmId === exp.id ? (
+                      <div className="flex items-center gap-1.5 bg-rose-950/90 p-1.5 rounded-2xl border border-rose-400/60 shadow-lg animate-in fade-in">
+                        <span className="text-[11px] text-rose-200 font-bold px-1">Delete?</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onDeleteExpense(exp.id);
+                            setDeleteConfirmId(null);
+                          }}
+                          className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl shadow-md transition-all border border-rose-400 cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmId(null)}
+                          className="px-2 py-1 bg-white/20 hover:bg-white/30 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirmId(exp.id)}
+                        className="px-2.5 py-1.5 text-rose-300 hover:text-white bg-rose-500/10 hover:bg-rose-600/30 rounded-xl transition-all border border-rose-400/40 hover:border-rose-400 cursor-pointer flex items-center gap-1.5 shadow-sm"
+                        title="Delete expense"
+                      >
+                        <Trash2 className="w-4 h-4 text-rose-400" />
+                        <span className="text-xs font-bold text-rose-300">Delete</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );

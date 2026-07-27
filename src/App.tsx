@@ -239,9 +239,38 @@ export default function App() {
     const unsubExp = subscribeToExpenses(group.id, (remoteExpenses) => {
       if (remoteExpenses && remoteExpenses.length > 0) {
         setExpenses(remoteExpenses);
+        localStorage.setItem(`room_expenses_${group.id}`, JSON.stringify(remoteExpenses));
       } else if (remoteExpenses && remoteExpenses.length === 0) {
-        INITIAL_EXPENSES.forEach((exp) => saveExpenseToFirestore({ ...exp, groupId: group.id }, group.id));
-        setExpenses(INITIAL_EXPENSES.map((exp) => ({ ...exp, groupId: group.id })));
+        const saved = localStorage.getItem(`room_expenses_${group.id}`);
+        let localExpenses: Expense[] = [];
+        if (saved !== null) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+              localExpenses = parsed;
+            }
+          } catch (e) {
+            // Fallback
+          }
+        }
+
+        if (saved !== null) {
+          if (localExpenses.length > 0) {
+            localExpenses.forEach((exp) => saveExpenseToFirestore({ ...exp, groupId: group.id }, group.id));
+            setExpenses(localExpenses);
+          } else {
+            setExpenses([]);
+          }
+        } else {
+          if (group.id === 'group-room-3') {
+            INITIAL_EXPENSES.forEach((exp) => saveExpenseToFirestore({ ...exp, groupId: group.id }, group.id));
+            setExpenses(INITIAL_EXPENSES.map((exp) => ({ ...exp, groupId: group.id })));
+            localStorage.setItem(`room_expenses_${group.id}`, JSON.stringify(INITIAL_EXPENSES));
+          } else {
+            setExpenses([]);
+            localStorage.setItem(`room_expenses_${group.id}`, JSON.stringify([]));
+          }
+        }
       }
     });
 
@@ -249,9 +278,38 @@ export default function App() {
     const unsubUtil = subscribeToUtilities(group.id, (remoteUtilities) => {
       if (remoteUtilities && remoteUtilities.length > 0) {
         setUtilities(remoteUtilities);
+        localStorage.setItem(`room_utilities_${group.id}`, JSON.stringify(remoteUtilities));
       } else if (remoteUtilities && remoteUtilities.length === 0) {
-        INITIAL_UTILITIES.forEach((util) => saveUtilityToFirestore({ ...util, groupId: group.id }, group.id));
-        setUtilities(INITIAL_UTILITIES.map((util) => ({ ...util, groupId: group.id })));
+        const saved = localStorage.getItem(`room_utilities_${group.id}`);
+        let localUtils: UtilityBill[] = [];
+        if (saved !== null) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+              localUtils = parsed;
+            }
+          } catch (e) {
+            // Fallback
+          }
+        }
+
+        if (saved !== null) {
+          if (localUtils.length > 0) {
+            localUtils.forEach((util) => saveUtilityToFirestore({ ...util, groupId: group.id }, group.id));
+            setUtilities(localUtils);
+          } else {
+            setUtilities([]);
+          }
+        } else {
+          if (group.id === 'group-room-3') {
+            INITIAL_UTILITIES.forEach((util) => saveUtilityToFirestore({ ...util, groupId: group.id }, group.id));
+            setUtilities(INITIAL_UTILITIES.map((util) => ({ ...util, groupId: group.id })));
+            localStorage.setItem(`room_utilities_${group.id}`, JSON.stringify(INITIAL_UTILITIES));
+          } else {
+            setUtilities([]);
+            localStorage.setItem(`room_utilities_${group.id}`, JSON.stringify([]));
+          }
+        }
       }
     });
 
@@ -259,7 +317,19 @@ export default function App() {
     const unsubRent = subscribeToRent(group.id, (remoteRent) => {
       if (remoteRent) {
         setRent(remoteRent);
+        localStorage.setItem(`room_rent_${group.id}`, JSON.stringify(remoteRent));
       } else {
+        const saved = localStorage.getItem(`room_rent_${group.id}`);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed) {
+              setRent(parsed);
+              saveRentToFirestore(group.id, { ...parsed, groupId: group.id });
+              return;
+            }
+          } catch (e) {}
+        }
         saveRentToFirestore(group.id, { ...rent, groupId: group.id });
       }
     });
@@ -268,9 +338,38 @@ export default function App() {
     const unsubChat = subscribeToChatMessages(group.id, (remoteMsgs) => {
       if (remoteMsgs && remoteMsgs.length > 0) {
         setChatMessages(remoteMsgs);
+        localStorage.setItem(`room_chat_messages_${group.id}`, JSON.stringify(remoteMsgs));
       } else if (remoteMsgs && remoteMsgs.length === 0) {
-        INITIAL_CHAT_MESSAGES.forEach((msg) => saveChatMessageToFirestore(group.id, { ...msg, groupId: group.id }));
-        setChatMessages(INITIAL_CHAT_MESSAGES);
+        const saved = localStorage.getItem(`room_chat_messages_${group.id}`);
+        let localMsgs: ChatMessage[] = [];
+        if (saved !== null) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+              localMsgs = parsed;
+            }
+          } catch (e) {
+            // Fallback
+          }
+        }
+
+        if (saved !== null) {
+          if (localMsgs.length > 0) {
+            localMsgs.forEach((msg) => saveChatMessageToFirestore(group.id, { ...msg, groupId: group.id }));
+            setChatMessages(localMsgs);
+          } else {
+            setChatMessages([]);
+          }
+        } else {
+          if (group.id === 'group-room-3') {
+            INITIAL_CHAT_MESSAGES.forEach((msg) => saveChatMessageToFirestore(group.id, { ...msg, groupId: group.id }));
+            setChatMessages(INITIAL_CHAT_MESSAGES);
+            localStorage.setItem(`room_chat_messages_${group.id}`, JSON.stringify(INITIAL_CHAT_MESSAGES));
+          } else {
+            setChatMessages([]);
+            localStorage.setItem(`room_chat_messages_${group.id}`, JSON.stringify([]));
+          }
+        }
       }
     });
 
@@ -535,7 +634,7 @@ export default function App() {
   };
 
   // Handlers for Expenses
-  const handleSaveExpense = (newExpData: {
+  const handleSaveExpense = async (newExpData: {
     type: 'mess' | 'general';
     title: string;
     amount: number;
@@ -563,7 +662,8 @@ export default function App() {
 
     const updatedExpenses = [newExpense, ...expenses];
     setExpenses(updatedExpenses);
-    saveExpenseToFirestore(newExpense);
+    localStorage.setItem(`room_expenses_${group.id}`, JSON.stringify(updatedExpenses));
+    await saveExpenseToFirestore(newExpense, group.id);
     triggerHaptic(hapticPatterns.success);
 
     // Automatically post room chat notification for new expense
@@ -578,7 +678,7 @@ export default function App() {
       amount: newExpData.amount,
     };
     setChatMessages((prev) => [...prev, chatNotification]);
-    saveChatMessageToFirestore(group.id, chatNotification);
+    await saveChatMessageToFirestore(group.id, chatNotification);
 
     triggerSheetsSync(false, updatedExpenses);
   };
@@ -786,8 +886,17 @@ export default function App() {
   const handleDeleteExpense = (id: string) => {
     const filtered = expenses.filter((e) => e.id !== id);
     setExpenses(filtered);
+    localStorage.setItem('room_expenses_' + group.id, JSON.stringify(filtered));
     deleteExpenseFromFirestore(id);
     triggerSheetsSync(false, filtered);
+  };
+
+  const handleDeleteUtility = (id: string) => {
+    const filtered = utilities.filter((u) => u.id !== id);
+    setUtilities(filtered);
+    localStorage.setItem('room_utilities_' + group.id, JSON.stringify(filtered));
+    deleteUtilityFromFirestore(id);
+    triggerSheetsSync(false, expenses, filtered, rent);
   };
 
   // Handlers for Utilities & Rent
@@ -818,6 +927,14 @@ export default function App() {
   const handleUpdateRentStatus = (status: 'paid' | 'pending') => {
     const updatedRent = { ...rent, status };
     setRent(updatedRent);
+    localStorage.setItem('room_rent_' + group.id, JSON.stringify(updatedRent));
+    saveRentToFirestore(group.id, updatedRent);
+    triggerSheetsSync(false, expenses, utilities, updatedRent);
+  };
+
+  const handleUpdateRent = (updatedRent: RentContribution) => {
+    setRent(updatedRent);
+    localStorage.setItem('room_rent_' + group.id, JSON.stringify(updatedRent));
     saveRentToFirestore(group.id, updatedRent);
     triggerSheetsSync(false, expenses, utilities, updatedRent);
   };
@@ -831,6 +948,22 @@ export default function App() {
     const updatedGroup = {
       ...group,
       members: [...group.members, newMember],
+    };
+    setGroup(updatedGroup);
+    saveGroupToFirestore(updatedGroup);
+
+    const updatedAll = allGroups.map((g) => (g.id === group.id ? updatedGroup : g));
+    setAllGroups(updatedAll);
+    localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
+
+    triggerSheetsSync(true, expenses, utilities, rent, updatedGroup);
+  };
+
+  const handleUpdateMember = (updatedMember: Member) => {
+    const updatedMembers = group.members.map((m) => (m.id === updatedMember.id ? updatedMember : m));
+    const updatedGroup = {
+      ...group,
+      members: updatedMembers,
     };
     setGroup(updatedGroup);
     saveGroupToFirestore(updatedGroup);
@@ -995,6 +1128,7 @@ export default function App() {
                   preferredCurrency={preferredCurrency}
                   customRates={customRates}
                   onOpenGroupChat={() => setIsChatOpen(true)}
+                  currentUser={userAuth}
                 />
               )}
 
@@ -1005,7 +1139,9 @@ export default function App() {
                   rent={rent}
                   onUpdateUtilityStatus={handleUpdateUtilityStatus}
                   onUpdateRentStatus={handleUpdateRentStatus}
+                  onUpdateRent={handleUpdateRent}
                   onAddUtility={handleAddUtility}
+                  onDeleteUtility={handleDeleteUtility}
                   preferredCurrency={preferredCurrency}
                   customRates={customRates}
                   currentUser={userAuth}
@@ -1035,6 +1171,7 @@ export default function App() {
                   onAddMember={handleAddMember}
                   onUpdateMemberDays={handleUpdateMemberDays}
                   onRemoveMember={handleRemoveMember}
+                  onUpdateMember={handleUpdateMember}
                   onSyncSheetsNow={() => triggerSheetsSync(false)}
                   onOpenArchGuide={() => setIsArchGuideOpen(true)}
                   isSyncing={isSyncing}

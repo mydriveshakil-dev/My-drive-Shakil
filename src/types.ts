@@ -11,6 +11,7 @@ export interface Member {
   avatar: string;
   daysPresent: number; // For mess calculation
   active: boolean;
+  includedCategories?: string[]; // Expense types/categories this member is included in
 }
 
 export interface Expense {

@@ -31,6 +31,7 @@ interface GroupManagementViewProps {
   onAddMember: (member: Omit<Member, 'id'>) => void;
   onUpdateMemberDays: (id: string, days: number) => void;
   onRemoveMember: (id: string) => void;
+  onUpdateMember?: (member: Member) => void;
   onSyncSheetsNow: () => void;
   onOpenArchGuide: () => void;
   isSyncing: boolean;
@@ -45,6 +46,17 @@ interface GroupManagementViewProps {
   onUpdateSpreadsheetConfig?: (spreadsheetId: string, webAppUrl?: string) => void;
 }
 
+export const ALL_EXPENSE_OPTIONS = [
+  { id: 'mess', label: 'Mess Food Expense (মেস মিল খরচ)', desc: 'Daily meals & food grocery' },
+  { id: 'general', label: 'General Room Expense (সাধারণ রুম খরচ)', desc: 'Common room items & shopping' },
+  { id: 'electricity', label: 'Electricity Bill (বিদ্যুৎ বিল)', desc: 'DEWA / Power supply' },
+  { id: 'internet', label: 'Internet / Wifi Bill (ওয়াইফাই বিল)', desc: 'Broadband wifi connection' },
+  { id: 'water', label: 'Water Bill (পানি বিল)', desc: 'Water usage & DEWA water' },
+  { id: 'gas', label: 'Gas Bill (গ্যাস বিল)', desc: 'LPG / Central gas supply' },
+  { id: 'cleaner', label: 'House Cleaner (ক্লিনার বিল)', desc: 'Maid & housekeeping fee' },
+  { id: 'rent', label: 'Room Rent / Landlord (রুম ভাড়া)', desc: 'Monthly landlord flat rent' },
+];
+
 export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   group,
   allGroups = [],
@@ -52,6 +64,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   onAddMember,
   onUpdateMemberDays,
   onRemoveMember,
+  onUpdateMember,
   onSyncSheetsNow,
   onOpenArchGuide,
   isSyncing,
@@ -68,6 +81,14 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberPhone, setNewMemberPhone] = useState('');
+  const [newMemberCategories, setNewMemberCategories] = useState<string[]>(ALL_EXPENSE_OPTIONS.map((o) => o.id));
+
+  // Edit Member Scope State
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [editMemberName, setEditMemberName] = useState('');
+  const [editMemberPhone, setEditMemberPhone] = useState('');
+  const [editMemberDays, setEditMemberDays] = useState(30);
+  const [editMemberCategories, setEditMemberCategories] = useState<string[]>([]);
 
   // Admin New Group Modal State
   const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -85,6 +106,51 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   const [copiedScript, setCopiedScript] = useState(false);
 
   const isAdmin = currentUser?.role === 'admin';
+
+  const toggleCategoryForNewMember = (catId: string) => {
+    if (newMemberCategories.includes(catId)) {
+      setNewMemberCategories(newMemberCategories.filter((c) => c !== catId));
+    } else {
+      setNewMemberCategories([...newMemberCategories, catId]);
+    }
+  };
+
+  const toggleCategoryForEditMember = (catId: string) => {
+    if (editMemberCategories.includes(catId)) {
+      setEditMemberCategories(editMemberCategories.filter((c) => c !== catId));
+    } else {
+      setEditMemberCategories([...editMemberCategories, catId]);
+    }
+  };
+
+  const openEditMemberModal = (member: Member) => {
+    setEditingMember(member);
+    setEditMemberName(member.name);
+    setEditMemberPhone(member.phone || member.mobileNumber || member.email || '');
+    setEditMemberDays(member.daysPresent || 30);
+    setEditMemberCategories(member.includedCategories || ALL_EXPENSE_OPTIONS.map((o) => o.id));
+  };
+
+  const handleSaveEditMemberSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMember) return;
+    const updated: Member = {
+      ...editingMember,
+      name: editMemberName.trim() || editingMember.name,
+      phone: editMemberPhone.trim() || editingMember.phone,
+      email: editMemberPhone.trim() || editingMember.email,
+      mobileNumber: editMemberPhone.trim() || editingMember.mobileNumber,
+      daysPresent: editMemberDays,
+      includedCategories: editMemberCategories,
+    };
+    if (onUpdateMember) {
+      onUpdateMember(updated);
+    } else {
+      onUpdateMemberDays(updated.id, editMemberDays);
+    }
+    setEditingMember(null);
+    triggerHaptic(hapticPatterns.success);
+  };
 
   const handleSaveSheetConfigSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,10 +181,12 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       avatar: initials,
       daysPresent: 30,
       active: true,
+      includedCategories: newMemberCategories,
     });
 
     setNewMemberName('');
     setNewMemberPhone('');
+    setNewMemberCategories(ALL_EXPENSE_OPTIONS.map((o) => o.id));
     setShowAddMember(false);
   };
 
@@ -777,54 +845,72 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
         {/* Member cards */}
         <div className="space-y-3">
-          {group.members.map((member) => (
-            <div
-              key={member.id}
-              className="bg-white/10 border border-white/25 rounded-3xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-white backdrop-blur-2xl"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#F9A826] text-[#0B4A3F] font-black flex items-center justify-center text-sm shadow-md">
-                  {member.avatar}
+          {group.members.map((member) => {
+            const activeCount = (member.includedCategories || ALL_EXPENSE_OPTIONS.map((o) => o.id)).length;
+            return (
+              <div
+                key={member.id}
+                className="bg-white/10 border border-white/25 rounded-3xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-white backdrop-blur-2xl"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#F9A826] text-[#0B4A3F] font-black flex items-center justify-center text-sm shadow-md shrink-0">
+                    {member.avatar}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">{member.name}</h4>
+                    <p className="text-xs text-emerald-100/70 font-mono">{member.phone || member.email}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1">
+                      <span className="text-[10px] text-amber-300 font-bold bg-black/40 px-2 py-0.5 rounded-md border border-white/10">
+                        Scope: {activeCount}/{ALL_EXPENSE_OPTIONS.length} Expenses
+                      </span>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => openEditMemberModal(member)}
+                          className="text-[10px] text-emerald-300 hover:text-white bg-emerald-500/20 hover:bg-emerald-500/30 px-2 py-0.5 rounded-md border border-emerald-500/30 font-bold cursor-pointer transition-all flex items-center gap-1"
+                        >
+                          <Edit className="w-3 h-3 text-emerald-300" />
+                          <span>Edit Scope</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-bold text-white">{member.name}</h4>
-                  <p className="text-xs text-emerald-100/70 font-mono">{member.phone || member.email}</p>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 pt-2 sm:pt-0 border-white/15">
-                {/* Days present input vs read-only */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-emerald-100/80 font-semibold">Mess Days Present:</span>
-                  {isAdmin ? (
-                    <input
-                      type="number"
-                      min="1"
-                      max="31"
-                      value={member.daysPresent}
-                      onChange={(e) => onUpdateMemberDays(member.id, parseInt(e.target.value) || 0)}
-                      className="w-16 px-2 py-1 bg-white/10 border border-white/30 rounded-xl text-xs font-bold text-white text-center focus:ring-1 focus:ring-amber-400 focus:outline-none"
-                    />
-                  ) : (
-                    <span className="text-xs font-black text-amber-300 bg-black/30 px-3 py-1 rounded-xl border border-white/10">
-                      {member.daysPresent} Days
-                    </span>
+                <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 pt-2 sm:pt-0 border-white/15">
+                  {/* Days present input vs read-only */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-emerald-100/80 font-semibold">Mess Days Present:</span>
+                    {isAdmin ? (
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={member.daysPresent}
+                        onChange={(e) => onUpdateMemberDays(member.id, parseInt(e.target.value) || 0)}
+                        className="w-16 px-2 py-1 bg-white/10 border border-white/30 rounded-xl text-xs font-bold text-white text-center focus:ring-1 focus:ring-amber-400 focus:outline-none"
+                      />
+                    ) : (
+                      <span className="text-xs font-black text-amber-300 bg-black/30 px-3 py-1 rounded-xl border border-white/10">
+                        {member.daysPresent} Days
+                      </span>
+                    )}
+                  </div>
+
+                  {isAdmin && (
+                    <button
+                      onClick={() => setDeleteConfirmMember(member)}
+                      className="p-1.5 px-2.5 text-rose-300 hover:text-white hover:bg-rose-600/30 rounded-xl transition-all border border-rose-400/40 cursor-pointer flex items-center gap-1 text-xs font-bold shadow-sm"
+                      title="Delete member"
+                    >
+                      <Trash2 className="w-4 h-4 text-rose-400" />
+                      <span>Delete</span>
+                    </button>
                   )}
                 </div>
-
-                {isAdmin && (
-                  <button
-                    onClick={() => setDeleteConfirmMember(member)}
-                    className="p-1.5 px-2.5 text-rose-300 hover:text-white hover:bg-rose-600/30 rounded-xl transition-all border border-rose-400/40 cursor-pointer flex items-center gap-1 text-xs font-bold shadow-sm"
-                    title="Delete member"
-                  >
-                    <Trash2 className="w-4 h-4 text-rose-400" />
-                    <span>Delete</span>
-                  </button>
-                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </GlassContainer>
 
@@ -833,7 +919,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
           <GlassContainer
             variant="modal"
-            className="w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl border border-white/40 space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border border-white/40 space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between border-b border-white/20 pb-3">
               <h3 className="text-lg font-black text-white flex items-center gap-2">
@@ -881,6 +967,47 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 </p>
               </div>
 
+              {/* Expense Inclusions Checkboxes */}
+              <div>
+                <label className="block text-xs font-bold text-amber-300 uppercase mb-1 flex items-center justify-between">
+                  <span>Expense Scope & Inclusions (কোন কোন খরচের আওতায় থাকবে) *</span>
+                  <span className="text-[10px] text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    {newMemberCategories.length}/{ALL_EXPENSE_OPTIONS.length} Selected
+                  </span>
+                </label>
+                <p className="text-[11px] text-emerald-100/80 mb-2">
+                  Tick the checkboxes for expenses this member will participate in. Unchecked expenses will NOT be charged to this member.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-2.5 bg-slate-900/90 border border-white/20 rounded-2xl shadow-inner">
+                  {ALL_EXPENSE_OPTIONS.map((opt) => {
+                    const isChecked = newMemberCategories.includes(opt.id);
+                    return (
+                      <label
+                        key={opt.id}
+                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                          isChecked
+                            ? 'bg-emerald-950/80 border-emerald-400/60 text-white shadow-sm'
+                            : 'bg-slate-950/60 border-white/10 text-slate-400 hover:border-white/20'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleCategoryForNewMember(opt.id)}
+                          className="mt-0.5 w-4 h-4 rounded text-emerald-500 focus:ring-emerald-400 cursor-pointer accent-emerald-500 shrink-0"
+                        />
+                        <div className="leading-tight">
+                          <span className={`text-xs font-bold block ${isChecked ? 'text-emerald-200' : 'text-slate-300'}`}>
+                            {opt.label}
+                          </span>
+                          <span className="text-[10px] opacity-75 block text-slate-300">{opt.desc}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="flex items-center gap-2 pt-2 border-t border-white/10">
                 <button
                   type="button"
@@ -894,6 +1021,131 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   className="w-1/2 py-3 rounded-2xl bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] text-xs font-black shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
                 >
                   Add Member
+                </button>
+              </div>
+            </form>
+          </GlassContainer>
+        </div>
+      )}
+
+      {/* Edit Member Scope Modal */}
+      {editingMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
+          <GlassContainer
+            variant="modal"
+            className="w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border border-amber-400/40 space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between border-b border-white/20 pb-3">
+              <h3 className="text-lg font-black text-white flex items-center gap-2">
+                <Edit className="w-5 h-5 text-[#F9A826]" />
+                <span>Edit Scope: {editingMember.name}</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingMember(null)}
+                className="text-white/60 hover:text-white text-xs font-bold px-2 py-1 rounded-lg hover:bg-white/10 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditMemberSubmit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-emerald-200 uppercase mb-1">
+                    Member Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editMemberName}
+                    onChange={(e) => setEditMemberName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white/10 border border-white/25 rounded-xl text-xs font-bold text-white focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-emerald-200 uppercase mb-1">
+                    Mobile / Phone
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={editMemberPhone}
+                    onChange={(e) => setEditMemberPhone(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white/10 border border-white/25 rounded-xl text-xs font-bold text-white focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-emerald-200 uppercase mb-1">
+                  Mess Days Present
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={editMemberDays}
+                  onChange={(e) => setEditMemberDays(parseInt(e.target.value) || 0)}
+                  className="w-full px-3.5 py-2.5 bg-white/10 border border-white/25 rounded-xl text-xs font-bold text-white focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                />
+              </div>
+
+              {/* Expense Inclusions Checkboxes */}
+              <div>
+                <label className="block text-xs font-bold text-amber-300 uppercase mb-1 flex items-center justify-between">
+                  <span>Expense Inclusions & Scope (খরচের টিক বক্স) *</span>
+                  <span className="text-[10px] text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    {editMemberCategories.length}/{ALL_EXPENSE_OPTIONS.length} Ticked
+                  </span>
+                </label>
+                <p className="text-[11px] text-emerald-100/80 mb-2">
+                  Checkboxes that are checked will charge this user for that expense. Unchecked expenses will NOT apply to this user.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto p-2.5 bg-slate-900/90 border border-white/20 rounded-2xl shadow-inner">
+                  {ALL_EXPENSE_OPTIONS.map((opt) => {
+                    const isChecked = editMemberCategories.includes(opt.id);
+                    return (
+                      <label
+                        key={opt.id}
+                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                          isChecked
+                            ? 'bg-emerald-950/80 border-emerald-400/60 text-white shadow-sm'
+                            : 'bg-slate-950/60 border-white/10 text-slate-400 hover:border-white/20'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleCategoryForEditMember(opt.id)}
+                          className="mt-0.5 w-4 h-4 rounded text-emerald-500 focus:ring-emerald-400 cursor-pointer accent-emerald-500 shrink-0"
+                        />
+                        <div className="leading-tight">
+                          <span className={`text-xs font-bold block ${isChecked ? 'text-emerald-200' : 'text-slate-300'}`}>
+                            {opt.label}
+                          </span>
+                          <span className="text-[10px] opacity-75 block text-slate-300">{opt.desc}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setEditingMember(null)}
+                  className="w-1/2 py-3 rounded-2xl border border-white/20 text-xs font-bold text-white hover:bg-white/10 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="w-1/2 py-3 rounded-2xl bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] text-xs font-black shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+                >
+                  Save Member Scope
                 </button>
               </div>
             </form>

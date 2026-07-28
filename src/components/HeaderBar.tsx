@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Group, GoogleSheetsConfig, BillingCycleType, UserAuthProfile } from '../types';
 import { ChevronDown, RefreshCw, Layers, Plus, Code, CheckCircle2, Coins, ShieldCheck, LogOut, ExternalLink } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
+import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
 
 interface HeaderBarProps {
   group: Group;
@@ -53,7 +54,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/20 pb-3.5">
               <div className="flex items-center gap-3">
                 <img
-                  src="/src/assets/images/uae_mess_logo_1785022712689.jpg"
+                  src={uaeMessLogo}
                   alt="UAE MESS SYSTEM Logo"
                   className="w-11 h-11 rounded-2xl object-cover border-2 border-black shadow-md"
                 />

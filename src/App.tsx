@@ -31,6 +31,7 @@ import {
 } from './lib/firebase';
 
 import { HeaderBar } from './components/HeaderBar';
+import uaeMessLogo from './assets/images/uae_mess_logo_1785022712689.jpg';
 import { DashboardView } from './components/DashboardView';
 import { HomeDashboard } from './components/HomeDashboard';
 import { AddExpenseModal } from './components/AddExpenseModal';
@@ -1265,7 +1266,7 @@ export default function App() {
                   className="relative"
                 >
                   <img
-                    src="/src/assets/images/uae_mess_logo_1785022712689.jpg"
+                    src={uaeMessLogo}
                     alt="UAE Mess System Logo"
                     className="w-32 h-32 sm:w-40 sm:h-40 rounded-3xl object-cover border-4 border-black shadow-2xl"
                   />

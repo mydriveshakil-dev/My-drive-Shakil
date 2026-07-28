@@ -15,6 +15,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
+import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
 
 interface UaeLoginModalProps {
   isOpen: boolean;
@@ -273,7 +274,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
         <div className="p-4 sm:p-5 border-b-2 border-black bg-white flex items-center justify-between shrink-0 gap-3 overflow-hidden text-slate-900">
           <div className="flex items-center gap-3 min-w-0">
             <img
-              src="/src/assets/images/uae_mess_logo_1785022712689.jpg"
+              src={uaeMessLogo}
               alt="UAE MESS SYSTEM Logo"
               className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover border-2 border-black shadow-md shrink-0"
             />

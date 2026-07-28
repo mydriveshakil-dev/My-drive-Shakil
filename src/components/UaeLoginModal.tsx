@@ -263,33 +263,33 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-300 max-w-full overflow-x-hidden overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300 max-w-full overflow-x-hidden overflow-y-auto">
       <GlassContainer
-        variant="emerald"
+        variant="card"
         blur="3xl"
-        className="w-full max-w-lg max-h-[92vh] rounded-3xl border border-white/30 shadow-2xl flex flex-col overflow-hidden relative my-auto box-border text-white bg-[#092621]/95"
+        className="w-full max-w-lg max-h-[92vh] rounded-3xl border-2 border-black shadow-2xl flex flex-col overflow-hidden relative my-auto box-border text-slate-900 bg-white"
       >
         {/* Header Banner */}
-        <div className="p-4 sm:p-5 border-b border-white/20 bg-emerald-950/80 flex items-center justify-between backdrop-blur-2xl shrink-0 gap-3 overflow-hidden text-white">
+        <div className="p-4 sm:p-5 border-b-2 border-black bg-white flex items-center justify-between shrink-0 gap-3 overflow-hidden text-slate-900">
           <div className="flex items-center gap-3 min-w-0">
             <img
               src="/src/assets/images/uae_mess_logo_1785022712689.jpg"
               alt="UAE MESS SYSTEM Logo"
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover border-2 border-amber-400/80 shadow-xl shadow-amber-500/20 shrink-0"
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover border-2 border-black shadow-md shrink-0"
             />
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs sm:text-sm font-black tracking-wider text-amber-300 uppercase">
+                <span className="text-xs sm:text-sm font-black tracking-wider text-slate-950 uppercase">
                   UAE MESS SYSTEM
                 </span>
-                <span className="bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase whitespace-nowrap">
+                <span className="bg-black text-white border border-black text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase whitespace-nowrap">
                   Portal Login
                 </span>
               </div>
-              <h2 className="text-sm sm:text-base font-black text-white truncate mt-0.5">
+              <h2 className="text-sm sm:text-base font-black text-slate-950 truncate mt-0.5">
                 Member & Admin Portal Access
               </h2>
-              <p className="text-[11px] sm:text-xs text-emerald-200/80 font-medium truncate">
+              <p className="text-[11px] sm:text-xs text-slate-700 font-medium truncate">
                 Log in using Full Name, Mobile Number & Password
               </p>
             </div>
@@ -297,19 +297,19 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleLogin} className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-white max-w-full">
-          <div className="bg-emerald-950/70 border border-emerald-400/30 p-3 rounded-2xl text-xs text-emerald-200 leading-relaxed flex items-start gap-2">
-            <Info className="w-4 h-4 text-[#F9A826] shrink-0 mt-0.5" />
+        <form onSubmit={handleLogin} className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-slate-900 max-w-full">
+          <div className="bg-slate-100 border border-black p-3 rounded-2xl text-xs text-slate-900 leading-relaxed flex items-start gap-2">
+            <Info className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" />
             <div>
-              Enter your <strong>Full Name</strong> (must match the name registered by Admin) and <strong>Mobile Number</strong> with Password to log in.
+              Enter your <strong className="text-slate-950">Full Name</strong> (must match the name registered by Admin) and <strong className="text-slate-950">Mobile Number</strong> with Password to log in.
             </div>
           </div>
 
           {/* 1. Name Field */}
           <div>
-            <label className="block text-xs font-bold text-emerald-200 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-[#F9A826]" />
-              Full Name * <span className="text-[10px] text-amber-300 font-normal lowercase">(must match Admin registered name)</span>
+            <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-slate-900" />
+              Full Name * <span className="text-[10px] text-slate-600 font-normal lowercase">(must match Admin registered name)</span>
             </label>
             <input
               type="text"
@@ -319,14 +319,14 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                 setFullName(e.target.value);
                 setLoginError(null);
               }}
-              className="w-full px-4 py-3 bg-white/10 border border-white/25 rounded-2xl text-xs sm:text-sm font-bold text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-400 backdrop-blur-xl"
+              className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black"
             />
           </div>
 
           {/* 2. Mobile Number */}
           <div>
-            <label className="block text-xs font-bold text-emerald-200 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <Smartphone className="w-3.5 h-3.5 text-[#F9A826]" />
+            <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <Smartphone className="w-3.5 h-3.5 text-slate-900" />
               Mobile Number *
             </label>
             <input
@@ -337,15 +337,15 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                 setMobileNumber(e.target.value);
                 setLoginError(null);
               }}
-              className="w-full px-4 py-3 bg-white/10 border border-white/25 rounded-2xl text-xs sm:text-sm font-bold text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-400 backdrop-blur-xl"
+              className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black"
             />
           </div>
 
           {/* 3. Password */}
           <div>
-            <label className="block text-xs font-bold text-emerald-200 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-1.5 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-[#F9A826]" />
+                <Lock className="w-3.5 h-3.5 text-slate-900" />
                 Password *
               </span>
             </label>
@@ -358,12 +358,12 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                   setUserPassword(e.target.value);
                   setLoginError(null);
                 }}
-                className="w-full px-4 py-3 bg-white/10 border border-white/25 rounded-2xl text-xs sm:text-sm font-bold text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-400 backdrop-blur-xl pr-16"
+                className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black pr-16"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-amber-300/90 hover:text-amber-300 cursor-pointer"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-900 hover:text-black cursor-pointer"
               >
                 {showPassword ? 'Hide' : 'Show'}
               </button>
@@ -378,12 +378,12 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                 setRememberMe(!rememberMe);
                 triggerHaptic(hapticPatterns.click);
               }}
-              className="flex items-center gap-2 text-xs font-bold text-amber-200 hover:text-amber-300 cursor-pointer select-none"
+              className="flex items-center gap-2 text-xs font-bold text-slate-900 hover:text-black cursor-pointer select-none"
             >
               {rememberMe ? (
-                <CheckSquare className="w-4 h-4 text-[#F9A826]" />
+                <CheckSquare className="w-4 h-4 text-black" />
               ) : (
-                <Square className="w-4 h-4 text-emerald-200/60" />
+                <Square className="w-4 h-4 text-slate-400" />
               )}
               <span>Remember my credentials on this device</span>
             </button>
@@ -391,8 +391,8 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
 
           {/* Error Alert */}
           {loginError && (
-            <div className="bg-rose-950/90 border border-rose-500 p-3.5 rounded-2xl text-rose-200 text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
-              <AlertTriangle className="w-4.5 h-4.5 text-rose-400 shrink-0" />
+            <div className="bg-slate-900 text-white border border-black p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
+              <AlertTriangle className="w-4.5 h-4.5 text-white shrink-0" />
               <span>{loginError}</span>
             </div>
           )}
@@ -402,16 +402,16 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
         </form>
 
         {/* Footer Login Button */}
-        <div className="p-4 sm:p-5 bg-emerald-950/80 border-t border-white/20 backdrop-blur-2xl shrink-0">
+        <div className="p-4 sm:p-5 bg-white border-t-2 border-black shrink-0">
           <button
             type="button"
             onClick={() => handleLogin()}
             disabled={isSearchingCloud}
-            className="w-full bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black py-4 rounded-2xl shadow-xl transition-all text-sm flex items-center justify-center gap-2 border border-white/30 active:scale-98 cursor-pointer ring-2 ring-amber-400/50 disabled:opacity-50"
+            className="w-full bg-black hover:bg-slate-800 text-white font-black py-4 rounded-2xl shadow-xl transition-all text-sm flex items-center justify-center gap-2 border border-black active:scale-98 cursor-pointer disabled:opacity-50"
           >
-            <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
+            <ShieldCheck className="w-5 h-5 stroke-[2.5] text-white" />
             <span>{isSearchingCloud ? 'Connecting Cloud...' : 'Login to Mess Portal'}</span>
-            <ArrowRight className="w-5 h-5 stroke-[3]" />
+            <ArrowRight className="w-5 h-5 stroke-[3] text-white" />
           </button>
         </div>
       </GlassContainer>

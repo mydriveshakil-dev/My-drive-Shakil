@@ -377,21 +377,21 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* CREATE NEW GROUP MODAL FORM */}
       {showCreateGroup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
           <GlassContainer
-            variant="emerald"
+            variant="modal"
             blur="3xl"
-            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border border-white/30 shadow-2xl space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border-2 border-black shadow-2xl space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto bg-white text-slate-900"
           >
-            <div className="flex items-center justify-between border-b border-white/20 pb-3">
-              <h3 className="text-lg font-black text-white flex items-center gap-2">
-                <FolderPlus className="w-5 h-5 text-[#F9A826]" />
+            <div className="flex items-center justify-between border-b-2 border-black pb-3">
+              <h3 className="text-lg font-black text-slate-950 flex items-center gap-2">
+                <FolderPlus className="w-5 h-5 text-slate-900" />
                 <span>Create New Room Group</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setShowCreateGroup(false)}
-                className="text-white/60 hover:text-white text-xs font-bold px-2 py-1 rounded-lg hover:bg-white/10 transition-all cursor-pointer"
+                className="text-slate-700 hover:text-black text-xs font-bold px-2 py-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer border border-black"
               >
                 Cancel
               </button>
@@ -399,23 +399,23 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
             <form onSubmit={handleCreateGroupSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-emerald-200 mb-1">Group / Room Name *</label>
+                <label className="block font-bold text-slate-900 uppercase tracking-wider mb-1">Group / Room Name *</label>
                 <input
                   type="text"
                   placeholder="e.g. DSO Villa 402 / Silicon Oasis Room 3"
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/25 rounded-2xl font-bold text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black"
                   required
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-emerald-200 mb-1">Base Room Currency *</label>
+                <label className="block font-bold text-slate-900 uppercase tracking-wider mb-1">Base Room Currency *</label>
                 <select
                   value={newGroupCurrency}
                   onChange={(e) => setNewGroupCurrency(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-900 border border-white/25 rounded-2xl font-bold text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-black cursor-pointer"
                 >
                   <option value="AED">AED - UAE Dirham</option>
                   <option value="USD">USD - US Dollar</option>
@@ -428,7 +428,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
               <button
                 type="submit"
-                className="w-full bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black py-3.5 rounded-2xl text-sm shadow-xl transition-all cursor-pointer"
+                className="w-full bg-black hover:bg-slate-800 text-white font-black py-3.5 rounded-2xl text-sm shadow-md transition-all cursor-pointer border border-black uppercase tracking-wider"
               >
                 Confirm & Create Group
               </button>
@@ -439,24 +439,24 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* DELETE GROUP CONFIRMATION MODAL */}
       {deleteConfirmGroup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
           <GlassContainer
-            variant="card"
+            variant="modal"
             blur="3xl"
-            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border border-rose-500/50 shadow-2xl space-y-4 text-white my-auto relative box-border max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border-2 border-black shadow-2xl space-y-4 text-slate-900 my-auto relative box-border max-h-[90vh] overflow-y-auto bg-white"
           >
-            <div className="flex items-center gap-3 text-rose-400 border-b border-white/15 pb-3">
-              <Trash2 className="w-6 h-6 shrink-0 text-rose-400" />
-              <h3 className="text-lg font-black text-white">Delete Room Group</h3>
+            <div className="flex items-center gap-3 border-b-2 border-black pb-3">
+              <Trash2 className="w-6 h-6 shrink-0 text-slate-900" />
+              <h3 className="text-lg font-black text-slate-950">Delete Room Group</h3>
             </div>
-            <p className="text-xs text-emerald-100 font-medium leading-relaxed">
-              Are you sure you want to delete room group <strong className="text-amber-300">{deleteConfirmGroup.name}</strong>? All associated room data and member configurations for this group will be removed.
+            <p className="text-xs text-slate-800 font-medium leading-relaxed">
+              Are you sure you want to delete room group <strong className="text-slate-950 font-black">{deleteConfirmGroup.name}</strong>? All associated room data and member configurations for this group will be removed.
             </p>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-black">
               <button
                 type="button"
                 onClick={() => setDeleteConfirmGroup(null)}
-                className="px-4 py-2 bg-white/15 hover:bg-white/25 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-black rounded-xl text-xs font-bold text-slate-900 transition-all cursor-pointer"
               >
                 Cancel
               </button>
@@ -467,7 +467,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   setDeleteConfirmGroup(null);
                   triggerHaptic(hapticPatterns.error);
                 }}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-lg transition-all cursor-pointer"
+                className="px-4 py-2 bg-black hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-md transition-all cursor-pointer border border-black uppercase tracking-wider"
               >
                 Confirm & Delete
               </button>
@@ -478,24 +478,24 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* DELETE MEMBER CONFIRMATION MODAL */}
       {deleteConfirmMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
           <GlassContainer
-            variant="card"
+            variant="modal"
             blur="3xl"
-            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border border-rose-500/50 shadow-2xl space-y-4 text-white my-auto relative box-border max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border-2 border-black shadow-2xl space-y-4 text-slate-900 my-auto relative box-border max-h-[90vh] overflow-y-auto bg-white"
           >
-            <div className="flex items-center gap-3 text-rose-400 border-b border-white/15 pb-3">
-              <Trash2 className="w-6 h-6 shrink-0 text-rose-400" />
-              <h3 className="text-lg font-black text-white">Delete Room Member</h3>
+            <div className="flex items-center gap-3 border-b-2 border-black pb-3">
+              <Trash2 className="w-6 h-6 shrink-0 text-slate-900" />
+              <h3 className="text-lg font-black text-slate-950">Delete Room Member</h3>
             </div>
-            <p className="text-xs text-emerald-100 font-medium leading-relaxed">
-              Are you sure you want to delete member <strong className="text-amber-300">{deleteConfirmMember.name}</strong> ({deleteConfirmMember.phone || deleteConfirmMember.email || 'No contact info'}) from <strong className="text-emerald-200">{group.name}</strong>?
+            <p className="text-xs text-slate-800 font-medium leading-relaxed">
+              Are you sure you want to delete member <strong className="text-slate-950 font-black">{deleteConfirmMember.name}</strong> ({deleteConfirmMember.phone || deleteConfirmMember.email || 'No contact info'}) from <strong className="text-slate-950 font-black">{group.name}</strong>?
             </p>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-black">
               <button
                 type="button"
                 onClick={() => setDeleteConfirmMember(null)}
-                className="px-4 py-2 bg-white/15 hover:bg-white/25 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-black rounded-xl text-xs font-bold text-slate-900 transition-all cursor-pointer"
               >
                 Cancel
               </button>

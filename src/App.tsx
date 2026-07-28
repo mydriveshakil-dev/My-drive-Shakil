@@ -378,6 +378,7 @@ export default function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(() => {
     return !userAuth.isLoggedIn;
   });
+  const [isLoginSuccessAnimActive, setIsLoginSuccessAnimActive] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<AppTabType>(() => {
     const saved = localStorage.getItem('uae_user_auth');
@@ -663,6 +664,10 @@ export default function App() {
   const handleLoginSuccess = (authData: UserAuthProfile) => {
     triggerHaptic(hapticPatterns.success);
     saveUserProfileToFirestore(authData);
+    setIsLoginSuccessAnimActive(true);
+    setTimeout(() => {
+      setIsLoginSuccessAnimActive(false);
+    }, 2200);
 
     if (authData.role === 'admin') {
       const targetGroup = group.id ? group : (allGroups[0] || group);
@@ -1189,21 +1194,21 @@ export default function App() {
       {/* Floating Action Button (FAB) for Room Group Chat */}
       {!isLoginModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && (
         <motion.button
-          whileHover={{ scale: 1.08 }}
+          whileHover={{ scale: 1.12 }}
           whileTap={{ scale: 0.92 }}
           onClick={() => setIsChatOpen(true)}
-          className="fixed bottom-[76px] sm:bottom-[82px] right-3 sm:right-6 z-50 w-13 h-13 sm:w-14 sm:h-14 bg-gradient-to-tr from-[#F9A826] to-amber-300 hover:from-amber-400 hover:to-amber-200 text-[#0B4A3F] rounded-full shadow-2xl shadow-amber-500/60 border-2 border-white/90 flex items-center justify-center cursor-pointer backdrop-blur-xl transition-all ring-4 ring-emerald-950/40"
+          className="fixed bottom-[96px] sm:bottom-[102px] right-4 sm:right-8 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-black hover:bg-slate-800 text-white rounded-full shadow-xl border-2 border-black flex items-center justify-center cursor-pointer transition-all ring-4 ring-slate-100"
           title="Open Room Group Chat"
         >
           <div className="relative flex items-center justify-center">
-            <MessageCircle className="w-6 h-6 stroke-[2.5]" />
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-600 border border-white animate-ping" />
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white" />
+            <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.5] text-white" />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-black animate-ping" />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-black" />
           </div>
 
           {/* Unread Message Notification Badge */}
           {chatMessages.length > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 bg-[#0B4A3F] text-amber-300 text-[10px] font-black min-w-5 h-5 px-1 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
+            <span className="absolute -top-1.5 -right-1.5 bg-white text-black text-[10px] font-black min-w-5 h-5 px-1 rounded-full border-2 border-black flex items-center justify-center shadow-md">
               {chatMessages.length}
             </span>
           )}
@@ -1218,6 +1223,85 @@ export default function App() {
           onOpenAddExpense={() => setIsAddExpenseOpen(true)}
         />
       )}
+
+      {/* 2-Second Successful Login Logo Zoom Animation Splash Overlay */}
+      <AnimatePresence>
+        {isLoginSuccessAnimActive && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/95 backdrop-blur-2xl p-4 selection:bg-none"
+          >
+            <div className="flex flex-col items-center text-center space-y-6">
+              {/* Logo Container with Zoom In - Zoom Out Animation */}
+              <div className="relative">
+                {/* Glowing ring behind logo */}
+                <motion.div
+                  animate={{
+                    scale: [0.8, 1.4, 0.9, 1.3, 1],
+                    opacity: [0.3, 0.7, 0.4, 0.8, 0.5],
+                  }}
+                  transition={{
+                    duration: 2,
+                    ease: 'easeInOut',
+                    times: [0, 0.3, 0.55, 0.8, 1],
+                  }}
+                  className="absolute inset-0 -m-5 rounded-3xl bg-black/10 blur-xl"
+                />
+
+                <motion.div
+                  initial={{ scale: 0.2, opacity: 0 }}
+                  animate={{
+                    scale: [0.3, 1.28, 0.88, 1.12, 1],
+                    opacity: [0, 1, 1, 1, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    ease: 'easeInOut',
+                    times: [0, 0.3, 0.55, 0.8, 1],
+                  }}
+                  className="relative"
+                >
+                  <img
+                    src="/src/assets/images/uae_mess_logo_1785022712689.jpg"
+                    alt="UAE Mess System Logo"
+                    className="w-32 h-32 sm:w-40 sm:h-40 rounded-3xl object-cover border-4 border-black shadow-2xl"
+                  />
+
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.6, type: 'spring', stiffness: 350, damping: 20 }}
+                    className="absolute -bottom-2 -right-2 bg-black text-white p-2.5 rounded-2xl border-2 border-black shadow-lg flex items-center justify-center"
+                  >
+                    <CheckCircle2 className="w-6 h-6 stroke-[3] text-white" />
+                  </motion.div>
+                </motion.div>
+              </div>
+
+              {/* Text Details */}
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 0.4 }}
+                className="space-y-2"
+              >
+                <span className="inline-block bg-black text-white text-[10px] sm:text-xs font-black uppercase tracking-widest px-3.5 py-1 rounded-full border border-black shadow-xs">
+                  Portal Access Granted
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                  Login Successful!
+                </h2>
+                <p className="text-xs sm:text-sm font-bold text-slate-700 max-w-xs mx-auto">
+                  Welcome back, <span className="text-slate-950 font-black">{userAuth.name}</span>
+                </p>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

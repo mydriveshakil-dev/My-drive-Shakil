@@ -257,17 +257,47 @@ export default function App() {
 
     // 2. Expenses subscription - Instant multi-device sync
     const unsubExp = subscribeToExpenses(group.id, (remoteExpenses) => {
-      if (Array.isArray(remoteExpenses)) {
+      if (remoteExpenses && remoteExpenses.length > 0) {
         setExpenses(remoteExpenses);
         localStorage.setItem(`room_expenses_${group.id}`, JSON.stringify(remoteExpenses));
+      } else if (remoteExpenses && remoteExpenses.length === 0) {
+        const saved = localStorage.getItem(`room_expenses_${group.id}`);
+        let localExpenses: Expense[] = [];
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) localExpenses = parsed;
+          } catch (e) {}
+        }
+        if (localExpenses.length > 0) {
+          localExpenses.forEach((exp) => saveExpenseToFirestore({ ...exp, groupId: group.id }, group.id));
+          setExpenses(localExpenses);
+        } else {
+          setExpenses([]);
+        }
       }
     });
 
     // 3. Utilities subscription - Instant multi-device sync
     const unsubUtil = subscribeToUtilities(group.id, (remoteUtilities) => {
-      if (Array.isArray(remoteUtilities)) {
+      if (remoteUtilities && remoteUtilities.length > 0) {
         setUtilities(remoteUtilities);
         localStorage.setItem(`room_utilities_${group.id}`, JSON.stringify(remoteUtilities));
+      } else if (remoteUtilities && remoteUtilities.length === 0) {
+        const saved = localStorage.getItem(`room_utilities_${group.id}`);
+        let localUtils: UtilityBill[] = [];
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) localUtils = parsed;
+          } catch (e) {}
+        }
+        if (localUtils.length > 0) {
+          localUtils.forEach((util) => saveUtilityToFirestore({ ...util, groupId: group.id }, group.id));
+          setUtilities(localUtils);
+        } else {
+          setUtilities([]);
+        }
       }
     });
 
@@ -281,9 +311,24 @@ export default function App() {
 
     // 5. Chat messages subscription - Instant multi-device sync
     const unsubChat = subscribeToChatMessages(group.id, (remoteMsgs) => {
-      if (Array.isArray(remoteMsgs)) {
+      if (remoteMsgs && remoteMsgs.length > 0) {
         setChatMessages(remoteMsgs);
         localStorage.setItem(`room_chat_messages_${group.id}`, JSON.stringify(remoteMsgs));
+      } else if (remoteMsgs && remoteMsgs.length === 0) {
+        const saved = localStorage.getItem(`room_chat_messages_${group.id}`);
+        let localMsgs: ChatMessage[] = [];
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) localMsgs = parsed;
+          } catch (e) {}
+        }
+        if (localMsgs.length > 0) {
+          localMsgs.forEach((msg) => saveChatMessageToFirestore(group.id, { ...msg, groupId: group.id }));
+          setChatMessages(localMsgs);
+        } else {
+          setChatMessages([]);
+        }
       }
     });
 
@@ -1146,6 +1191,7 @@ export default function App() {
       <UaeLoginModal
         isOpen={isLoginModalOpen}
         defaultEmail={userAuth.email || 'mydriveshakil@gmail.com'}
+        allGroups={allGroups}
         onLoginSuccess={handleLoginSuccess}
       />
 

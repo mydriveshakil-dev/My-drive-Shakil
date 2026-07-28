@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserAuthProfile } from '../types';
+import { UserAuthProfile, Group, Member } from '../types';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 import { loginWithGoogleAuth, getUserProfileFromFirestore } from '../lib/firebase';
 import {
@@ -19,14 +19,58 @@ import { GlassContainer } from './GlassContainer';
 interface UaeLoginModalProps {
   isOpen: boolean;
   defaultEmail: string;
+  allGroups?: Group[];
   onLoginSuccess: (authData: UserAuthProfile) => void;
 }
 
 const SAVED_CREDENTIALS_KEY = 'uae_saved_login_credentials';
 
+function cleanPhone(p?: string): string {
+  if (!p) return '';
+  return p.replace(/\D/g, '');
+}
+
+function isPhoneMatch(p1?: string, p2?: string): boolean {
+  if (!p1 || !p2) return false;
+  const c1 = cleanPhone(p1);
+  const c2 = cleanPhone(p2);
+  if (!c1 || !c2) return false;
+  if (c1 === c2) return true;
+  if (c1.length >= 7 && c2.length >= 7) {
+    return c1.slice(-7) === c2.slice(-7);
+  }
+  return false;
+}
+
+function isNameMatch(inputName: string, registeredName: string): boolean {
+  if (!inputName || !registeredName) return false;
+
+  const norm1 = inputName.trim().toLowerCase().replace(/\s+/g, ' ');
+  const norm2 = registeredName.trim().toLowerCase().replace(/\s+/g, ' ');
+
+  if (norm1 === norm2) return true;
+
+  const clean1 = norm1.replace(/[^a-z0-9]/g, '');
+  const clean2 = norm2.replace(/[^a-z0-9]/g, '');
+
+  if (clean1 === clean2) return true;
+  if (clean1.length >= 3 && clean2.length >= 3) {
+    if (clean1.includes(clean2) || clean2.includes(clean1)) return true;
+  }
+
+  const words1 = norm1.split(' ').filter((w) => w.length > 2);
+  const words2 = norm2.split(' ').filter((w) => w.length > 2);
+
+  const overlappingWords = words1.filter((w) => words2.includes(w));
+  if (overlappingWords.length > 0) return true;
+
+  return false;
+}
+
 export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
   isOpen,
   defaultEmail,
+  allGroups,
   onLoginSuccess,
 }) => {
   // Form State
@@ -88,8 +132,15 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
+    const trimmedName = fullName.trim();
     const trimmedMobile = mobileNumber.trim();
     const trimmedPass = userPassword.trim();
+
+    if (!trimmedName) {
+      triggerHaptic(hapticPatterns.error);
+      setLoginError('Please enter your Full Name.');
+      return;
+    }
 
     if (!trimmedMobile) {
       triggerHaptic(hapticPatterns.error);
@@ -108,7 +159,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
       localStorage.setItem(
         SAVED_CREDENTIALS_KEY,
         JSON.stringify({
-          fullName: fullName.trim(),
+          fullName: trimmedName,
           mobileNumber: trimmedMobile,
           password: trimmedPass,
           rememberMe: true,
@@ -137,7 +188,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
 
       // Authenticate as App Administrator
       onLoginSuccess({
-        name: fullName.trim() || 'KAZI MD SHAKIL (App Admin)',
+        name: trimmedName || 'KAZI MD SHAKIL (App Admin)',
         email: defaultEmail || 'mydriveshakil@gmail.com',
         mobileNumber: trimmedMobile,
         password: trimmedPass,
@@ -149,11 +200,45 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
       return;
     }
 
-    // Cloud Lookup check for multi-device cross login
+    // Member Validation: Lookup in allGroups and Cloud Firestore
     setIsSearchingCloud(true);
     const cloudProfile = await getUserProfileFromFirestore(trimmedMobile);
     setIsSearchingCloud(false);
 
+    let foundMember: Member | null = null;
+    if (allGroups && allGroups.length > 0) {
+      for (const g of allGroups) {
+        if (g.members) {
+          const match = g.members.find(
+            (m) =>
+              isPhoneMatch(m.mobileNumber, trimmedMobile) ||
+              isPhoneMatch(m.phone, trimmedMobile)
+          );
+          if (match) {
+            foundMember = match;
+            break;
+          }
+        }
+      }
+    }
+
+    const registeredName = foundMember?.name || cloudProfile?.name;
+
+    // 1. Mobile number registration check
+    if (!foundMember && !cloudProfile) {
+      triggerHaptic(hapticPatterns.error);
+      setLoginError(`Mobile number (${trimmedMobile}) is not registered in any mess group by Admin. Please contact Admin to add your account.`);
+      return;
+    }
+
+    // 2. Full Name match check against Admin-created name
+    if (registeredName && !isNameMatch(trimmedName, registeredName)) {
+      triggerHaptic(hapticPatterns.error);
+      setLoginError(`Full Name does not match the name registered by Admin for this mobile number ("${registeredName}"). Please enter the exact name created by Admin.`);
+      return;
+    }
+
+    // 3. Password check
     if (cloudProfile && cloudProfile.password && cloudProfile.password !== trimmedPass) {
       triggerHaptic(hapticPatterns.error);
       setLoginError('Incorrect password for this mobile number.');
@@ -165,7 +250,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
     triggerHaptic(hapticPatterns.success);
 
     onLoginSuccess({
-      name: fullName.trim() || cloudProfile?.name || undefined,
+      name: registeredName || trimmedName,
       email: defaultEmail || cloudProfile?.email || 'user@mess.com',
       mobileNumber: trimmedMobile,
       password: trimmedPass,
@@ -205,7 +290,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                 Member & Admin Portal Access
               </h2>
               <p className="text-[11px] sm:text-xs text-emerald-200/80 font-medium truncate">
-                Log in using Mobile Number & Password
+                Log in using Full Name, Mobile Number & Password
               </p>
             </div>
           </div>
@@ -216,15 +301,15 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
           <div className="bg-emerald-950/70 border border-emerald-400/30 p-3 rounded-2xl text-xs text-emerald-200 leading-relaxed flex items-start gap-2">
             <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div>
-              Enter your <strong>Mobile Number</strong> and <strong>Password</strong> to access your group. Data automatically syncs across all devices logged into the same account.
+              Enter your <strong>Full Name</strong> (must match the name registered by Admin) and <strong>Mobile Number</strong> with Password to log in.
             </div>
           </div>
 
-          {/* 1. Name Field (for new registrations) */}
+          {/* 1. Name Field */}
           <div>
             <label className="block text-xs font-bold text-emerald-200 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-[#F9A826]" />
-              Full Name <span className="text-[10px] text-amber-300 font-normal lowercase">(for new registrations)</span>
+              Full Name * <span className="text-[10px] text-amber-300 font-normal lowercase">(must match Admin registered name)</span>
             </label>
             <input
               type="text"

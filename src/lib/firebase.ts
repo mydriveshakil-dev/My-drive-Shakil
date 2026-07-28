@@ -57,13 +57,24 @@ export function subscribeToAllGroups(onUpdate: (groups: Group[]) => void) {
   );
 }
 
+function removeUndefinedFields<T extends Record<string, any>>(obj: T): T {
+  const cleanObj: Record<string, any> = { ...obj };
+  Object.keys(cleanObj).forEach((key) => {
+    if (cleanObj[key] === undefined) {
+      delete cleanObj[key];
+    }
+  });
+  return cleanObj as T;
+}
+
 // User Profiles Cloud Sync for Multi-Device Login
 export async function saveUserProfileToFirestore(profile: UserAuthProfile) {
   try {
     const rawId = profile.mobileNumber || profile.email || 'user';
     const cleanDocId = rawId.replace(/[^a-zA-Z0-9_\-]/g, '_');
     const userRef = doc(db, 'users', cleanDocId);
-    await setDoc(userRef, { ...profile, updatedAt: new Date().toISOString() }, { merge: true });
+    const payload = removeUndefinedFields({ ...profile, updatedAt: new Date().toISOString() });
+    await setDoc(userRef, payload, { merge: true });
   } catch (err) {
     console.error('Error saving user profile to Firestore:', err);
   }
@@ -139,7 +150,8 @@ export function subscribeToGroup(
 export async function saveGroupToFirestore(group: Group) {
   try {
     const groupRef = doc(db, 'groups', group.id);
-    await setDoc(groupRef, group, { merge: true });
+    const payload = removeUndefinedFields(group);
+    await setDoc(groupRef, payload, { merge: true });
   } catch (err) {
     console.error('Error saving group to Firestore:', err);
   }
@@ -181,7 +193,8 @@ export async function saveExpenseToFirestore(expense: Expense, activeGroupId?: s
   try {
     const expenseRef = doc(db, 'expenses', expense.id);
     const targetGroupId = expense.groupId || activeGroupId || 'group-room-3';
-    await setDoc(expenseRef, { ...expense, groupId: targetGroupId }, { merge: true });
+    const payload = removeUndefinedFields({ ...expense, groupId: targetGroupId });
+    await setDoc(expenseRef, payload, { merge: true });
   } catch (err) {
     console.error('Error saving expense to Firestore:', err);
   }
@@ -223,7 +236,8 @@ export async function saveUtilityToFirestore(utility: UtilityBill, activeGroupId
   try {
     const utilRef = doc(db, 'utilities', utility.id);
     const targetGroupId = utility.groupId || activeGroupId || 'group-room-3';
-    await setDoc(utilRef, { ...utility, groupId: targetGroupId }, { merge: true });
+    const payload = removeUndefinedFields({ ...utility, groupId: targetGroupId });
+    await setDoc(utilRef, payload, { merge: true });
   } catch (err) {
     console.error('Error saving utility to Firestore:', err);
   }
@@ -262,7 +276,8 @@ export function subscribeToRent(
 export async function saveRentToFirestore(groupId: string, rent: RentContribution) {
   try {
     const rentRef = doc(db, 'rent', groupId);
-    await setDoc(rentRef, rent, { merge: true });
+    const payload = removeUndefinedFields(rent);
+    await setDoc(rentRef, payload, { merge: true });
   } catch (err) {
     console.error('Error saving rent to Firestore:', err);
   }
@@ -297,7 +312,8 @@ export function subscribeToChatMessages(
 export async function saveChatMessageToFirestore(groupId: string, message: ChatMessage) {
   try {
     const msgRef = doc(db, 'chatMessages', message.id);
-    await setDoc(msgRef, { ...message, groupId }, { merge: true });
+    const payload = removeUndefinedFields({ ...message, groupId });
+    await setDoc(msgRef, payload, { merge: true });
   } catch (err) {
     console.error('Error saving chat message to Firestore:', err);
   }

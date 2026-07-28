@@ -123,7 +123,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           </div>
 
           <div>
-            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Total Group Expenses</p>
+            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">TOTAL EXPENSES</p>
             <div className="mt-1">
               <DualCurrencyDisplay
                 amount={totalExpenses}
@@ -142,37 +142,87 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         </div>
       </GlassContainer>
 
-      {/* 2. Settlement Info Box */}
+      {/* 2. Mess Food Expense Only Box */}
       <GlassContainer
         variant="card"
         blur="2xl"
-        className="p-4 rounded-3xl border-2 border-black shadow-lg bg-white text-slate-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+        className="p-5 rounded-3xl border-2 border-black shadow-lg bg-white text-slate-900 space-y-3"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-black text-white font-black flex items-center justify-center shrink-0 border border-black shadow-xs">
-            <Receipt className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-extrabold text-slate-900">Current Settlement Cycle</h3>
-              <span className="bg-black text-white text-[10px] font-black px-2.5 py-0.5 rounded-full border border-black">
-                Pending Settlement
-              </span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-black/15">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-black text-white font-black flex items-center justify-center shrink-0 border border-black shadow-xs">
+              <Utensils className="w-5 h-5 text-white" />
             </div>
-            <p className="text-xs text-slate-700 font-semibold mt-0.5">
-              Cycle: <strong>{group.billingCycle}</strong> (Mess meal rate: ~{dailyMealRate.toFixed(2)} AED/day)
-            </p>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base font-black text-slate-950 tracking-tight">
+                  Mess Food Expenses (মেস খাবার খরচ)
+                </h3>
+                <span className="bg-emerald-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-700 shadow-xs">
+                  Food & Grocery Only
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 font-bold mt-0.5">
+                Excludes Room Rent & Utility Bills (রুম রেন্ট ও অন্যান্য বিল ব্যতীত)
+              </p>
+            </div>
+          </div>
+
+          <div className="self-start sm:self-auto flex items-center gap-2">
+            <button
+              onClick={() => onNavigateTab('report')}
+              className="bg-black hover:bg-slate-800 text-white text-xs font-black px-3.5 py-2 rounded-2xl transition-all flex items-center gap-1.5 shadow-md active:scale-95 border border-black cursor-pointer"
+            >
+              <span>Settlement Report</span>
+              <ArrowRight className="w-3.5 h-3.5 text-white" />
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
-          <button
-            onClick={() => onNavigateTab('report')}
-            className="bg-black hover:bg-slate-800 text-white text-xs font-black px-4 py-2 rounded-2xl transition-all flex items-center gap-1.5 shadow-md active:scale-95 border border-black cursor-pointer"
-          >
-            <span>Calculate Settlements</span>
-            <ArrowRight className="w-3.5 h-3.5 text-white" />
-          </button>
+        {/* Amount & Key Metrics Row for Mess Food Expense Only */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          <div className="bg-slate-50 p-3.5 rounded-2xl border border-black/20">
+            <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider block">
+              Total Mess Food Spent
+            </span>
+            <div className="mt-1">
+              <DualCurrencyDisplay
+                amount={messTotal}
+                baseCurrency={group.currency}
+                preferredCurrency={preferredCurrency}
+                customRates={customRates}
+                layout="pill"
+                baseClassName="text-2xl font-black text-slate-950"
+              />
+            </div>
+            <span className="text-[10px] text-slate-500 font-bold block mt-1">
+              {expenses.filter((e) => e.type === 'mess').length} Grocery/Food Receipts
+            </span>
+          </div>
+
+          <div className="bg-slate-50 p-3.5 rounded-2xl border border-black/20">
+            <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider block">
+              Daily Meal Rate
+            </span>
+            <div className="text-2xl font-black text-slate-950 mt-1">
+              ~{dailyMealRate.toFixed(2)} <span className="text-sm font-bold text-slate-700">{group.currency}/day</span>
+            </div>
+            <span className="text-[10px] text-slate-500 font-bold block mt-1">
+              Mess Rate per Person/Day
+            </span>
+          </div>
+
+          <div className="bg-slate-50 p-3.5 rounded-2xl border border-black/20">
+            <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider block">
+              Total Mess Days Logged
+            </span>
+            <div className="text-2xl font-black text-slate-950 mt-1">
+              {totalMessDays} <span className="text-sm font-bold text-slate-700">Days</span>
+            </div>
+            <span className="text-[10px] text-slate-500 font-bold block mt-1">
+              Sum of active member days
+            </span>
+          </div>
         </div>
       </GlassContainer>
 

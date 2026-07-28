@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Group, UtilityBill, RentContribution, UserAuthProfile } from '../types';
-import { Zap, Home as HomeIcon, Plus, CheckCircle2, Clock, Edit2, AlertCircle, DollarSign, Calculator, Trash2 } from 'lucide-react';
+import { Zap, Home as HomeIcon, Plus, CheckCircle2, Clock, Edit2, AlertCircle, DollarSign, Calculator, Trash2, Lock, Unlock } from 'lucide-react';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 import { GlassContainer } from './GlassContainer';
 import { evaluateMathExpression } from '../utils/mathEvaluator';
+import { isCategoryPermittedForUser } from '../utils/permissionUtils';
 
 interface UtilitiesAndRentViewProps {
   group: Group;
@@ -40,6 +41,16 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
       (currentUser?.name && m.name.toLowerCase() === currentUser.name.toLowerCase())
   ) || group.members[0];
 
+  const hasRentPermission = isCategoryPermittedForUser('rent', group, currentUser);
+  const hasUtilityPermission =
+    isCategoryPermittedForUser('electricity', group, currentUser) ||
+    isCategoryPermittedForUser('internet', group, currentUser) ||
+    isCategoryPermittedForUser('water', group, currentUser) ||
+    isCategoryPermittedForUser('gas', group, currentUser) ||
+    isCategoryPermittedForUser('cleaner', group, currentUser);
+
+  const visibleUtilities = utilities.filter((u) => isCategoryPermittedForUser(u.category, group, currentUser));
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUtilName, setNewUtilName] = useState('');
   const [newUtilAmount, setNewUtilAmount] = useState('');
@@ -52,15 +63,39 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
     }
   }, [showAddModal, loggedInMember]);
 
+  const now = new Date();
+  const currentMonthCycle = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
   const [totalRentInput, setTotalRentInput] = useState((rent?.totalRent || 0).toString());
   const [paidRentMembers, setPaidRentMembers] = useState<string[]>(rent?.paidMemberIds || []);
 
   useEffect(() => {
     if (rent) {
-      setTotalRentInput((rent.totalRent || 0).toString());
-      setPaidRentMembers(rent.paidMemberIds || []);
+      // Auto-reset on the 1st of next month if cycle has passed
+      if (rent.cycle && rent.cycle < currentMonthCycle) {
+        const resetRent: RentContribution = {
+          ...rent,
+          totalRent: 0,
+          paidMemberIds: [],
+          cycle: currentMonthCycle,
+          perMemberAmount: 0,
+          status: 'pending',
+        };
+        setTotalRentInput('0');
+        setPaidRentMembers([]);
+        if (onUpdateRent) {
+          onUpdateRent(resetRent);
+        }
+      } else {
+        setTotalRentInput((rent.totalRent || 0).toString());
+        setPaidRentMembers(rent.paidMemberIds || []);
+      }
     }
-  }, [rent?.totalRent, rent?.paidMemberIds]);
+  }, [rent?.totalRent, rent?.paidMemberIds, rent?.cycle, currentMonthCycle]);
+
+  const isAdmin = currentUser?.role === 'admin';
+  const isRentAmountSet = (rent?.totalRent || 0) > 0;
+  const isRentInputLocked = isRentAmountSet && !isAdmin;
 
   const rentParticipatingMembers = group.members.filter(
     (m) => !m.includedCategories || m.includedCategories.length === 0 || m.includedCategories.includes('rent')
@@ -76,6 +111,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
   const currentMemberRentShare = parsedTotalRent / rentParticipatingCount;
 
   const handleRentInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isRentInputLocked) return;
     const val = e.target.value;
     setTotalRentInput(val);
     const parsed = parseFloat(val);
@@ -84,6 +120,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         ...rent,
         totalRent: parsed,
         perMemberAmount: parsed / rentParticipatingCount,
+        cycle: rent.cycle || currentMonthCycle,
       };
       if (onUpdateRent) {
         onUpdateRent(updatedRent);
@@ -92,8 +129,16 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
   };
 
   const toggleMemberRentPaid = (memberId: string) => {
+    const isCurrentlyPaid = paidRentMembers.includes(memberId);
+    
+    // Member cannot untick once marked as paid for the month unless Admin
+    if (isCurrentlyPaid && !isAdmin) {
+      alert('This rent payment status is locked for the current month once marked as paid. It will automatically unlock & reset on the 1st day of next month (or contact Admin).');
+      return;
+    }
+
     let updated: string[];
-    if (paidRentMembers.includes(memberId)) {
+    if (isCurrentlyPaid) {
       updated = paidRentMembers.filter((id) => id !== memberId);
     } else {
       updated = [...paidRentMembers, memberId];
@@ -103,6 +148,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
       onUpdateRent({
         ...rent,
         paidMemberIds: updated,
+        cycle: rent.cycle || currentMonthCycle,
       });
     }
   };
@@ -367,18 +413,44 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         <div className="bg-slate-50 p-4 rounded-2xl border border-black space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex-1">
-              <label className="block text-xs font-black text-slate-900 uppercase tracking-wider mb-1">
-                Total Rent Amount (AED)
-              </label>
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <label className="block text-xs font-black text-slate-900 uppercase tracking-wider">
+                  Total Rent Amount (AED)
+                </label>
+                {isRentInputLocked ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-900 bg-amber-100 border border-amber-400 px-2.5 py-0.5 rounded-full shadow-xs">
+                    <Lock className="w-3 h-3 text-amber-800" />
+                    Locked for {rent.cycle || currentMonthCycle} (Auto-resets on 1st of next month)
+                  </span>
+                ) : isAdmin && isRentAmountSet ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-900 bg-emerald-100 border border-emerald-400 px-2.5 py-0.5 rounded-full shadow-xs">
+                    <Unlock className="w-3 h-3 text-emerald-800" />
+                    Admin Edit Mode (Locked for Members)
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-white border border-black/30 px-2 py-0.5 rounded-full">
+                    Enter rent amount to lock for month
+                  </span>
+                )}
+              </div>
+
               <div className="relative max-w-xs">
                 <input
                   type="number"
                   value={totalRentInput}
                   onChange={handleRentInputChange}
+                  disabled={isRentInputLocked}
                   placeholder="e.g. 3500"
-                  className="w-full bg-white border border-black rounded-xl px-3.5 py-2 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-black"
+                  className={`w-full bg-white border border-black rounded-xl px-3.5 py-2 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-black ${
+                    isRentInputLocked ? 'bg-slate-100 text-slate-500 cursor-not-allowed opacity-80' : ''
+                  }`}
                 />
               </div>
+              {isRentInputLocked && (
+                <p className="text-[11px] font-semibold text-amber-800 mt-1">
+                  * Rent modification is locked for the current month. It will automatically reset and unlock on the 1st day of next month.
+                </p>
+              )}
             </div>
 
             <div className="bg-white p-3 rounded-xl border border-black text-right shadow-xs">
@@ -397,19 +469,26 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
         {/* Member rent status list with checkboxes */}
         <div>
-          <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
-            Member Rent Payment Status ({currentMemberRentShare.toFixed(2)} AED / person)
-          </h4>
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              Member Rent Payment Status ({currentMemberRentShare.toFixed(2)} AED / person)
+            </h4>
+            <span className="text-[10px] text-slate-600 font-bold bg-slate-100 px-2.5 py-0.5 rounded-full border border-black/20">
+              1-Time Lock per month • Auto-resets on 1st of next month
+            </span>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
             {group.members.map((member) => {
               const isPaid = paidRentMembers.includes(member.id);
+              const isUntickDisabled = isPaid && !isAdmin;
+
               return (
                 <div
                   key={member.id}
                   className={`p-3 rounded-2xl border flex items-center justify-between text-xs font-semibold transition-all ${
                     isPaid
-                      ? 'bg-black text-white border-black'
+                      ? 'bg-black text-white border-black shadow-sm'
                       : 'bg-white text-slate-900 border-black'
                   }`}
                 >
@@ -417,12 +496,22 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                     <input
                       type="checkbox"
                       checked={isPaid}
+                      disabled={isUntickDisabled}
                       onChange={() => toggleMemberRentPaid(member.id)}
-                      className="w-4 h-4 rounded text-black focus:ring-black cursor-pointer accent-black"
+                      className={`w-4 h-4 rounded text-black focus:ring-black accent-black ${
+                        isUntickDisabled ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
+                      }`}
+                      title={
+                        isUntickDisabled
+                          ? 'Payment status locked for current month. Resets on 1st of next month.'
+                          : 'Click to mark rent paid'
+                      }
                     />
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
-                      isPaid ? 'bg-white text-black' : 'bg-black text-white'
-                    }`}>
+                    <span
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
+                        isPaid ? 'bg-white text-black' : 'bg-black text-white'
+                      }`}
+                    >
                       {member.avatar}
                     </span>
                     <span className="truncate max-w-[90px]">{member.name}</span>
@@ -432,8 +521,19 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                     <span className="text-[11px] font-mono">
                       {currentMemberRentShare.toFixed(0)} AED
                     </span>
-                    <span className="text-xs font-extrabold">
-                      {isPaid ? 'Paid' : 'Pending'}
+                    <span className="text-xs font-extrabold flex items-center gap-1">
+                      {isPaid ? (
+                        <>
+                          <span className="text-emerald-400">Paid</span>
+                          {isUntickDisabled ? (
+                            <span title="Locked for current month">🔒</span>
+                          ) : (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          )}
+                        </>
+                      ) : (
+                        'Pending'
+                      )}
                     </span>
                   </div>
                 </div>

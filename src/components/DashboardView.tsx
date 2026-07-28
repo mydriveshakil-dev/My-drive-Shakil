@@ -58,7 +58,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const utilitiesTotal = utilities.reduce((sum, u) => sum + u.amount, 0);
   const rentTotal = rent?.totalRent || 0;
 
-  const totalGroupExpenses = messTotal + generalTotal + utilitiesTotal + rentTotal;
+  // Exclude room rent from total dashboard group expenses as room rent is strictly managed in the Landlord Monthly Rent box
+  const totalGroupExpenses = messTotal + generalTotal + utilitiesTotal;
   const activeMembers = group.members.filter((m) => m.active);
   const activeMembersCount = activeMembers.length || 1;
   const avgPerPerson = totalGroupExpenses / activeMembersCount;
@@ -95,7 +96,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           <div>
             <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-              Total Room Budget & Expenses ({group.name})
+              TOTAL EXPENSES
             </span>
             <div className="mt-1">
               <DualCurrencyDisplay
@@ -284,7 +285,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Rent
             </span>
           </div>
-          <span className="text-xs text-slate-700 font-semibold block">Landlord Room Rent</span>
+          <span className="text-xs text-slate-700 font-bold block">Landlord Monthly Rent</span>
           <div className="mt-1">
             <DualCurrencyDisplay
               amount={rentTotal}

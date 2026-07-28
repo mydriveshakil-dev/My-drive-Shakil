@@ -4,6 +4,7 @@ import { X, Utensils, ShoppingBag, Upload, Calendar as CalendarIcon, UserCheck, 
 import { GlassContainer } from './GlassContainer';
 import { evaluateMathExpression } from '../utils/mathEvaluator';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
+import { isCategoryPermittedForMember, isCategoryPermittedForUser } from '../utils/permissionUtils';
 
 interface AddExpenseModalProps {
   group: Group;
@@ -44,24 +45,40 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
     active: true,
   };
 
-  const [category, setCategory] = useState<ExpenseCategory>('mess');
+  const isMessPermitted = isCategoryPermittedForUser('mess', group, currentUser);
+  const isGeneralPermitted = isCategoryPermittedForUser('general', group, currentUser);
+
+  const [category, setCategory] = useState<ExpenseCategory>(() => {
+    if (!isMessPermitted && isGeneralPermitted) return 'general';
+    return 'mess';
+  });
+
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [paidById, setPaidById] = useState(loggedInMember?.id || 'm1');
-  const [selectedMembers, setSelectedMembers] = useState<string[]>(group.members.map((m) => m.id));
+
+  // Filter members eligible for the selected category based on scope permission
+  const eligibleMembers = group.members.filter((m) => isCategoryPermittedForMember(m, category));
+
+  const [selectedMembers, setSelectedMembers] = useState<string[]>(eligibleMembers.map((m) => m.id));
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState('');
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isMessPermitted && isGeneralPermitted && category === 'mess') {
+      setCategory('general');
+    }
+  }, [isMessPermitted, isGeneralPermitted, category]);
+
+  useEffect(() => {
     if (isOpen) {
-      // Default to select ALL members when modal opens
-      setSelectedMembers(group.members.map((m) => m.id));
+      setSelectedMembers(eligibleMembers.map((m) => m.id));
       if (loggedInMember) {
         setPaidById(loggedInMember.id);
       }
     }
-  }, [isOpen, group.members, loggedInMember]);
+  }, [isOpen, category, group.members, loggedInMember]);
 
   if (!isOpen) return null;
 
@@ -76,10 +93,10 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   };
 
   const handleSelectAllMembers = () => {
-    if (selectedMembers.length === group.members.length) {
+    if (selectedMembers.length === eligibleMembers.length) {
       setSelectedMembers([paidById]);
     } else {
-      setSelectedMembers(group.members.map((m) => m.id));
+      setSelectedMembers(eligibleMembers.map((m) => m.id));
     }
   };
 
@@ -185,33 +202,43 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
         {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-5 overflow-y-auto flex-1">
           {/* Category Tabs: Mess Bill vs General Expense */}
-          <div className="grid grid-cols-2 gap-2 bg-slate-100 border border-black p-1.5 rounded-2xl">
-            <button
-              type="button"
-              onClick={() => setCategory('mess')}
-              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                category === 'mess'
-                  ? 'bg-black text-white shadow-md font-black border border-black'
-                  : 'bg-white text-black border border-black hover:bg-slate-200'
-              }`}
-            >
-              <Utensils className="w-4 h-4" />
-              <span>Mess Bill</span>
-            </button>
+          {(isMessPermitted || isGeneralPermitted) ? (
+            <div className={`grid ${isMessPermitted && isGeneralPermitted ? 'grid-cols-2' : 'grid-cols-1'} gap-2 bg-slate-100 border border-black p-1.5 rounded-2xl`}>
+              {isMessPermitted && (
+                <button
+                  type="button"
+                  onClick={() => setCategory('mess')}
+                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    category === 'mess'
+                      ? 'bg-black text-white shadow-md font-black border border-black'
+                      : 'bg-white text-black border border-black hover:bg-slate-200'
+                  }`}
+                >
+                  <Utensils className="w-4 h-4" />
+                  <span>Mess Bill</span>
+                </button>
+              )}
 
-            <button
-              type="button"
-              onClick={() => setCategory('general')}
-              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                category === 'general'
-                  ? 'bg-black text-white shadow-md font-black border border-black'
-                  : 'bg-white text-black border border-black hover:bg-slate-200'
-              }`}
-            >
-              <ShoppingBag className="w-4 h-4" />
-              <span>General Expense</span>
-            </button>
-          </div>
+              {isGeneralPermitted && (
+                <button
+                  type="button"
+                  onClick={() => setCategory('general')}
+                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    category === 'general'
+                      ? 'bg-black text-white shadow-md font-black border border-black'
+                      : 'bg-white text-black border border-black hover:bg-slate-200'
+                  }`}
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>General Expense</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl text-xs text-amber-900 font-bold text-center">
+              Your assigned member scope is restricted (e.g. Landlord Rent / Utilities only).
+            </div>
+          )}
 
           {/* Amount Field */}
           <div>
@@ -378,19 +405,19 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Shared With ({selectedMembers.length}/{group.members.length} members)
+                Shared With ({selectedMembers.length}/{eligibleMembers.length} members)
               </label>
               <button
                 type="button"
                 onClick={handleSelectAllMembers}
                 className="text-xs font-bold text-slate-900 hover:underline cursor-pointer"
               >
-                {selectedMembers.length === group.members.length ? 'Deselect All' : 'Select All'}
+                {selectedMembers.length === eligibleMembers.length ? 'Deselect All' : 'Select All'}
               </button>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {group.members.map((member) => {
+              {eligibleMembers.map((member) => {
                 const isSelected = selectedMembers.includes(member.id);
                 return (
                   <button

@@ -45,7 +45,6 @@ import { GlassContainer } from './components/GlassContainer';
 import { BottomNavBar, AppTabType } from './components/BottomNavBar';
 import { CheckCircle2, MessageCircle, Plus, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import wallpaperImg from './assets/images/dark_blue_wallpaper_1784929378477.jpg';
 
 function cleanPhone(p?: string): string {
   if (!p) return '';
@@ -965,17 +964,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col font-sans text-slate-900 selection:bg-emerald-500 selection:text-white antialiased max-w-full overflow-x-hidden">
-      {/* Global Background Wallpaper & Glowing Liquid Orbs */}
-      <div
-        className="ios26-wallpaper-bg"
-        style={{ backgroundImage: `url(${wallpaperImg})` }}
-      />
-      <div className="ios26-ambient-orbs">
-        <div className="orb-1" />
-        <div className="orb-2" />
-        <div className="orb-3" />
-      </div>
+    <div className="min-h-screen relative flex flex-col font-sans text-slate-900 selection:bg-emerald-500 selection:text-white antialiased max-w-full overflow-x-hidden bg-white">
+      {/* Global Background White Theme */}
+      <div className="ios26-wallpaper-bg bg-white" />
 
       {/* Toast Sync Notification */}
       {syncNotification && (

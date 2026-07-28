@@ -31,7 +31,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
 
   return (
     <div className="fixed bottom-7 left-0 right-0 z-40 px-2 sm:px-4 flex flex-col items-center pointer-events-none">
-      {/* Central circular floating action button (+) restored */}
+      {/* Central circular floating action button (+) */}
       <div className="pointer-events-auto mb-2 relative z-50">
         <motion.button
           whileHover={{ scale: 1.12 }}
@@ -40,7 +40,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
             triggerHaptic(hapticPatterns.click);
             onOpenAddExpense();
           }}
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#F9A826] to-amber-300 hover:from-amber-400 hover:to-amber-200 text-slate-950 shadow-xl shadow-amber-500/30 border-2 border-white flex items-center justify-center transition-all cursor-pointer ring-4 ring-slate-200"
+          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-black hover:bg-slate-800 text-white shadow-xl border-2 border-black flex items-center justify-center transition-all cursor-pointer ring-4 ring-slate-100"
           title="Add New Expense (+)"
         >
           <Plus className="w-7 h-7 sm:w-8 sm:h-8 stroke-[3.2]" />
@@ -50,7 +50,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
       <GlassContainer
         variant="card"
         blur="3xl"
-        className="pointer-events-auto w-full max-w-lg rounded-full p-1.5 sm:p-2 border border-white/30 shadow-2xl backdrop-blur-3xl bg-[#092621]/95 text-white"
+        className="pointer-events-auto w-full max-w-lg rounded-full p-1.5 sm:p-2 border-2 border-black shadow-2xl bg-white text-black"
       >
         <div className="flex items-center justify-around relative px-1 sm:px-2">
           {tabs.map((tab) => {
@@ -61,13 +61,13 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
                 key={tab.id}
                 onClick={() => handleTabClick(tab.id)}
                 className={`flex flex-col items-center justify-center py-1.5 px-3 sm:px-4 rounded-full transition-all relative cursor-pointer ${
-                  isActive ? 'text-[#0B4A3F] font-black' : 'text-emerald-100/70 hover:text-white'
+                  isActive ? 'text-white font-black' : 'text-black hover:text-slate-700'
                 }`}
               >
                 {isActive && (
                   <motion.div
                     layoutId="activeBottomTabPill"
-                    className="absolute inset-0 bg-[#F9A826] rounded-full shadow-lg shadow-amber-500/20 border border-white/40"
+                    className="absolute inset-0 bg-black rounded-full shadow-lg border border-black"
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   />
                 )}

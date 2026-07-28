@@ -42,21 +42,21 @@ export const GlassContainer: React.FC<GlassContainerProps> = ({
 
   const variantStyles: Record<GlassVariant, string> = {
     default:
-      'bg-[#0B4A3F]/85 text-white border border-white/20 shadow-xl backdrop-blur-2xl',
+      'bg-white text-slate-900 border border-black shadow-md rounded-3xl',
     card:
-      'bg-[#0d2a24]/90 text-white border border-white/20 shadow-2xl backdrop-blur-2xl rounded-3xl',
+      'bg-white text-slate-900 border border-black shadow-md rounded-3xl',
     emerald:
-      'bg-[#0B4A3F]/90 text-white border border-emerald-400/40 shadow-2xl backdrop-blur-3xl rounded-3xl',
+      'bg-white text-slate-900 border border-black shadow-md rounded-3xl',
     amber:
-      'bg-amber-950/70 text-amber-100 border border-amber-300/40 shadow-2xl backdrop-blur-3xl rounded-3xl',
+      'bg-white text-slate-900 border border-black shadow-md rounded-3xl',
     pill:
-      'bg-white/15 text-white border border-white/35 shadow-md backdrop-blur-xl rounded-full',
+      'bg-white text-slate-900 border border-black shadow-sm rounded-full',
     subtle:
-      'bg-[#0B4A3F]/50 text-white border border-white/15 backdrop-blur-xl shadow-xs rounded-2xl',
+      'bg-white text-slate-900 border border-black shadow-xs rounded-2xl',
     modal:
-      'bg-[#092621]/95 text-white border border-white/30 shadow-2xl backdrop-blur-3xl rounded-3xl',
+      'bg-white text-slate-900 border-2 border-black shadow-2xl rounded-3xl',
     dark:
-      'bg-black/70 text-white border border-white/25 shadow-2xl backdrop-blur-2xl rounded-3xl',
+      'bg-black text-white border border-black shadow-2xl rounded-3xl',
   };
 
   const hoverClass = hoverEffect

@@ -668,7 +668,7 @@ export default function App() {
     setIsLoginSuccessAnimActive(true);
     setTimeout(() => {
       setIsLoginSuccessAnimActive(false);
-    }, 2200);
+    }, 5200);
 
     if (authData.role === 'admin') {
       const targetGroup = group.id ? group : (allGroups[0] || group);
@@ -1225,78 +1225,81 @@ export default function App() {
         />
       )}
 
-      {/* 2-Second Successful Login Logo Zoom Animation Splash Overlay */}
+      {/* 5-Second Successful Login Logo Zoom Animation Splash Overlay */}
       <AnimatePresence>
         {isLoginSuccessAnimActive && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/95 backdrop-blur-2xl p-4 selection:bg-none"
+            transition={{ duration: 0.4 }}
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-white/95 backdrop-blur-2xl p-6 selection:bg-none"
           >
-            <div className="flex flex-col items-center text-center space-y-6">
-              {/* Logo Container with Zoom In - Zoom Out Animation */}
+            <div className="flex flex-col items-center text-center space-y-8 max-w-md mx-auto">
+              {/* Logo Container with 5-Second Continuous Zoom In - Zoom Out Animation */}
               <div className="relative">
                 {/* Glowing ring behind logo */}
                 <motion.div
                   animate={{
-                    scale: [0.8, 1.4, 0.9, 1.3, 1],
-                    opacity: [0.3, 0.7, 0.4, 0.8, 0.5],
+                    scale: [0.8, 1.45, 0.9, 1.35, 0.95, 1.2, 1],
+                    opacity: [0.3, 0.8, 0.4, 0.85, 0.5, 0.8, 0.6],
                   }}
                   transition={{
-                    duration: 2,
+                    duration: 4.8,
                     ease: 'easeInOut',
-                    times: [0, 0.3, 0.55, 0.8, 1],
+                    times: [0, 0.2, 0.4, 0.6, 0.75, 0.9, 1],
                   }}
-                  className="absolute inset-0 -m-5 rounded-3xl bg-black/10 blur-xl"
+                  className="absolute inset-0 -m-6 rounded-3xl bg-emerald-500/20 blur-2xl"
                 />
 
                 <motion.div
                   initial={{ scale: 0.2, opacity: 0 }}
                   animate={{
-                    scale: [0.3, 1.28, 0.88, 1.12, 1],
-                    opacity: [0, 1, 1, 1, 1],
+                    scale: [0.2, 1.3, 0.85, 1.18, 0.92, 1.08, 1],
+                    opacity: [0, 1, 1, 1, 1, 1, 1],
                   }}
                   transition={{
-                    duration: 2,
+                    duration: 4.8,
                     ease: 'easeInOut',
-                    times: [0, 0.3, 0.55, 0.8, 1],
+                    times: [0, 0.2, 0.4, 0.6, 0.75, 0.9, 1],
                   }}
                   className="relative"
                 >
                   <img
                     src={uaeMessLogo}
                     alt="UAE Mess System Logo"
-                    className="w-32 h-32 sm:w-40 sm:h-40 rounded-3xl object-cover border-4 border-black shadow-2xl"
+                    className="w-36 h-36 sm:w-48 sm:h-48 rounded-3xl object-cover border-4 border-black shadow-2xl"
                   />
 
+                  {/* Animated Green Circle with Tick Mark at Top Right of Logo */}
                   <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.6, type: 'spring', stiffness: 350, damping: 20 }}
-                    className="absolute -bottom-2 -right-2 bg-black text-white p-2.5 rounded-2xl border-2 border-black shadow-lg flex items-center justify-center"
+                    initial={{ scale: 0, opacity: 0, y: 10 }}
+                    animate={{ scale: [0, 1.35, 1], opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5, duration: 0.6, ease: 'backOut' }}
+                    className="absolute -top-4 -right-3 sm:-top-5 sm:-right-4 bg-emerald-500 text-white p-3 sm:p-3.5 rounded-full border-3 border-white shadow-2xl flex items-center justify-center ring-4 ring-emerald-400/40 z-10"
                   >
-                    <CheckCircle2 className="w-6 h-6 stroke-[3] text-white" />
+                    <CheckCircle2 className="w-7 h-7 sm:w-8 sm:h-8 stroke-[3] text-white" />
                   </motion.div>
                 </motion.div>
               </div>
 
-              {/* Text Details */}
+              {/* Text Details with Enlarged Typography */}
               <motion.div
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35, duration: 0.4 }}
-                className="space-y-2"
+                transition={{ delay: 0.4, duration: 0.5 }}
+                className="space-y-3"
               >
-                <span className="inline-block bg-black text-white text-[10px] sm:text-xs font-black uppercase tracking-widest px-3.5 py-1 rounded-full border border-black shadow-xs">
-                  Portal Access Granted
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                <div>
+                  <span className="inline-block bg-black text-white text-xs sm:text-sm font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-black shadow-md">
+                    Portal Access Granted
+                  </span>
+                </div>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-950 tracking-tight leading-tight">
                   Login Successful!
                 </h2>
-                <p className="text-xs sm:text-sm font-bold text-slate-700 max-w-xs mx-auto">
-                  Welcome back, <span className="text-slate-950 font-black">{userAuth.name}</span>
+                <p className="text-base sm:text-lg md:text-xl font-extrabold text-slate-800 max-w-sm mx-auto">
+                  Welcome back, <span className="text-emerald-600 font-black underline decoration-emerald-500/40">{userAuth.name}</span>
                 </p>
               </motion.div>
             </div>

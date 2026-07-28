@@ -44,28 +44,28 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   return (
     <header className="pt-4 pb-4 px-4 md:px-8 z-30 relative">
       <GlassContainer
-        variant="emerald"
+        variant="card"
         blur="3xl"
-        className="max-w-7xl mx-auto p-4 sm:p-5 rounded-3xl border border-white/30 shadow-2xl shadow-[#0B4A3F]/30"
+        className="max-w-7xl mx-auto p-4 sm:p-5 rounded-3xl border border-white/30 shadow-2xl backdrop-blur-3xl text-white"
       >
         <div className="space-y-4">
           {/* Top bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 pb-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/20 pb-3.5">
               <div className="flex items-center gap-3">
                 <img
                   src="/src/assets/images/uae_mess_logo_1785022712689.jpg"
                   alt="UAE MESS SYSTEM Logo"
-                  className="w-11 h-11 rounded-2xl object-cover border-2 border-amber-400/80 shadow-lg shadow-amber-500/20"
+                  className="w-11 h-11 rounded-2xl object-cover border-2 border-amber-400/80 shadow-xl shadow-amber-500/20"
                 />
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-black tracking-widest text-amber-300 uppercase">
+                    <span className="text-[10px] font-black tracking-widest text-emerald-200 uppercase">
                       UAE MESS SYSTEM
                     </span>
                     {isAdmin && (
                       <span
                         onClick={onOpenLoginModal}
-                        className="inline-flex items-center gap-1 bg-amber-400 text-emerald-950 text-[10px] font-black px-2 py-0.5 rounded-full border border-white/40 shadow-md cursor-pointer transition-all"
+                        className="inline-flex items-center gap-1 bg-amber-400 text-emerald-950 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-300 shadow-sm cursor-pointer transition-all hover:scale-105"
                         title="Logged in as App Admin"
                       >
                         <ShieldCheck className="w-3.5 h-3.5" />
@@ -73,18 +73,18 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                       </span>
                     )}
                     {group.isHeld && (
-                      <span className="inline-flex items-center gap-1 bg-amber-500/80 text-amber-950 font-black text-[10px] px-2 py-0.5 rounded-full border border-amber-300">
+                      <span className="inline-flex items-center gap-1 bg-amber-500 text-black font-black text-[10px] px-2 py-0.5 rounded-full border border-amber-300">
                         ON HOLD
                       </span>
                     )}
                   </div>
-                  <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2 drop-shadow-sm mt-0.5">
+                  <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2 mt-0.5 drop-shadow-md">
                     {group.name}
                   </h1>
                   {currentUser?.name && (
-                    <p className="text-xs font-bold text-amber-300/90 mt-0.5 flex items-center gap-1">
+                    <p className="text-xs font-bold text-emerald-100/90 mt-0.5 flex items-center gap-1">
                       <span>Logged in as:</span>
-                      <strong className="text-white bg-white/10 px-2 py-0.5 rounded-md border border-white/20">
+                      <strong className="text-white bg-white/15 px-2 py-0.5 rounded-md border border-white/20">
                         {currentUser.name}
                       </strong>
                     </p>
@@ -100,7 +100,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   {onOpenLoginModal && (
                     <button
                       onClick={onOpenLoginModal}
-                      className="inline-flex items-center gap-1.5 bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] text-xs font-black px-3.5 py-1.5 rounded-2xl transition-all shadow-lg shadow-amber-500/20 active:scale-95 border border-white/40"
+                      className="inline-flex items-center gap-1.5 bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] text-xs font-black px-3.5 py-1.5 rounded-2xl transition-all shadow-lg shadow-amber-500/20 active:scale-95 border border-white/30 cursor-pointer"
                       title="Member & Admin Account Portal"
                     >
                       <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
@@ -110,15 +110,15 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
                   <button
                     onClick={onOpenCurrencySettings}
-                    className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-xs text-amber-300 font-bold px-3 py-1.5 rounded-2xl border border-amber-400/40 backdrop-blur-xl transition-all active:scale-95 shadow-xs"
+                    className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-xs text-white font-bold px-3 py-1.5 rounded-2xl border border-white/25 transition-all active:scale-95 backdrop-blur-md shadow-sm cursor-pointer"
                     title="Change Display Currency & Rates"
                   >
-                    <Coins className="w-3.5 h-3.5 text-[#F9A826]" />
+                    <Coins className="w-3.5 h-3.5 text-amber-300" />
                     <span>Currency: {preferredCurrency}</span>
                   </button>
 
                   <div
-                    className="inline-flex items-center gap-1.5 bg-emerald-950/60 text-xs text-emerald-200 font-bold px-3 py-1.5 rounded-2xl border border-emerald-400/40 backdrop-blur-xl shadow-xs"
+                    className="inline-flex items-center gap-1.5 bg-emerald-950/70 text-xs text-emerald-200 font-bold px-3 py-1.5 rounded-2xl border border-emerald-400/40 backdrop-blur-md shadow-sm"
                     title="Backend auto-sync active"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 text-emerald-400 ${isSyncing ? 'animate-spin' : ''}`} />
@@ -129,7 +129,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     href={`https://docs.google.com/spreadsheets/d/${group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}/edit`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-2xl border border-emerald-400/50 backdrop-blur-xl transition-all active:scale-95 shadow-md cursor-pointer"
+                    className="inline-flex items-center gap-1.5 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-2xl border border-emerald-400/50 transition-all active:scale-95 shadow-md cursor-pointer"
                     title="Open Linked Master Google Sheet in new tab"
                   >
                     <ExternalLink className="w-3.5 h-3.5 text-[#F9A826]" />
@@ -138,21 +138,19 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
                   <button
                     onClick={onOpenArchGuide}
-                    className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-3 py-1.5 rounded-2xl transition-all border border-white/20 active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-2xl transition-all border border-white/20 active:scale-95 cursor-pointer"
                   >
-                    <Code className="w-3.5 h-3.5 text-[#F9A826]" />
+                    <Code className="w-3.5 h-3.5 text-amber-300" />
                     <span>Flutter & API Guide</span>
                   </button>
                 </>
               )}
 
-
-
               {/* Top Corner Logout Button */}
               {onLogout && (
                 <button
                   onClick={onLogout}
-                  className="inline-flex items-center gap-1.5 bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-black px-3.5 py-1.5 rounded-2xl transition-all shadow-lg border border-rose-400/50 active:scale-95 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-black px-3.5 py-1.5 rounded-2xl transition-all shadow-lg border border-rose-400/50 active:scale-95 cursor-pointer"
                   title="Logout Session"
                 >
                   <LogOut className="w-4 h-4 stroke-[2.5]" />
@@ -169,7 +167,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               <div className="relative">
                 <button
                   onClick={() => setShowGroupDropdown(!showGroupDropdown)}
-                  className="flex items-center gap-2 bg-white/15 hover:bg-white/25 px-4 py-2 rounded-2xl text-xs font-bold border border-white/30 backdrop-blur-xl transition-all text-white shadow-xs"
+                  className="flex items-center gap-2 bg-white/15 hover:bg-white/25 px-4 py-2 rounded-2xl text-xs font-bold border border-white/30 transition-all text-white backdrop-blur-md shadow-sm cursor-pointer"
                 >
                   <Layers className="w-4 h-4 text-[#F9A826]" />
                   <span>Switch Room Group</span>
@@ -177,8 +175,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 </button>
 
                 {showGroupDropdown && (
-                  <div className="absolute left-0 mt-2 w-64 bg-slate-900/95 backdrop-blur-2xl text-white rounded-3xl shadow-2xl border border-white/20 py-2.5 z-50 animate-in fade-in slide-in-from-top-2">
-                    <div className="px-3.5 py-1 text-[10px] font-bold text-emerald-300 uppercase tracking-wider">
+                  <div className="absolute left-0 mt-2 w-64 bg-[#092621]/95 text-white rounded-3xl shadow-2xl border border-white/30 backdrop-blur-3xl py-2.5 z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="px-3.5 py-1 text-[10px] font-bold text-emerald-200 uppercase tracking-wider">
                       Active Room Groups ({allGroups.length > 0 ? allGroups.length : 1})
                     </div>
                     {allGroups.length > 0 ? (
@@ -214,13 +212,13 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                         </span>
                       </button>
                     )}
-                    <div className="border-t border-white/10 my-1"></div>
+                    <div className="border-t border-white/15 my-1"></div>
                     <button
                       onClick={() => {
                         setShowGroupDropdown(false);
                         onOpenAddGroup();
                       }}
-                      className="w-full text-left px-4 py-2 hover:bg-amber-400/20 text-xs font-bold text-[#F9A826] flex items-center gap-2 cursor-pointer"
+                      className="w-full text-left px-4 py-2 hover:bg-white/15 text-xs font-bold text-amber-300 flex items-center gap-2 cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
                       <span>+ Add New Room / Group</span>
@@ -229,15 +227,15 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2 bg-emerald-950/60 px-4 py-2 rounded-2xl text-xs font-bold border border-emerald-400/30 text-white shadow-xs">
-                <span className="text-emerald-300 font-medium">Assigned Group:</span>
-                <span className="text-amber-300 font-extrabold">{group.name}</span>
+              <div className="flex items-center gap-2 bg-emerald-950/70 px-4 py-2 rounded-2xl text-xs font-bold border border-emerald-400/40 text-emerald-200 shadow-sm">
+                <span className="text-emerald-200/80 font-medium">Assigned Group:</span>
+                <span className="text-white font-extrabold">{group.name}</span>
               </div>
             )}
 
             {/* Billing Cycle Toggle: Previous / Current */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-              <div className="flex items-center bg-black/25 p-1 rounded-2xl border border-white/20 backdrop-blur-xl self-start sm:self-auto">
+              <div className="flex items-center bg-black/30 p-1 rounded-2xl border border-white/20 self-start sm:self-auto backdrop-blur-md">
                 <button
                   onClick={() => onToggleCycle('current')}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
@@ -266,7 +264,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   onChange={(e) => {
                     onToggleCycle('previous');
                   }}
-                  className="bg-slate-900 text-amber-300 font-extrabold text-xs px-3 py-1.5 rounded-xl border border-amber-400/50 focus:outline-none cursor-pointer shadow-md"
+                  className="bg-[#092621] text-amber-300 font-extrabold text-xs px-3 py-1.5 rounded-xl border border-amber-400/50 focus:outline-none cursor-pointer shadow-md"
                 >
                   <option value="01 Jun - 30 Jun 2026">Jun 2026 (Previous Cycle)</option>
                   <option value="01 May - 31 May 2026">May 2026</option>

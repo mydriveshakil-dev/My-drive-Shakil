@@ -77,7 +77,7 @@ export interface MemberSummary {
   rentShare: number;
   totalActualExpense: number; // Total they SHOULD pay
   totalAmountSpent: number; // Total they ALREADY paid
-  balance: number; // Positive = Overpaid (Will Receive), Negative = Underpaid (Owes Money)
+  balance: number; // Positive = Overpaid (Will Receive), Negative = Underpaid (DUE)
 }
 
 export interface SettlementFlow {

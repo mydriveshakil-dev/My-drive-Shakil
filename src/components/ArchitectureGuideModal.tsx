@@ -438,7 +438,7 @@ class GoogleSheetsApiManager {
                   Balance = Total Paid Out of Pocket - Member Actual Expense Share
                 </code>
                 <p className="text-emerald-200/70">
-                  Positive balance = Overpaid (Gets money back). Negative balance = Underpaid (Owes money).
+                  Positive balance = Overpaid (Gets money back). Negative balance = Underpaid (DUE money).
                 </p>
               </div>
             </div>

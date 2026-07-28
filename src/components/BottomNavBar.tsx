@@ -40,7 +40,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
             triggerHaptic(hapticPatterns.click);
             onOpenAddExpense();
           }}
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#F9A826] to-amber-300 hover:from-amber-400 hover:to-amber-200 text-[#0B4A3F] shadow-2xl shadow-amber-500/60 border-2 border-white/90 flex items-center justify-center transition-all cursor-pointer ring-4 ring-emerald-950/40"
+          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#F9A826] to-amber-300 hover:from-amber-400 hover:to-amber-200 text-slate-950 shadow-xl shadow-amber-500/30 border-2 border-white flex items-center justify-center transition-all cursor-pointer ring-4 ring-slate-200"
           title="Add New Expense (+)"
         >
           <Plus className="w-7 h-7 sm:w-8 sm:h-8 stroke-[3.2]" />
@@ -48,9 +48,9 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
       </div>
 
       <GlassContainer
-        variant="emerald"
+        variant="card"
         blur="3xl"
-        className="pointer-events-auto w-full max-w-lg rounded-full p-1.5 sm:p-2 border border-white/30 shadow-2xl shadow-emerald-950/60"
+        className="pointer-events-auto w-full max-w-lg rounded-full p-1.5 sm:p-2 border border-white/30 shadow-2xl backdrop-blur-3xl bg-[#092621]/95 text-white"
       >
         <div className="flex items-center justify-around relative px-1 sm:px-2">
           {tabs.map((tab) => {
@@ -67,7 +67,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
                 {isActive && (
                   <motion.div
                     layoutId="activeBottomTabPill"
-                    className="absolute inset-0 bg-[#F9A826] rounded-full shadow-lg shadow-amber-500/30 border border-white/40"
+                    className="absolute inset-0 bg-[#F9A826] rounded-full shadow-lg shadow-amber-500/20 border border-white/40"
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   />
                 )}

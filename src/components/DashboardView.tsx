@@ -73,20 +73,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <GlassContainer
         variant="emerald"
         blur="3xl"
-        className="p-6 md:p-8 rounded-3xl border border-white/30 shadow-2xl relative overflow-hidden"
+        className="p-6 md:p-8 rounded-3xl border border-white/30 shadow-2xl bg-gradient-to-br from-[#092621] via-[#0B4A3F] to-[#081e1a] text-white relative overflow-hidden"
       >
         <div className="relative z-10 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs font-black uppercase tracking-wider text-emerald-200 bg-white/15 px-3.5 py-1 rounded-full border border-white/20 backdrop-blur-md flex items-center gap-1.5">
-              <LayoutDashboard className="w-3.5 h-3.5 text-[#F9A826]" />
+            <span className="text-xs font-black uppercase tracking-wider text-[#0B4A3F] bg-[#F9A826] px-3.5 py-1 rounded-full shadow-md border border-white/30 flex items-center gap-1.5">
+              <LayoutDashboard className="w-3.5 h-3.5 text-[#0B4A3F]" />
               Master Room Dashboard Overview
             </span>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-emerald-100 flex items-center gap-1 font-semibold bg-black/30 px-3 py-1 rounded-full border border-white/10">
+              <span className="text-xs text-white flex items-center gap-1 font-semibold bg-white/10 px-3 py-1 rounded-full border border-white/20 backdrop-blur-md">
                 <Calendar className="w-3.5 h-3.5 text-[#F9A826]" />
                 Cycle: {group.billingCycle}
               </span>
-              <span className="text-xs text-emerald-200 font-semibold bg-emerald-950/70 px-3 py-1 rounded-full border border-emerald-400/40 flex items-center gap-1">
+              <span className="text-xs text-emerald-200 font-semibold bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-400/30 flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 {group.members.length} Members
               </span>
@@ -94,7 +94,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div>
-            <span className="text-xs font-bold text-emerald-200 uppercase tracking-wider block">
+            <span className="text-xs font-bold text-emerald-200/90 uppercase tracking-wider block">
               Total Room Budget & Expenses ({group.name})
             </span>
             <div className="mt-1">
@@ -109,22 +109,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-white/15 text-xs">
-            <div className="flex items-center gap-4 text-emerald-100 font-semibold">
+          <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-white/20 text-xs">
+            <div className="flex items-center gap-4 text-emerald-200 font-semibold">
               <div>
-                <span className="text-emerald-200/80 block text-[10px] uppercase font-bold">Avg Per Member</span>
+                <span className="text-emerald-200/70 block text-[10px] uppercase font-bold">Avg Per Member</span>
                 <span className="text-white font-extrabold">{avgPerPerson.toFixed(2)} {group.currency}</span>
               </div>
               <div className="h-6 w-[1px] bg-white/20" />
               <div>
-                <span className="text-emerald-200/80 block text-[10px] uppercase font-bold">Daily Meal Rate</span>
-                <span className="text-amber-300 font-extrabold">~{dailyMealRate.toFixed(2)} {group.currency}/day</span>
+                <span className="text-emerald-200/70 block text-[10px] uppercase font-bold">Daily Meal Rate</span>
+                <span className="text-[#F9A826] font-extrabold">~{dailyMealRate.toFixed(2)} {group.currency}/day</span>
               </div>
             </div>
 
             <button
               onClick={() => onNavigateTab('report')}
-              className="bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black px-4 py-2 rounded-2xl text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 border border-white/30 transition-all cursor-pointer"
+              className="bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black px-4 py-2 rounded-2xl text-xs flex items-center gap-1.5 shadow-lg border border-white/30 transition-all cursor-pointer"
             >
               <PieChart className="w-4 h-4" />
               <span>View Detailed Breakdown</span>
@@ -133,55 +133,55 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </GlassContainer>
 
-      {/* QUICK NAVIGATION & CATEGORY ACTIONS (Placed directly after 1st Box) */}
+      {/* QUICK NAVIGATION & CATEGORY ACTIONS */}
       <div>
-        <h3 className="text-xs font-black text-emerald-200 uppercase tracking-wider mb-2.5 px-1 drop-shadow-xs flex items-center justify-between">
+        <h3 className="text-xs font-black text-emerald-200 uppercase tracking-wider mb-2.5 px-1 flex items-center justify-between">
           <span>Quick Navigation & Category Actions</span>
           <span className="text-[10px] text-amber-300 font-bold">1-Click Direct Access</span>
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
           <button
             onClick={() => onNavigateTab('report')}
-            className="flex flex-col items-center justify-center p-3 sm:p-3.5 bg-white/10 hover:bg-white/20 border border-white/30 rounded-3xl shadow-xl backdrop-blur-2xl transition-all group text-center active:scale-95 cursor-pointer"
+            className="flex flex-col items-center justify-center p-3 sm:p-3.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-3xl shadow-xl backdrop-blur-xl transition-all group text-center active:scale-95 cursor-pointer text-white"
           >
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform border border-emerald-400/30">
               <Wallet className="w-5 h-5" />
             </div>
             <span className="text-xs font-bold text-white">Expenses</span>
-            <span className="text-[10px] text-emerald-200/80 font-medium">{expenses.length} Added</span>
+            <span className="text-[10px] text-emerald-200/70 font-medium">{expenses.length} Added</span>
           </button>
 
           <button
             onClick={() => onNavigateTab('utilities')}
-            className="flex flex-col items-center justify-center p-3 sm:p-3.5 bg-white/10 hover:bg-white/20 border border-white/30 rounded-3xl shadow-xl backdrop-blur-2xl transition-all group text-center active:scale-95 cursor-pointer"
+            className="flex flex-col items-center justify-center p-3 sm:p-3.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-3xl shadow-xl backdrop-blur-xl transition-all group text-center active:scale-95 cursor-pointer text-white"
           >
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-500/20 text-amber-300 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform border border-amber-400/30">
               <Zap className="w-5 h-5" />
             </div>
             <span className="text-xs font-bold text-white">Utilities</span>
-            <span className="text-[10px] text-amber-200/80 font-medium">DEWA, WiFi</span>
+            <span className="text-[10px] text-emerald-200/70 font-medium">DEWA, WiFi</span>
           </button>
 
           <button
             onClick={() => onNavigateTab('utilities')}
-            className="flex flex-col items-center justify-center p-3 sm:p-3.5 bg-white/10 hover:bg-white/20 border border-white/30 rounded-3xl shadow-xl backdrop-blur-2xl transition-all group text-center active:scale-95 cursor-pointer"
+            className="flex flex-col items-center justify-center p-3 sm:p-3.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-3xl shadow-xl backdrop-blur-xl transition-all group text-center active:scale-95 cursor-pointer text-white"
           >
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-blue-500/20 text-blue-300 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform border border-blue-400/30">
               <HomeIcon className="w-5 h-5" />
             </div>
             <span className="text-xs font-bold text-white">Rent</span>
-            <span className="text-[10px] text-blue-200/80 font-medium">{rent.totalRent} AED</span>
+            <span className="text-[10px] text-emerald-200/70 font-medium">{rent.totalRent} AED</span>
           </button>
 
           <button
             onClick={() => onNavigateTab('report')}
-            className="flex flex-col items-center justify-center p-3 sm:p-3.5 bg-white/10 hover:bg-white/20 border border-white/30 rounded-3xl shadow-xl backdrop-blur-2xl transition-all group text-center active:scale-95 cursor-pointer"
+            className="flex flex-col items-center justify-center p-3 sm:p-3.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-3xl shadow-xl backdrop-blur-xl transition-all group text-center active:scale-95 cursor-pointer text-white"
           >
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-purple-500/20 text-purple-300 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform border border-purple-400/30">
               <PieChart className="w-5 h-5" />
             </div>
             <span className="text-xs font-bold text-white">Settlement</span>
-            <span className="text-[10px] text-purple-200/80 font-medium">Report</span>
+            <span className="text-[10px] text-emerald-200/70 font-medium">Report</span>
           </button>
         </div>
       </div>
@@ -191,16 +191,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Mess Expense Card */}
         <GlassContainer
           variant="card"
-          className="p-4 md:p-5 border border-amber-400/30 text-white shadow-xl cursor-pointer hover:border-amber-400/60 transition-all"
+          className="p-4 md:p-5 border border-white/20 text-white bg-[#092621]/90 shadow-2xl cursor-pointer hover:border-emerald-400/40 transition-all backdrop-blur-2xl"
           onClick={() => onNavigateTab('expenses')}
         >
           <div className="flex items-center justify-between text-amber-300 mb-2">
             <Utensils className="w-5 h-5" />
-            <span className="text-[10px] font-extrabold uppercase bg-amber-400/20 px-2 py-0.5 rounded-full border border-amber-400/30">
+            <span className="text-[10px] font-extrabold uppercase bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/30 text-amber-300">
               Mess
             </span>
           </div>
-          <span className="text-xs text-amber-200 font-semibold block">Mess Food Expenses</span>
+          <span className="text-xs text-emerald-200/80 font-semibold block">Mess Food Expenses</span>
           <div className="mt-1">
             <DualCurrencyDisplay
               amount={messTotal}
@@ -211,7 +211,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               baseClassName="text-xl font-extrabold text-white"
             />
           </div>
-          <span className="text-[10px] text-amber-200/80 mt-2 block">
+          <span className="text-[10px] text-emerald-200/60 mt-2 block">
             {expenses.filter((e) => e.type === 'mess').length} Transactions
           </span>
         </GlassContainer>
@@ -219,16 +219,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* General Expenses Card */}
         <GlassContainer
           variant="card"
-          className="p-4 md:p-5 border border-emerald-400/30 text-white shadow-xl cursor-pointer hover:border-emerald-400/60 transition-all"
+          className="p-4 md:p-5 border border-white/20 text-white bg-[#092621]/90 shadow-2xl cursor-pointer hover:border-emerald-400/40 transition-all backdrop-blur-2xl"
           onClick={() => onNavigateTab('expenses')}
         >
           <div className="flex items-center justify-between text-emerald-300 mb-2">
             <ShoppingBag className="w-5 h-5" />
-            <span className="text-[10px] font-extrabold uppercase bg-emerald-400/20 px-2 py-0.5 rounded-full border border-emerald-400/30">
+            <span className="text-[10px] font-extrabold uppercase bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-400/30 text-emerald-300">
               General
             </span>
           </div>
-          <span className="text-xs text-emerald-200 font-semibold block">General Room Items</span>
+          <span className="text-xs text-emerald-200/80 font-semibold block">General Room Items</span>
           <div className="mt-1">
             <DualCurrencyDisplay
               amount={generalTotal}
@@ -239,7 +239,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               baseClassName="text-xl font-extrabold text-white"
             />
           </div>
-          <span className="text-[10px] text-emerald-200/80 mt-2 block">
+          <span className="text-[10px] text-emerald-200/60 mt-2 block">
             {expenses.filter((e) => e.type === 'general').length} Items
           </span>
         </GlassContainer>
@@ -247,16 +247,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Utilities Card */}
         <GlassContainer
           variant="card"
-          className="p-4 md:p-5 border border-blue-400/30 text-white shadow-xl cursor-pointer hover:border-blue-400/60 transition-all"
+          className="p-4 md:p-5 border border-white/20 text-white bg-[#092621]/90 shadow-2xl cursor-pointer hover:border-emerald-400/40 transition-all backdrop-blur-2xl"
           onClick={() => onNavigateTab('utilities')}
         >
           <div className="flex items-center justify-between text-blue-300 mb-2">
             <Zap className="w-5 h-5" />
-            <span className="text-[10px] font-extrabold uppercase bg-blue-400/20 px-2 py-0.5 rounded-full border border-blue-400/30">
+            <span className="text-[10px] font-extrabold uppercase bg-blue-500/20 px-2 py-0.5 rounded-full border border-blue-400/30 text-blue-300">
               Utilities
             </span>
           </div>
-          <span className="text-xs text-blue-200 font-semibold block">DEWA & WiFi Bills</span>
+          <span className="text-xs text-emerald-200/80 font-semibold block">DEWA & WiFi Bills</span>
           <div className="mt-1">
             <DualCurrencyDisplay
               amount={utilitiesTotal}
@@ -267,7 +267,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               baseClassName="text-xl font-extrabold text-white"
             />
           </div>
-          <span className="text-[10px] text-blue-200/80 mt-2 block">
+          <span className="text-[10px] text-emerald-200/60 mt-2 block">
             {utilities.length} Utility Bills
           </span>
         </GlassContainer>
@@ -275,16 +275,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Landlord Rent Card */}
         <GlassContainer
           variant="card"
-          className="p-4 md:p-5 border border-purple-400/30 text-white shadow-xl cursor-pointer hover:border-purple-400/60 transition-all"
+          className="p-4 md:p-5 border border-white/20 text-white bg-[#092621]/90 shadow-2xl cursor-pointer hover:border-emerald-400/40 transition-all backdrop-blur-2xl"
           onClick={() => onNavigateTab('utilities')}
         >
           <div className="flex items-center justify-between text-purple-300 mb-2">
             <HomeIcon className="w-5 h-5" />
-            <span className="text-[10px] font-extrabold uppercase bg-purple-400/20 px-2 py-0.5 rounded-full border border-purple-400/30">
+            <span className="text-[10px] font-extrabold uppercase bg-purple-500/20 px-2 py-0.5 rounded-full border border-purple-400/30 text-purple-300">
               Rent
             </span>
           </div>
-          <span className="text-xs text-purple-200 font-semibold block">Landlord Room Rent</span>
+          <span className="text-xs text-emerald-200/80 font-semibold block">Landlord Room Rent</span>
           <div className="mt-1">
             <DualCurrencyDisplay
               amount={rentTotal}
@@ -295,7 +295,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               baseClassName="text-xl font-extrabold text-white"
             />
           </div>
-          <span className="text-[10px] text-purple-200/80 mt-2 block">
+          <span className="text-[10px] text-emerald-200/60 mt-2 block">
             Status: {rent?.status === 'paid' ? 'Paid' : 'Pending'}
           </span>
         </GlassContainer>
@@ -303,22 +303,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Central Google Sheets Integration & Admin Panel Info (Admin Only) */}
       {currentUser?.role === 'admin' && (
-        <GlassContainer variant="card" className="p-5 md:p-6 border border-white/30 text-white shadow-2xl space-y-4">
+        <GlassContainer variant="card" className="p-5 md:p-6 border border-white/20 text-white bg-[#092621]/90 shadow-2xl space-y-4 backdrop-blur-2xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-300">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300">
                 <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
               </div>
               <div>
                 <h3 className="text-sm font-extrabold text-white">Google Sheets Central Synchronization</h3>
-                <p className="text-xs text-emerald-100/80 font-medium">
-                  Spreadsheet ID: <code className="text-amber-300 font-mono">{group.spreadsheetId ? group.spreadsheetId.substring(0, 16) + '...' : '1-VBgqW...'}</code>
+                <p className="text-xs text-emerald-200/70 font-medium">
+                  Spreadsheet ID: <code className="text-amber-300 font-mono font-bold">{group.spreadsheetId ? group.spreadsheetId.substring(0, 16) + '...' : '1-VBgqW...'}</code>
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="bg-emerald-950/70 border border-emerald-400/40 text-emerald-200 font-extrabold px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shadow-sm">
+              <div className="bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 font-extrabold px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shadow-xs">
                 <RefreshCw className={`w-3.5 h-3.5 text-emerald-400 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span>{isSyncing ? 'Auto-Syncing...' : 'Auto-Synced'}</span>
               </div>
@@ -327,9 +327,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 href={`https://docs.google.com/spreadsheets/d/${group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}/edit`}
                 target="_blank"
                 rel="noreferrer"
-                className="bg-emerald-600/80 hover:bg-emerald-600 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 border border-emerald-400/50 transition-all cursor-pointer shadow-sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 border border-emerald-500 transition-all cursor-pointer shadow-md"
               >
-                <ExternalLink className="w-3.5 h-3.5 text-[#F9A826]" />
+                <ExternalLink className="w-3.5 h-3.5 text-amber-300" />
                 <span>Open Sheet</span>
               </a>
             </div>
@@ -338,15 +338,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* Member List Quick Table */}
-      <GlassContainer variant="card" className="p-5 md:p-6 border border-white/30 text-white shadow-2xl space-y-4">
+      <GlassContainer variant="card" className="p-5 md:p-6 border border-white/20 text-white bg-[#092621]/90 shadow-2xl space-y-4 backdrop-blur-2xl">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold text-emerald-200 uppercase tracking-wider flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-[#F9A826]" />
+              <Users className="w-4 h-4 text-amber-300" />
               Active Room Members ({group.members.length})
             </span>
             <button
               onClick={() => onNavigateTab('group')}
-              className="text-xs text-amber-300 hover:underline font-bold"
+              className="text-xs text-[#F9A826] hover:underline font-bold cursor-pointer"
             >
               Manage Members →
             </button>
@@ -361,17 +361,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               return (
                 <div
                   key={member.id}
-                  className="bg-white/10 p-3 rounded-2xl border border-white/15 backdrop-blur-md flex flex-col justify-between"
+                  className="bg-white/10 border border-white/20 p-3 rounded-2xl flex items-center gap-2.5 text-white backdrop-blur-md"
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-amber-400 text-emerald-950 font-black text-xs flex items-center justify-center shrink-0">
-                      {member.avatar}
-                    </div>
-                    <span className="text-xs font-bold text-white truncate">{member.name}</span>
+                  <div className="w-8 h-8 rounded-xl bg-[#F9A826] text-[#0B4A3F] font-black text-xs flex items-center justify-center shrink-0 border border-white/30">
+                    {member.avatar}
                   </div>
-                  <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
-                    <span className="text-emerald-200 font-medium">{member.daysPresent} Days</span>
-                    <span className="text-amber-300 font-extrabold">{memberSpent.toFixed(0)} {group.currency}</span>
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold text-white truncate block">{member.name}</span>
+                    <span className="text-[10px] text-emerald-200/70 font-medium block">{member.daysPresent} Days</span>
                   </div>
                 </div>
               );

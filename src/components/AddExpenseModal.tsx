@@ -164,7 +164,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
       <GlassContainer
         variant="modal"
         blur="3xl"
-        className="w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[88vh] sm:max-h-[85vh] flex flex-col border border-white/40 my-auto relative box-border shrink-0"
+        className="w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[88vh] sm:max-h-[85vh] flex flex-col border border-white/40 my-auto relative box-border shrink-0 bg-[#092621]/95 text-white"
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-[#0B4A3F] to-[#145C4E] text-white p-5 flex items-center justify-between border-b border-white/20">
@@ -172,11 +172,11 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             <span className="text-xs font-black text-emerald-200 uppercase tracking-wider">
               Shared Room Expense Log
             </span>
-            <h2 className="text-xl font-black tracking-tight">Add New Expense</h2>
+            <h2 className="text-xl font-black tracking-tight text-white">Add New Expense</h2>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-all border border-white/20 active:scale-90"
+            className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-all border border-white/20 active:scale-90 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -189,7 +189,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             <button
               type="button"
               onClick={() => setCategory('mess')}
-              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 category === 'mess'
                   ? 'bg-[#F9A826] text-[#0B4A3F] shadow-lg font-black'
                   : 'text-white/70 hover:text-white'
@@ -202,7 +202,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             <button
               type="button"
               onClick={() => setCategory('general')}
-              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 category === 'general'
                   ? 'bg-[#F9A826] text-[#0B4A3F] shadow-lg font-black'
                   : 'text-white/70 hover:text-white'
@@ -383,7 +383,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               <button
                 type="button"
                 onClick={handleSelectAllMembers}
-                className="text-xs font-bold text-[#F9A826] hover:underline"
+                className="text-xs font-bold text-[#F9A826] hover:underline cursor-pointer"
               >
                 {selectedMembers.length === group.members.length ? 'Deselect All' : 'Select All'}
               </button>
@@ -397,7 +397,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                     type="button"
                     key={member.id}
                     onClick={() => handleMemberToggle(member.id)}
-                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all text-left backdrop-blur-md ${
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all text-left backdrop-blur-md cursor-pointer ${
                       isSelected
                         ? 'bg-emerald-500/30 border-emerald-400/50 text-emerald-200'
                         : 'bg-white/5 border-white/15 text-white/50 hover:bg-white/10'
@@ -448,26 +448,26 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
 
           {/* Receipt Upload (Optional Image) */}
           <div>
-            <label className="block text-xs font-bold text-emerald-200 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5">
               Attach Receipt Photo (Optional)
             </label>
 
             {receiptImage ? (
-              <div className="relative rounded-2xl overflow-hidden border border-white/30 h-32 bg-black/40">
+              <div className="relative rounded-2xl overflow-hidden border border-slate-300 h-32 bg-slate-100">
                 <img src={receiptImage} alt="Receipt Preview" className="w-full h-full object-contain" />
                 <button
                   type="button"
                   onClick={() => setReceiptImage(null)}
-                  className="absolute top-2 right-2 bg-rose-600 text-white p-1 rounded-full shadow"
+                  className="absolute top-2 right-2 bg-rose-600 text-white p-1 rounded-full shadow cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <label className="border-2 border-dashed border-white/30 hover:border-amber-400 bg-white/5 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors">
-                <Upload className="w-6 h-6 text-emerald-200/60 mb-1" />
-                <span className="text-xs font-bold text-white">Click to upload receipt photo</span>
-                <span className="text-[10px] text-emerald-200/60">PNG, JPG up to 5MB</span>
+              <label className="border-2 border-dashed border-slate-300 hover:border-amber-500 bg-slate-50 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors">
+                <Upload className="w-6 h-6 text-slate-400 mb-1" />
+                <span className="text-xs font-bold text-slate-800">Click to upload receipt photo</span>
+                <span className="text-[10px] text-slate-500">PNG, JPG up to 5MB</span>
                 <input type="file" accept="image/*" onChange={handleReceiptUpload} className="hidden" />
               </label>
             )}
@@ -477,7 +477,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
           <div className="pt-3">
             <button
               type="submit"
-              className="w-full bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black py-4 rounded-2xl shadow-xl transition-all text-sm flex items-center justify-center gap-2 active:scale-98 border border-white/30 tracking-wider uppercase"
+              className="w-full bg-[#F9A826] hover:bg-[#e59819] text-slate-950 font-black py-4 rounded-2xl shadow-md transition-all text-sm flex items-center justify-center gap-2 active:scale-98 border border-amber-500 tracking-wider uppercase cursor-pointer"
             >
               <span>SAVE YOUR EXPENSE</span>
             </button>

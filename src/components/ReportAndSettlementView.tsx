@@ -338,7 +338,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                         : 'bg-rose-950/80 text-rose-300 border border-rose-400/40'
                     }`}
                   >
-                    {isOverpaid ? `+${ms.balance.toFixed(2)} AED (Gets Back)` : `${ms.balance.toFixed(2)} AED (Owes)`}
+                    {isOverpaid ? `+${ms.balance.toFixed(2)} AED (Gets Back)` : `${ms.balance.toFixed(2)} AED (DUE)`}
                   </span>
                 </div>
               </div>
@@ -388,7 +388,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                             : 'bg-rose-950/70 text-rose-300 border border-rose-400/40'
                         }`}
                       >
-                        {isOverpaid ? `+${ms.balance.toFixed(2)} AED (Gets Back)` : `${ms.balance.toFixed(2)} AED (Owes)`}
+                        {isOverpaid ? `+${ms.balance.toFixed(2)} AED (Gets Back)` : `${ms.balance.toFixed(2)} AED (DUE)`}
                       </span>
                     </td>
                   </tr>
@@ -431,7 +431,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
-                      Payer (Owes)
+                      Payer (DUE)
                     </span>
                     <h4 className="text-sm font-bold text-white">{flow.fromMemberName}</h4>
                   </div>
@@ -470,7 +470,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           <div className="text-center py-8 bg-emerald-950/40 rounded-3xl border border-emerald-400/30 p-4">
             <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
             <h4 className="text-sm font-bold text-white">All Expenses Settled Perfectly!</h4>
-            <p className="text-xs text-emerald-200 mt-1">No member owes money to another member in this cycle.</p>
+            <p className="text-xs text-emerald-200 mt-1">No member has DUE money to another member in this cycle.</p>
           </div>
         )}
       </GlassContainer>
@@ -656,7 +656,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                             <span className={isOverpaid ? 'text-emerald-700' : 'text-rose-700'}>
                               {isOverpaid
                                 ? `+${ms.balance.toFixed(2)} ${group.currency} (Gets Back)`
-                                : `${ms.balance.toFixed(2)} ${group.currency} (Owes)`}
+                                : `${ms.balance.toFixed(2)} ${group.currency} (DUE)`}
                             </span>
                           </td>
                         </tr>

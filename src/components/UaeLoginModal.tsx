@@ -267,10 +267,10 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
       <GlassContainer
         variant="emerald"
         blur="3xl"
-        className="w-full max-w-lg max-h-[92vh] rounded-3xl border border-white/30 shadow-2xl flex flex-col overflow-hidden relative my-auto box-border"
+        className="w-full max-w-lg max-h-[92vh] rounded-3xl border border-white/30 shadow-2xl flex flex-col overflow-hidden relative my-auto box-border text-white bg-[#092621]/95"
       >
         {/* Header Banner */}
-        <div className="p-4 sm:p-5 border-b border-white/20 bg-emerald-950/60 flex items-center justify-between backdrop-blur-2xl shrink-0 gap-3 overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-white/20 bg-emerald-950/80 flex items-center justify-between backdrop-blur-2xl shrink-0 gap-3 overflow-hidden text-white">
           <div className="flex items-center gap-3 min-w-0">
             <img
               src="/src/assets/images/uae_mess_logo_1785022712689.jpg"
@@ -299,7 +299,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleLogin} className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-white max-w-full">
           <div className="bg-emerald-950/70 border border-emerald-400/30 p-3 rounded-2xl text-xs text-emerald-200 leading-relaxed flex items-start gap-2">
-            <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <Info className="w-4 h-4 text-[#F9A826] shrink-0 mt-0.5" />
             <div>
               Enter your <strong>Full Name</strong> (must match the name registered by Admin) and <strong>Mobile Number</strong> with Password to log in.
             </div>

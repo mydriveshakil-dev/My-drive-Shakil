@@ -42,21 +42,21 @@ export const GlassContainer: React.FC<GlassContainerProps> = ({
 
   const variantStyles: Record<GlassVariant, string> = {
     default:
-      'bg-white/10 text-white border border-white/30 shadow-xl backdrop-blur-2xl',
+      'bg-[#0B4A3F]/85 text-white border border-white/20 shadow-xl backdrop-blur-2xl',
     card:
-      'bg-white/10 text-white border border-white/30 shadow-2xl backdrop-blur-2xl rounded-3xl',
+      'bg-[#0d2a24]/90 text-white border border-white/20 shadow-2xl backdrop-blur-2xl rounded-3xl',
     emerald:
-      'bg-emerald-950/35 text-white border border-emerald-400/40 shadow-2xl backdrop-blur-3xl rounded-3xl',
+      'bg-[#0B4A3F]/90 text-white border border-emerald-400/40 shadow-2xl backdrop-blur-3xl rounded-3xl',
     amber:
-      'bg-amber-950/35 text-amber-100 border border-amber-300/40 shadow-2xl backdrop-blur-3xl rounded-3xl',
+      'bg-amber-950/70 text-amber-100 border border-amber-300/40 shadow-2xl backdrop-blur-3xl rounded-3xl',
     pill:
       'bg-white/15 text-white border border-white/35 shadow-md backdrop-blur-xl rounded-full',
     subtle:
-      'bg-white/[0.08] text-white border border-white/20 backdrop-blur-xl shadow-xs rounded-2xl',
+      'bg-[#0B4A3F]/50 text-white border border-white/15 backdrop-blur-xl shadow-xs rounded-2xl',
     modal:
-      'bg-slate-950/50 text-white border border-white/35 shadow-2xl backdrop-blur-3xl rounded-3xl',
+      'bg-[#092621]/95 text-white border border-white/30 shadow-2xl backdrop-blur-3xl rounded-3xl',
     dark:
-      'bg-black/40 text-white border border-white/25 shadow-2xl backdrop-blur-2xl rounded-3xl',
+      'bg-black/70 text-white border border-white/25 shadow-2xl backdrop-blur-2xl rounded-3xl',
   };
 
   const hoverClass = hoverEffect
@@ -75,7 +75,7 @@ export const GlassContainer: React.FC<GlassContainerProps> = ({
       {...motionProps}
     >
       {/* Specular top reflection highlight line */}
-      <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/70 to-transparent pointer-events-none" />
+      <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-slate-300/80 to-transparent pointer-events-none" />
 
       {/* Content slot */}
       {children}

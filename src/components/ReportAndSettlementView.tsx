@@ -53,12 +53,12 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   const [isCopied, setIsCopied] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
-  // Category filter checkboxes
+  // Category filter checkboxes (Room rent is excluded from settlement breakdown as per landlord rent box rule)
   const [includeCategories, setIncludeCategories] = useState({
     mess: true,
     general: true,
     utilities: true,
-    rent: true,
+    rent: false,
   });
 
   const settlementResult = calculateSettlement(
@@ -202,7 +202,6 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               { key: 'mess', label: 'Mess Expenses' },
               { key: 'general', label: 'General Expenses' },
               { key: 'utilities', label: 'Utilities (DEWA & WiFi)' },
-              { key: 'rent', label: 'Landlord Rent' },
             ].map(({ key, label }) => {
               const isChecked = includeCategories[key as keyof typeof includeCategories];
               return (
@@ -257,10 +256,10 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         </GlassContainer>
 
         <GlassContainer variant="card" className="p-4 border border-black bg-white text-slate-900 shadow-md">
-          <span className="text-[10px] font-bold text-slate-900 uppercase">Utilities & Rent</span>
+          <span className="text-[10px] font-bold text-slate-900 uppercase">Utilities (DEWA & WiFi)</span>
           <div className="text-xl font-black mt-1">
             <DualCurrencyDisplay
-              amount={settlementResult.totalUtilities + settlementResult.totalRent}
+              amount={settlementResult.totalUtilities}
               baseCurrency={group.currency}
               preferredCurrency={preferredCurrency}
               customRates={customRates}
@@ -268,7 +267,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               baseClassName="text-xl font-black text-slate-950"
             />
           </div>
-          <span className="text-[10px] text-slate-600 block mt-1">DEWA, WiFi, Rent</span>
+          <span className="text-[10px] text-slate-600 block mt-1">DEWA & WiFi Bills</span>
         </GlassContainer>
 
         <GlassContainer variant="card" className="p-4 border-2 border-black bg-white text-slate-900 shadow-md">
@@ -602,11 +601,11 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                 </div>
 
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">Utilities & Rent</span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Utilities (DEWA & WiFi)</span>
                   <div className="text-base font-black text-slate-900 mt-0.5">
-                    {(settlementResult.totalUtilities + settlementResult.totalRent).toFixed(2)} {group.currency}
+                    {settlementResult.totalUtilities.toFixed(2)} {group.currency}
                   </div>
-                  <span className="text-[10px] text-slate-500">DEWA, WiFi, Rent</span>
+                  <span className="text-[10px] text-slate-500">DEWA, WiFi Bills</span>
                 </div>
 
                 <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-300">

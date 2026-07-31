@@ -177,14 +177,14 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto overflow-x-hidden max-w-full">
       <GlassContainer
         variant="modal"
         blur="3xl"
-        className="w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[88vh] sm:max-h-[85vh] flex flex-col border-2 border-black my-auto relative box-border shrink-0 bg-white text-slate-900"
+        className="w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[88vh] sm:max-h-[85vh] flex flex-col border-2 border-black my-auto relative box-border shrink-0 bg-white text-slate-900 max-w-full"
       >
         {/* Header */}
-        <div className="bg-black text-white p-5 flex items-center justify-between border-b-2 border-black">
+        <div className="bg-black text-white p-5 flex items-center justify-between border-b-2 border-black shrink-0">
           <div>
             <span className="text-xs font-black text-slate-300 uppercase tracking-wider">
               Shared Room Expense Log
@@ -200,7 +200,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-5 overflow-y-auto flex-1">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-5 overflow-y-auto overflow-x-hidden flex-1 w-full box-border">
           {/* Category Tabs: Mess Bill vs General Expense */}
           {(isMessPermitted || isGeneralPermitted) ? (
             <div className={`grid ${isMessPermitted && isGeneralPermitted ? 'grid-cols-2' : 'grid-cols-1'} gap-2 bg-slate-100 border border-black p-1.5 rounded-2xl`}>
@@ -270,10 +270,9 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             </div>
 
             {/* Quick Math Symbols Keyboard Strip */}
-            <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 scrollbar-none">
-              <span className="text-[10px] font-bold text-slate-800 uppercase shrink-0 mr-0.5 flex items-center gap-1">
-                <Calculator className="w-3 h-3 text-black" />
-                Symbols:
+            <div className="flex items-center gap-1.5 mt-2 w-full max-w-full overflow-x-auto pb-1 scrollbar-none touch-pan-x">
+              <span className="text-slate-800 shrink-0 mr-0.5 flex items-center">
+                <Calculator className="w-3.5 h-3.5 text-black" />
               </span>
               <button
                 type="button"

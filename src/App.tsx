@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Group, Expense, UtilityBill, RentContribution, GoogleSheetsConfig, BillingCycleType, Member, ChatMessage, UserAuthProfile } from './types';
+import { getCurrentCycleId, getBillingCycleLabel, getPreviousCycleOptions } from './utils/cycleUtils';
 import {
   INITIAL_GROUP,
   INITIAL_EXPENSES,
@@ -26,6 +27,7 @@ import {
   saveRentToFirestore,
   subscribeToChatMessages,
   saveChatMessageToFirestore,
+  getMessageTimestampMs,
   auth,
   onAuthStateChanged,
 } from './lib/firebase';
@@ -396,10 +398,123 @@ export default function App() {
     return 'home';
   });
   const [billingCycleType, setBillingCycleType] = useState<BillingCycleType>('current');
+  const [selectedPreviousCycle, setSelectedPreviousCycle] = useState<string>(() => {
+    const prevs = getPreviousCycleOptions(1);
+    return prevs[0]?.cycleId || '2026-06';
+  });
+
+  const currentCycleId = getCurrentCycleId();
+  const currentCycleLabel = getBillingCycleLabel(currentCycleId);
+
+  // Automatic monthly rollover on the 1st of every month
+  useEffect(() => {
+    if (group && (group.cycleId !== currentCycleId || group.billingCycle !== currentCycleLabel)) {
+      const updatedGroup: Group = {
+        ...group,
+        cycleId: currentCycleId,
+        billingCycle: currentCycleLabel,
+      };
+      setGroup(updatedGroup);
+      saveGroupToFirestore(updatedGroup);
+      setAllGroups((prev) => {
+        const next = prev.map((g) => (g.id === group.id ? updatedGroup : g));
+        localStorage.setItem('all_room_groups', JSON.stringify(next));
+        return next;
+      });
+    }
+  }, [group?.id, currentCycleId, currentCycleLabel]);
+
+  const activeCycleId = billingCycleType === 'current'
+    ? currentCycleId
+    : (selectedPreviousCycle || getPreviousCycleOptions(1)[0]?.cycleId || '2026-06');
+
+  const activeCycleLabel = billingCycleType === 'current'
+    ? (group.billingCycle || currentCycleLabel)
+    : getBillingCycleLabel(activeCycleId);
+
+  const displayedGroup = useMemo(() => {
+    return {
+      ...group,
+      cycleId: activeCycleId,
+      billingCycle: activeCycleLabel,
+    };
+  }, [group, activeCycleId, activeCycleLabel]);
+
+  const displayedExpenses = useMemo(() => {
+    return expenses.filter((e) => {
+      const expCycle = e.cycle || (e.date ? e.date.slice(0, 7) : '');
+      if (expCycle) {
+        return expCycle === activeCycleId;
+      }
+      return activeCycleId === currentCycleId;
+    });
+  }, [expenses, activeCycleId, currentCycleId]);
+
+  const displayedUtilities = useMemo(() => {
+    return utilities.filter((u) => {
+      const utilCycle = u.cycle || (u.date ? u.date.slice(0, 7) : '');
+      if (utilCycle) {
+        return utilCycle === activeCycleId;
+      }
+      return activeCycleId === currentCycleId;
+    });
+  }, [utilities, activeCycleId, currentCycleId]);
+
+  const displayedRent = useMemo(() => {
+    if (!rent) return rent;
+    if (rent.cycle && rent.cycle !== activeCycleId) {
+      return {
+        ...rent,
+        cycle: activeCycleId,
+        totalRent: 0,
+        paidMemberIds: [],
+        status: 'pending' as const,
+      };
+    }
+    return rent;
+  }, [rent, activeCycleId]);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isArchGuideOpen, setIsArchGuideOpen] = useState(false);
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [lastReadTimestamp, setLastReadTimestamp] = useState<number>(() => {
+    if (group?.id) {
+      const saved = localStorage.getItem(`chat_last_read_time_${group.id}`);
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+      }
+    }
+    return Date.now();
+  });
+
+  // When chat opens or active group changes, update last read timestamp
+  useEffect(() => {
+    if (isChatOpen) {
+      const now = Date.now();
+      setLastReadTimestamp(now);
+      if (group?.id) {
+        localStorage.setItem(`chat_last_read_time_${group.id}`, String(now));
+      }
+    }
+  }, [isChatOpen, group?.id]);
+
+  // Calculate unread messages count (only messages sent by others after lastReadTimestamp)
+  const unreadCount = useMemo(() => {
+    if (!chatMessages || chatMessages.length === 0 || isChatOpen) return 0;
+
+    return chatMessages.filter((msg) => {
+      const isMe =
+        msg.senderId === userAuth.id ||
+        msg.senderId === userAuth.linkedGroupId ||
+        (userAuth.name && msg.senderName === userAuth.name);
+
+      if (isMe) return false;
+
+      const msgTime = getMessageTimestampMs(msg);
+      return msgTime > lastReadTimestamp;
+    }).length;
+  }, [chatMessages, isChatOpen, lastReadTimestamp, userAuth.id, userAuth.linkedGroupId, userAuth.name]);
   const [preferredCurrency, setPreferredCurrency] = useState<string>(() => {
     return localStorage.getItem('preferred_currency') || 'USD';
   });
@@ -473,7 +588,7 @@ export default function App() {
         }
       }
     }
-  }, [allGroups, userAuth.isLoggedIn, userAuth.role, userAuth.mobileNumber]);
+  }, [allGroups, userAuth.isLoggedIn, userAuth.role, userAuth.mobileNumber, userAuth.linkedGroupId, group.id]);
   useEffect(() => {
     // Initial optional check from sheet if needed, but do not override live Firestore
   }, [group.spreadsheetId]);
@@ -627,13 +742,16 @@ export default function App() {
     triggerHaptic(hapticPatterns.success);
 
     // Automatically post room chat notification for new expense
+    const nowMs = Date.now();
     const chatNotification: ChatMessage = {
-      id: `msg-${Date.now()}`,
+      id: `msg-${nowMs}`,
       senderId: payer?.id || 'm3',
       senderName: payer?.name || 'Member',
       senderAvatar: payer?.avatar || 'MB',
       text: `🛒 Added new ${newExpData.type} expense: "${newExpData.title}" (${newExpData.amount.toFixed(2)} ${group.currency})`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      createdMs: nowMs,
+      createdAt: new Date(nowMs).toISOString(),
       type: 'expense_added',
       amount: newExpData.amount,
     };
@@ -648,13 +766,16 @@ export default function App() {
     const nameToUse = data.senderName || sender?.name || userAuth?.name || 'User';
     const avatarToUse = sender?.avatar || nameToUse.slice(0, 2).toUpperCase();
 
+    const nowMs = Date.now();
     const newMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      senderId: sender?.id || 'm1',
+      id: `msg-${nowMs}`,
+      senderId: data.senderId || sender?.id || 'm1',
       senderName: nameToUse,
       senderAvatar: avatarToUse,
       text: data.text,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      createdMs: nowMs,
+      createdAt: new Date(nowMs).toISOString(),
       type: 'text',
     };
     setChatMessages((prev) => [...prev, newMsg]);
@@ -985,7 +1106,7 @@ export default function App() {
       {/* Header Bar (Visible ONLY when logged in on Dashboard View) */}
       {activeTab === 'dashboard' && !isLoginModalOpen && userAuth.isLoggedIn && (
         <HeaderBar
-          group={group}
+          group={displayedGroup}
           allGroups={allGroups}
           onSelectGroup={(g) => {
             setGroup(g);
@@ -993,6 +1114,8 @@ export default function App() {
           }}
           billingCycleType={billingCycleType}
           onToggleCycle={setBillingCycleType}
+          selectedPreviousCycle={selectedPreviousCycle}
+          onSelectPreviousCycle={setSelectedPreviousCycle}
           sheetsConfig={sheetsConfig}
           onSyncNow={() => fetchFromSheet(false)}
           onOpenAddGroup={() => setActiveTab('group')}
@@ -1058,28 +1181,56 @@ export default function App() {
             >
               {activeTab === 'dashboard' && (
                 <DashboardView
-                  group={group}
-                  expenses={expenses}
-                  utilities={utilities}
-                  rent={rent}
+                  group={displayedGroup}
+                  expenses={displayedExpenses}
+                  utilities={displayedUtilities}
+                  rent={displayedRent}
                   sheetsConfig={sheetsConfig}
                   onSyncNow={() => fetchFromSheet(false)}
                   isSyncing={isSyncing}
                   preferredCurrency={preferredCurrency}
                   customRates={customRates}
                   currentUser={userAuth}
-                  onNavigateTab={(tab) => setActiveTab(tab as AppTabType)}
+                  onNavigateTab={(tab) => {
+                    if (tab === 'expenses') {
+                      setActiveTab('home');
+                      setTimeout(() => {
+                        const el = document.getElementById('recent-expenses-section');
+                        if (el) {
+                          el.scrollIntoView({ behavior: 'smooth' });
+                        } else {
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }, 50);
+                    } else if (['dashboard', 'home', 'utilities', 'report', 'group'].includes(tab)) {
+                      setActiveTab(tab as AppTabType);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  onDeleteExpense={handleDeleteExpense}
                 />
               )}
 
               {activeTab === 'home' && (
                 <HomeDashboard
-                  group={group}
-                  expenses={expenses}
-                  utilities={utilities}
-                  rent={rent}
+                  group={displayedGroup}
+                  expenses={displayedExpenses}
+                  utilities={displayedUtilities}
+                  rent={displayedRent}
                   onOpenAddExpense={() => setIsAddExpenseOpen(true)}
-                  onNavigateTab={(tab) => setActiveTab(tab as AppTabType)}
+                  onNavigateTab={(tab) => {
+                    if (tab === 'expenses') {
+                      const el = document.getElementById('recent-expenses-section');
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth' });
+                      } else {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
+                    } else if (['dashboard', 'home', 'utilities', 'report', 'group'].includes(tab)) {
+                      setActiveTab(tab as AppTabType);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
                   onDeleteExpense={handleDeleteExpense}
                   preferredCurrency={preferredCurrency}
                   customRates={customRates}
@@ -1090,9 +1241,9 @@ export default function App() {
 
               {activeTab === 'utilities' && (
                 <UtilitiesAndRentView
-                  group={group}
-                  utilities={utilities}
-                  rent={rent}
+                  group={displayedGroup}
+                  utilities={displayedUtilities}
+                  rent={displayedRent}
                   onUpdateUtilityStatus={handleUpdateUtilityStatus}
                   onUpdateRentStatus={handleUpdateRentStatus}
                   onUpdateRent={handleUpdateRent}
@@ -1106,10 +1257,10 @@ export default function App() {
 
               {activeTab === 'report' && (
                 <ReportAndSettlementView
-                  group={group}
-                  expenses={expenses}
-                  utilities={utilities}
-                  rent={rent}
+                  group={displayedGroup}
+                  expenses={displayedExpenses}
+                  utilities={displayedUtilities}
+                  rent={displayedRent}
                   onSaveSettlement={() => {
                     setSyncNotification('Settlement Report saved and exported to Master Google Sheet!');
                     setTimeout(() => setSyncNotification(null), 3000);
@@ -1192,8 +1343,8 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess}
       />
 
-      {/* Floating Action Button (FAB) for Room Group Chat */}
-      {!isLoginModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && (
+      {/* Floating Action Button (FAB) for Room Group Chat - Automatically hides when chat modal is open */}
+      {!isChatOpen && !isLoginModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && (
         <motion.button
           whileHover={{ scale: 1.12 }}
           whileTap={{ scale: 0.92 }}
@@ -1207,10 +1358,10 @@ export default function App() {
             <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-black" />
           </div>
 
-          {/* Unread Message Notification Badge */}
-          {chatMessages.length > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 bg-white text-black text-[10px] font-black min-w-5 h-5 px-1 rounded-full border-2 border-black flex items-center justify-center shadow-md">
-              {chatMessages.length}
+          {/* Unread Message Notification Badge (Only shown when new unread messages exist) */}
+          {unreadCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-black min-w-5 h-5 px-1.5 rounded-full border-2 border-black flex items-center justify-center shadow-md animate-pulse">
+              {unreadCount}
             </span>
           )}
         </motion.button>

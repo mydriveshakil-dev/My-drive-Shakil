@@ -25,6 +25,7 @@ import {
   Receipt,
   Download,
   Loader2,
+  MessageSquare,
 } from 'lucide-react';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 
@@ -52,6 +53,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isSharingPdf, setIsSharingPdf] = useState(false);
 
   // Category filter checkboxes (Room rent is excluded from settlement breakdown as per landlord rent box rule)
   const [includeCategories, setIncludeCategories] = useState({
@@ -76,6 +78,78 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     });
   };
 
+  const sanitizeCssText = (text: string): string => {
+    if (!text) return text;
+    let css = text;
+
+    css = css.replace(/\bin\s+(oklab|oklch)\b/gi, 'in srgb');
+
+    const targets = ['oklch(', 'oklab(', 'color-mix(', 'light-dark(', 'color('];
+    let passCount = 0;
+
+    while (passCount < 30) {
+      passCount++;
+      let foundIndex = -1;
+      let foundTargetLen = 0;
+
+      const lower = css.toLowerCase();
+      for (const t of targets) {
+        const idx = lower.indexOf(t);
+        if (idx !== -1 && (foundIndex === -1 || idx < foundIndex)) {
+          foundIndex = idx;
+          foundTargetLen = t.length;
+        }
+      }
+
+      if (foundIndex === -1) break;
+
+      let depth = 0;
+      let endIdx = foundIndex;
+      for (let i = foundIndex; i < css.length; i++) {
+        if (css[i] === '(') depth++;
+        else if (css[i] === ')') {
+          depth--;
+          if (depth === 0) {
+            endIdx = i + 1;
+            break;
+          }
+        }
+      }
+
+      if (endIdx > foundIndex) {
+        css = css.substring(0, foundIndex) + '#1e293b' + css.substring(endIdx);
+      } else {
+        css = css.substring(0, foundIndex) + '#1e293b' + css.substring(foundIndex + foundTargetLen);
+      }
+    }
+
+    css = css.replace(/\b(oklab|oklch)\b/gi, 'srgb');
+
+    return css;
+  };
+
+  const sanitizeDocumentForHtml2Canvas = (clonedDoc: Document) => {
+    try {
+      const styles = clonedDoc.querySelectorAll('style');
+      styles.forEach((s) => {
+        if (s.textContent) {
+          s.textContent = sanitizeCssText(s.textContent);
+        }
+      });
+
+      const elements = clonedDoc.querySelectorAll('*');
+      elements.forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        const styleAttr = htmlEl.getAttribute('style');
+        if (styleAttr) {
+          htmlEl.setAttribute('style', sanitizeCssText(styleAttr));
+        }
+      });
+    } catch (e) {
+      console.warn('Sanitize document for html2canvas failed:', e);
+    }
+  };
+
   const handlePrintPdf = async () => {
     const element = document.getElementById('pdf-report-document');
     if (!element) {
@@ -89,7 +163,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         margin: 6,
         filename: `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
       };
 
@@ -103,6 +177,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   };
 
   const handleShareReport = async () => {
+    const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
     const summaryText = `📋 *${group.name} - Settlement Report*\n📅 Period: ${fromDate} to ${toDate}\n\n💰 Grand Total: ${settlementResult.grandTotalExpenses.toFixed(2)} ${group.currency}\n🍲 Daily Meal Rate: ${settlementResult.dailyMealRate.toFixed(2)} ${group.currency}/day\n\n*Settlement Transactions:*\n${
       settlementResult.settlementFlows.length > 0
         ? settlementResult.settlementFlows
@@ -111,23 +186,64 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         : 'All balances cleared!'
     }`;
 
-    if (navigator.share) {
+    const element = document.getElementById('pdf-report-document');
+    let generatedFile: File | null = null;
+    let generatedBlob: Blob | null = null;
+
+    if (element) {
+      try {
+        setIsSharingPdf(true);
+        const opt = {
+          margin: 6,
+          filename: fileName,
+          image: { type: 'jpeg' as const, quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+        };
+
+        const worker = html2pdf().set(opt).from(element);
+        generatedBlob = await worker.output('blob');
+        generatedFile = new File([generatedBlob], fileName, { type: 'application/pdf' });
+      } catch (err) {
+        console.warn('PDF generation for share failed:', err);
+      } finally {
+        setIsSharingPdf(false);
+      }
+    }
+
+    // Attempt native system share dialog with attached PDF file (Supported on Android, iOS, Chrome mobile)
+    if (generatedFile && navigator.canShare && navigator.canShare({ files: [generatedFile] })) {
       try {
         await navigator.share({
           title: `${group.name} Settlement Report`,
           text: summaryText,
+          files: [generatedFile],
         });
-      } catch (err) {
-        // Fallback to clipboard
-        await navigator.clipboard.writeText(summaryText);
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2500);
+        return; // Successfully opened native share sheet with PDF file attached!
+      } catch (shareErr: any) {
+        if (shareErr?.name === 'AbortError') {
+          return; // User canceled intentionally
+        }
+        console.warn('Native PDF file share rejected:', shareErr);
       }
-    } else {
-      await navigator.clipboard.writeText(summaryText);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2500);
     }
+
+    // Direct fallback for environments without native Web Share API file support (e.g. desktop web):
+    // 1. Download PDF directly to user's device
+    if (generatedBlob) {
+      const url = URL.createObjectURL(generatedBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    // 2. Open WhatsApp directly with formatted text summary
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(summaryText)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   return (
@@ -476,9 +592,9 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
       {/* PDF REPORT PREVIEW MODAL */}
       {isPdfPreviewOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex flex-col items-center justify-between p-2 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 bg-slate-100/95 backdrop-blur-md flex flex-col items-center justify-start p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
           {/* Top Control Header Bar */}
-          <div className="w-full max-w-4xl bg-slate-900/90 border border-white/20 p-3 sm:p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-white backdrop-blur-2xl shadow-2xl shrink-0 my-2">
+          <div className="w-full max-w-5xl bg-slate-900 border border-black p-3 sm:p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-white shadow-xl shrink-0 mb-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#F9A826] text-[#0B4A3F] font-black flex items-center justify-center shadow-md">
                 <FileText className="w-5 h-5" />
@@ -517,21 +633,27 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                 )}
               </button>
 
-              {/* Share Button */}
+              {/* Share WhatsApp Button */}
               <button
                 type="button"
                 onClick={handleShareReport}
-                className="bg-white/15 hover:bg-white/25 text-white font-bold px-3.5 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-1.5 border border-white/20 transition-all active:scale-95 cursor-pointer"
+                disabled={isSharingPdf || isGeneratingPdf}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-3.5 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-1.5 border border-emerald-700 transition-all active:scale-95 cursor-pointer disabled:opacity-60 shadow-md"
               >
-                {isCopied ? (
+                {isSharingPdf ? (
                   <>
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    <span className="text-emerald-300">Copied!</span>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Preparing PDF...</span>
+                  </>
+                ) : isCopied ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-200" />
+                    <span className="text-emerald-100">Copied!</span>
                   </>
                 ) : (
                   <>
-                    <Share2 className="w-4 h-4 text-amber-300" />
-                    <span>Share</span>
+                    <MessageSquare className="w-4 h-4 text-white fill-white" />
+                    <span>Share WhatsApp</span>
                   </>
                 )}
               </button>
@@ -549,10 +671,10 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           </div>
 
           {/* PDF Preview Document Container (A4 Printable Document Sheet) */}
-          <div className="w-full max-w-4xl my-auto py-4 overflow-x-auto">
+          <div className="w-full max-w-5xl mb-4 pb-4 overflow-x-auto">
             <div
               id="pdf-report-document"
-              className="bg-white text-slate-900 rounded-2xl shadow-2xl p-6 sm:p-10 max-w-3xl w-full mx-auto space-y-6 text-xs font-sans border border-slate-200"
+              className="bg-white text-slate-900 rounded-2xl shadow-xl p-6 sm:p-10 w-full mx-auto space-y-6 text-xs font-sans border-2 border-black"
             >
               {/* Header Stamp & Title */}
               <div className="border-b-2 border-slate-900 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -709,6 +831,12 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                   </div>
                   <p className="mt-1 text-[10px] text-slate-400">Generated by Room Suite Portal</p>
                 </div>
+              </div>
+
+              {/* Developer / Application Creator Footer */}
+              <div className="pt-4 border-t border-slate-200 text-center text-slate-700 text-xs font-bold leading-tight">
+                <p>This application created by AL AMIN</p>
+                <p>Mobile No. +971 54 487 4028</p>
               </div>
             </div>
           </div>

@@ -11,8 +11,10 @@ import {
   Receipt,
   Bot,
   Zap,
+  Clock,
 } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
+import { getMessageTimestampMs } from '../lib/firebase';
 
 interface GroupChatModalProps {
   isOpen: boolean;
@@ -46,7 +48,7 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
     group?.members?.[0]?.name ||
     'Logged In User';
 
-  const activeSenderId = loggedInMember?.id || 'm3';
+  const activeSenderId = loggedInMember?.id || currentUser?.id || currentUser?.email || 'm_current';
 
   const [inputText, setInputText] = useState('');
 
@@ -74,14 +76,6 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
       senderName: activeSenderName,
     });
     setInputText('');
-  };
-
-  const handleQuickChipClick = (chipText: string) => {
-    onSendMessage({
-      text: chipText,
-      senderId: activeSenderId,
-      senderName: activeSenderName,
-    });
   };
 
   return (
@@ -153,8 +147,28 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
 
         {/* Chat Messages Body */}
         <div className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50">
-          {messages.map((msg) => {
-            const isMe = msg.senderId === 'm3' || msg.senderName.includes('(Me)');
+          {/* 3-Day Retention Notice Badge */}
+          <div className="flex justify-center my-1">
+            <span className="text-[10px] font-bold bg-amber-100 text-amber-950 border border-amber-300 px-3 py-1 rounded-full flex items-center gap-1 shadow-xs">
+              <Clock className="w-3 h-3 text-amber-800 shrink-0" />
+              <span>৩ দিনের আগের চ্যাট স্বয়ংক্রিয়ভাবে মুছে যায় (Auto-deleted after 3 days)</span>
+            </span>
+          </div>
+
+          {messages
+            .filter((msg) => {
+              const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+              const msgTime = getMessageTimestampMs(msg);
+              return Date.now() - msgTime <= THREE_DAYS_MS;
+            })
+            .map((msg) => {
+            const isMe =
+              msg.senderId === activeSenderId ||
+              (loggedInMember && msg.senderId === loggedInMember.id) ||
+              (msg.senderName && activeSenderName && msg.senderName.trim().toLowerCase() === activeSenderName.trim().toLowerCase()) ||
+              (currentUser?.name && msg.senderName && msg.senderName.trim().toLowerCase().includes(currentUser.name.trim().toLowerCase())) ||
+              (currentUser?.email && msg.senderId === currentUser.email) ||
+              msg.senderName.includes('(Me)');
             const isSystemOrExpense = msg.type === 'expense_added' || msg.type === 'settlement_update';
 
             if (isSystemOrExpense) {
@@ -171,59 +185,42 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
             return (
               <div
                 key={msg.id}
-                className={`flex items-start gap-2.5 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}
+                className={`flex items-start gap-2 w-full ${isMe ? 'justify-end' : 'justify-start'}`}
               >
-                {/* Avatar */}
-                <div
-                  className={`w-9 h-9 rounded-2xl font-black text-xs flex items-center justify-center shrink-0 border shadow-sm ${
-                    isMe
-                      ? 'bg-black text-white border-black'
-                      : 'bg-white text-slate-900 border-black'
-                  }`}
-                >
-                  {msg.senderAvatar}
-                </div>
+                {!isMe && (
+                  <div className="w-8 h-8 rounded-2xl bg-white text-slate-900 font-black text-[10px] flex items-center justify-center shrink-0 border border-black shadow-sm mt-0.5">
+                    {msg.senderAvatar || 'U'}
+                  </div>
+                )}
 
                 {/* Message Bubble */}
                 <div
-                  className={`max-w-[78%] sm:max-w-[70%] rounded-2xl p-3 shadow-md text-xs space-y-1 ${
+                  className={`max-w-[78%] sm:max-w-[72%] rounded-2xl p-3 shadow-md text-xs space-y-1 ${
                     isMe
-                      ? 'bg-slate-900 text-white border border-black rounded-tr-none'
-                      : 'bg-white text-slate-900 border border-black rounded-tl-none'
+                      ? 'bg-slate-900 text-white border border-black rounded-tr-none ml-auto'
+                      : 'bg-white text-slate-900 border border-black rounded-tl-none mr-auto'
                   }`}
                 >
                   <div className={`flex items-center justify-between gap-3 text-[10px] font-bold border-b pb-1 ${isMe ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'}`}>
-                    <span className={isMe ? 'text-white' : 'text-slate-950'}>{msg.senderName}</span>
-                    <span>{msg.timestamp}</span>
+                    <span className={isMe ? 'text-emerald-400 font-extrabold' : 'text-slate-950 font-black'}>
+                      {isMe ? 'You' : msg.senderName}
+                    </span>
+                    <span className="text-[9px] opacity-80">{msg.timestamp}</span>
                   </div>
                   <p className="text-xs sm:text-sm font-medium leading-relaxed break-words pt-0.5">
                     {msg.text}
                   </p>
                 </div>
+
+                {isMe && (
+                  <div className="w-8 h-8 rounded-2xl bg-emerald-950 text-white font-black text-[10px] flex items-center justify-center shrink-0 border border-emerald-900 shadow-sm mt-0.5">
+                    {msg.senderAvatar || 'ME'}
+                  </div>
+                )}
               </div>
             );
           })}
           <div ref={messagesEndRef} />
-        </div>
-
-        {/* Quick Response Chips */}
-        <div className="px-4 py-2 bg-slate-100 border-t border-black flex items-center gap-2 overflow-x-auto text-xs shrink-0">
-          <span className="text-[10px] font-black text-slate-900 whitespace-nowrap uppercase">Quick Reply:</span>
-          {[
-            '👍 Paid my share!',
-            '🛒 Added new grocery receipt',
-            '💡 DEWA bill due soon',
-            '💳 Bank transfer sent to Mahadi',
-            '📊 Please check Google Sheet',
-          ].map((chip) => (
-            <button
-              key={chip}
-              onClick={() => handleQuickChipClick(chip)}
-              className="bg-white hover:bg-slate-200 text-slate-900 text-[11px] font-bold px-2.5 py-1 rounded-xl border border-black whitespace-nowrap transition-all active:scale-95 cursor-pointer shadow-xs"
-            >
-              {chip}
-            </button>
-          ))}
         </div>
 
         {/* Footer Input Controls */}

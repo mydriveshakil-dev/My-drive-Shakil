@@ -134,6 +134,8 @@ export interface ChatMessage {
   senderAvatar: string;
   text: string;
   timestamp: string;
+  createdMs?: number;
+  createdAt?: string;
   type?: 'text' | 'expense_added' | 'settlement_update' | 'bill_reminder';
   amount?: number;
 }

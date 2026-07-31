@@ -61,13 +61,15 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
     if (showAddModal && loggedInMember) {
       setNewUtilPayer(loggedInMember.id);
     }
-  }, [showAddModal, loggedInMember]);
+  }, [showAddModal, loggedInMember?.id]);
 
   const now = new Date();
   const currentMonthCycle = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
   const [totalRentInput, setTotalRentInput] = useState((rent?.totalRent || 0).toString());
   const [paidRentMembers, setPaidRentMembers] = useState<string[]>(rent?.paidMemberIds || []);
+
+  const paidMemberIdsJoined = (rent?.paidMemberIds || []).join(',');
 
   useEffect(() => {
     if (rent) {
@@ -91,7 +93,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         setPaidRentMembers(rent.paidMemberIds || []);
       }
     }
-  }, [rent?.totalRent, rent?.paidMemberIds, rent?.cycle, currentMonthCycle]);
+  }, [rent?.totalRent, paidMemberIdsJoined, rent?.cycle, currentMonthCycle]);
 
   const isAdmin = currentUser?.role === 'admin';
   const isRentAmountSet = (rent?.totalRent || 0) > 0;
@@ -602,6 +604,8 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   </span>
                   <button
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onTouchStart={(e) => e.preventDefault()}
                     onClick={() => setNewUtilAmount((prev) => prev + '+')}
                     className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
                   >
@@ -609,6 +613,8 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   </button>
                   <button
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onTouchStart={(e) => e.preventDefault()}
                     onClick={() => setNewUtilAmount((prev) => prev + '-')}
                     className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
                   >
@@ -616,6 +622,8 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   </button>
                   <button
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onTouchStart={(e) => e.preventDefault()}
                     onClick={() => setNewUtilAmount((prev) => prev + '*')}
                     className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
                   >
@@ -623,6 +631,8 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   </button>
                   <button
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onTouchStart={(e) => e.preventDefault()}
                     onClick={() => setNewUtilAmount((prev) => prev + '/')}
                     className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
                   >
@@ -630,6 +640,8 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   </button>
                   <button
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onTouchStart={(e) => e.preventDefault()}
                     onClick={() => {
                       const res = evaluateMathExpression(newUtilAmount);
                       if (res.isValid && res.calculatedValue !== null) {

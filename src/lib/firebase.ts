@@ -283,6 +283,30 @@ export async function saveRentToFirestore(groupId: string, rent: RentContributio
   }
 }
 
+// Helper to extract timestamp in ms from ChatMessage
+export function getMessageTimestampMs(msg: ChatMessage): number {
+  if (msg.createdMs && typeof msg.createdMs === 'number' && !isNaN(msg.createdMs)) {
+    return msg.createdMs;
+  }
+  if (msg.createdAt) {
+    const parsed = new Date(msg.createdAt).getTime();
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+  if (msg.id) {
+    if (msg.id.startsWith('msg-')) {
+      const rawNum = parseInt(msg.id.replace('msg-', ''), 10);
+      if (!isNaN(rawNum) && rawNum > 1000000000000) return rawNum;
+    }
+  }
+  if (msg.timestamp) {
+    const parsed = new Date(msg.timestamp).getTime();
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+  return Date.now();
+}
+
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000; // 3 days auto-deletion retention threshold
+
 // 5. Sync Chat Messages
 export function subscribeToChatMessages(
   groupId: string,
@@ -295,12 +319,22 @@ export function subscribeToChatMessages(
     q,
     (snapshot) => {
       const items: ChatMessage[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        items.push({ ...data, id: doc.id } as ChatMessage);
+      const now = Date.now();
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const msg = { ...data, id: docSnap.id } as ChatMessage;
+        const msgTime = getMessageTimestampMs(msg);
+
+        // Keep messages created within the last 3 days (72 hours)
+        if (now - msgTime <= THREE_DAYS_MS) {
+          items.push(msg);
+        } else {
+          // Auto delete messages older than 3 days from Firestore
+          deleteDoc(doc(db, 'chatMessages', docSnap.id)).catch(() => {});
+        }
       });
-      // sort by timestamp
-      items.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      // sort by timestamp ascending
+      items.sort((a, b) => getMessageTimestampMs(a) - getMessageTimestampMs(b));
       onUpdate(items);
     },
     (err) => {
@@ -312,7 +346,14 @@ export function subscribeToChatMessages(
 export async function saveChatMessageToFirestore(groupId: string, message: ChatMessage) {
   try {
     const msgRef = doc(db, 'chatMessages', message.id);
-    const payload = removeUndefinedFields({ ...message, groupId });
+    const createdMs = message.createdMs || getMessageTimestampMs(message);
+    const createdAt = message.createdAt || new Date(createdMs).toISOString();
+    const payload = removeUndefinedFields({
+      ...message,
+      groupId,
+      createdMs,
+      createdAt,
+    });
     await setDoc(msgRef, payload, { merge: true });
   } catch (err) {
     console.error('Error saving chat message to Firestore:', err);

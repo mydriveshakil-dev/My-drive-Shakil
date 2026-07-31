@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Group, ExpenseCategory, UserAuthProfile } from '../types';
 import { X, Utensils, ShoppingBag, Upload, Calendar as CalendarIcon, UserCheck, DollarSign, Check, Calculator } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
@@ -64,12 +64,15 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState('');
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isMessPermitted && isGeneralPermitted && category === 'mess') {
       setCategory('general');
     }
   }, [isMessPermitted, isGeneralPermitted, category]);
+
+  const groupMembersJoined = group.members.map((m) => m.id).join(',');
 
   useEffect(() => {
     if (isOpen) {
@@ -78,7 +81,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
         setPaidById(loggedInMember.id);
       }
     }
-  }, [isOpen, category, group.members, loggedInMember]);
+  }, [isOpen, category, groupMembersJoined, loggedInMember?.id]);
 
   if (!isOpen) return null;
 
@@ -111,14 +114,22 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
     }
   };
 
+  const focusAmountInput = () => {
+    if (amountInputRef.current) {
+      amountInputRef.current.focus();
+    }
+  };
+
   const handleAppendSymbol = (symbol: string) => {
     setAmount((prev) => prev + symbol);
     triggerHaptic(hapticPatterns.click);
+    setTimeout(focusAmountInput, 0);
   };
 
   const handleClearAmount = () => {
     setAmount('');
     triggerHaptic(hapticPatterns.click);
+    setTimeout(focusAmountInput, 0);
   };
 
   const mathEval = evaluateMathExpression(amount);
@@ -148,6 +159,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
       setAmount(res.displayValue);
       triggerHaptic(hapticPatterns.success);
     }
+    setTimeout(focusAmountInput, 0);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -256,6 +268,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 {group.currency}
               </span>
               <input
+                ref={amountInputRef}
                 type="text"
                 inputMode="decimal"
                 autoComplete="off"
@@ -276,6 +289,8 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               </span>
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
                 onClick={() => handleAppendSymbol('+')}
                 className="px-3 py-1.5 bg-white hover:bg-slate-100 active:scale-95 text-black font-black text-base rounded-xl border border-black transition-all cursor-pointer min-w-[36px]"
               >
@@ -283,6 +298,8 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
                 onClick={() => handleAppendSymbol('-')}
                 className="px-3 py-1.5 bg-white hover:bg-slate-100 active:scale-95 text-black font-black text-base rounded-xl border border-black transition-all cursor-pointer min-w-[36px]"
               >
@@ -290,6 +307,8 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
                 onClick={() => handleAppendSymbol('*')}
                 className="px-3 py-1.5 bg-white hover:bg-slate-100 active:scale-95 text-black font-black text-base rounded-xl border border-black transition-all cursor-pointer min-w-[36px]"
               >
@@ -297,6 +316,8 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
                 onClick={() => handleAppendSymbol('/')}
                 className="px-3 py-1.5 bg-white hover:bg-slate-100 active:scale-95 text-black font-black text-base rounded-xl border border-black transition-all cursor-pointer min-w-[36px]"
               >
@@ -304,6 +325,8 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
                 onClick={() => handleAppendSymbol('(')}
                 className="px-2.5 py-1.5 bg-white hover:bg-slate-100 active:scale-95 text-black font-black text-sm rounded-xl border border-black transition-all cursor-pointer min-w-[32px]"
               >
@@ -311,6 +334,8 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
                 onClick={() => handleAppendSymbol(')')}
                 className="px-2.5 py-1.5 bg-white hover:bg-slate-100 active:scale-95 text-black font-black text-sm rounded-xl border border-black transition-all cursor-pointer min-w-[32px]"
               >
@@ -318,6 +343,8 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
                 onClick={handleApplyCalculation}
                 className="px-3 py-1.5 bg-black hover:bg-slate-800 active:scale-95 text-white font-black text-base rounded-xl shadow-md transition-all cursor-pointer ml-auto shrink-0 border border-black"
                 title="Calculate expression"
@@ -326,6 +353,8 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               </button>
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
                 onClick={handleClearAmount}
                 className="px-2.5 py-1.5 bg-white hover:bg-slate-100 active:scale-95 text-black font-bold text-xs rounded-xl border border-black transition-all cursor-pointer shrink-0"
               >

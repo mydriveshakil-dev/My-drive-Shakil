@@ -3,6 +3,7 @@ import { Group, GoogleSheetsConfig, BillingCycleType, UserAuthProfile } from '..
 import { ChevronDown, RefreshCw, Layers, Plus, Code, CheckCircle2, Coins, ShieldCheck, LogOut, ExternalLink } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
 import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
+import { getPreviousCycleOptions } from '../utils/cycleUtils';
 
 interface HeaderBarProps {
   group: Group;
@@ -10,6 +11,8 @@ interface HeaderBarProps {
   onSelectGroup?: (group: Group) => void;
   billingCycleType: BillingCycleType;
   onToggleCycle: (type: BillingCycleType) => void;
+  selectedPreviousCycle?: string;
+  onSelectPreviousCycle?: (cycleId: string) => void;
   sheetsConfig: GoogleSheetsConfig;
   onSyncNow: () => void;
   onOpenAddGroup: () => void;
@@ -28,6 +31,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onSelectGroup,
   billingCycleType,
   onToggleCycle,
+  selectedPreviousCycle,
+  onSelectPreviousCycle,
   sheetsConfig,
   onSyncNow,
   onOpenAddGroup,
@@ -39,6 +44,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onOpenLoginModal,
   onLogout,
 }) => {
+  const previousCycleOptions = getPreviousCycleOptions(12);
   const isAdmin = currentUser?.role === 'admin';
   const [showGroupDropdown, setShowGroupDropdown] = useState(false);
 
@@ -263,20 +269,19 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
               {billingCycleType === 'previous' && (
                 <select
-                  value={group.billingCycle}
+                  value={selectedPreviousCycle || previousCycleOptions[0]?.cycleId}
                   onChange={(e) => {
-                    onToggleCycle('previous');
+                    if (onSelectPreviousCycle) {
+                      onSelectPreviousCycle(e.target.value);
+                    }
                   }}
                   className="bg-white text-slate-900 font-black text-xs px-3 py-1.5 rounded-xl border border-black focus:outline-none cursor-pointer shadow-xs"
                 >
-                  <option value="01 Jun - 30 Jun 2026">Jun 2026 (Previous Cycle)</option>
-                  <option value="01 May - 31 May 2026">May 2026</option>
-                  <option value="01 Apr - 30 Apr 2026">Apr 2026</option>
-                  <option value="01 Mar - 31 Mar 2026">Mar 2026</option>
-                  <option value="01 Feb - 28 Feb 2026">Feb 2026</option>
-                  <option value="01 Jan - 31 Jan 2026">Jan 2026</option>
-                  <option value="01 Dec - 31 Dec 2025">Dec 2025</option>
-                  <option value="01 Nov - 30 Nov 2025">Nov 2025</option>
+                  {previousCycleOptions.map((opt) => (
+                    <option key={opt.cycleId} value={opt.cycleId}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               )}
             </div>

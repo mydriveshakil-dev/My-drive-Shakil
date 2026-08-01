@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Code, Copy, Check, FileSpreadsheet, Server, Layers, ArrowRight, ShieldCheck } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
 
@@ -10,6 +10,18 @@ interface ArchitectureGuideModalProps {
 export const ArchitectureGuideModal: React.FC<ArchitectureGuideModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<'architecture' | 'sheetsApi' | 'flutterCode' | 'settlementAlgo'>('architecture');
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

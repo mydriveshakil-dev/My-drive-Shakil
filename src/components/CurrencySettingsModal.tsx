@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DEFAULT_CURRENCIES, CurrencyInfo } from '../utils/currency';
 import { X, RefreshCw, Check, ArrowRightLeft, SlidersHorizontal, Info } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
@@ -30,6 +30,18 @@ export const CurrencySettingsModal: React.FC<CurrencySettingsModalProps> = ({
   const [search, setSearch] = useState('');
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [tempRate, setTempRate] = useState<string>('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

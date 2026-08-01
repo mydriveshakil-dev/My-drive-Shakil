@@ -72,6 +72,19 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
     }
   }, [isMessPermitted, isGeneralPermitted, category]);
 
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, [isOpen]);
+
   const groupMembersJoined = group.members.map((m) => m.id).join(',');
 
   useEffect(() => {

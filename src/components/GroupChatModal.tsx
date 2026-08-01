@@ -64,6 +64,18 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
     }
   }, [isOpen, messages]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSend = (e?: React.FormEvent) => {

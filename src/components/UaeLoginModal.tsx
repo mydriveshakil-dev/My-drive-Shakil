@@ -100,6 +100,22 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
     }
   }, [isOpen]);
 
+  // Prevent background scrolling when login modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleGoogleLogin = async () => {

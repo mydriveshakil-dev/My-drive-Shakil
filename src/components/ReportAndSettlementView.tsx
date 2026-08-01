@@ -117,56 +117,35 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     });
   };
 
-  const sanitizeCssText = (text: string): string => {
-    if (!text) return '';
-    return text
-      .replace(/\boklch\([^)]*\)/gi, '#1e293b')
-      .replace(/\boklab\([^)]*\)/gi, '#1e293b')
-      .replace(/\bcolor-mix\([^)]*\)/gi, '#1e293b')
-      .replace(/\blight-dark\([^)]*\)/gi, '#1e293b')
-      .replace(/\bin\s+(oklab|oklch)\b/gi, 'in srgb');
-  };
-
   const sanitizeDocumentForHtml2Canvas = (clonedDoc: Document) => {
     try {
-      // 1. Sanitize style tags
-      const styles = clonedDoc.querySelectorAll('style');
-      styles.forEach((s) => {
-        if (s.textContent) {
-          s.textContent = sanitizeCssText(s.textContent);
-        }
-      });
+      const origDocEl = document.getElementById('pdf-report-document');
+      const clonedDocEl = clonedDoc.getElementById('pdf-report-document');
 
-      // 2. Inline and sanitize stylesheet rules if accessible
-      const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
-      links.forEach((link) => {
-        try {
-          const sheet = (link as HTMLLinkElement).sheet;
-          if (sheet && sheet.cssRules) {
-            let cssText = '';
-            for (let i = 0; i < sheet.cssRules.length; i++) {
-              cssText += sheet.cssRules[i].cssText + '\n';
+      if (origDocEl && clonedDocEl) {
+        const origElements = Array.from(origDocEl.querySelectorAll('*'));
+        const clonedElements = Array.from(clonedDocEl.querySelectorAll('*'));
+
+        clonedDocEl.style.backgroundColor = '#ffffff';
+        clonedDocEl.style.color = '#0f172a';
+
+        for (let i = 0; i < clonedElements.length; i++) {
+          const origEl = origElements[i] as HTMLElement;
+          const clonedEl = clonedElements[i] as HTMLElement;
+          if (origEl && clonedEl && clonedEl.style) {
+            const computed = window.getComputedStyle(origEl);
+            if (computed.backgroundColor && computed.backgroundColor !== 'transparent' && computed.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+              clonedEl.style.backgroundColor = computed.backgroundColor;
             }
-            if (cssText) {
-              const styleEl = clonedDoc.createElement('style');
-              styleEl.textContent = sanitizeCssText(cssText);
-              link.parentNode?.replaceChild(styleEl, link);
+            if (computed.color) {
+              clonedEl.style.color = computed.color;
+            }
+            if (computed.borderColor) {
+              clonedEl.style.borderColor = computed.borderColor;
             }
           }
-        } catch (e) {
-          // Ignore cross-origin rules access errors
         }
-      });
-
-      // 3. Sanitize inline style attributes
-      const elements = clonedDoc.querySelectorAll('*');
-      elements.forEach((el) => {
-        const htmlEl = el as HTMLElement;
-        const styleAttr = htmlEl.getAttribute('style');
-        if (styleAttr) {
-          htmlEl.setAttribute('style', sanitizeCssText(styleAttr));
-        }
-      });
+      }
     } catch (e) {
       console.warn('Sanitize document for html2canvas failed:', e);
     }
@@ -740,75 +719,75 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
               {/* Key Summary Totals Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">Total Mess Expense</span>
-                  <div className="text-base font-black text-slate-900 mt-0.5">
+                <div className="p-3 rounded-xl border" style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a' }}>
+                  <span className="text-[10px] font-bold uppercase" style={{ color: '#64748b' }}>Total Mess Expense</span>
+                  <div className="text-base font-black mt-0.5" style={{ color: '#0f172a' }}>
                     {settlementResult.totalMessExpenses.toFixed(2)} {group.currency}
                   </div>
-                  <span className="text-[10px] text-slate-500">Rate: {settlementResult.dailyMealRate.toFixed(2)} {group.currency}/day</span>
+                  <span className="text-[10px]" style={{ color: '#64748b' }}>Rate: {settlementResult.dailyMealRate.toFixed(2)} {group.currency}/day</span>
                 </div>
 
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">General Expense</span>
-                  <div className="text-base font-black text-slate-900 mt-0.5">
+                <div className="p-3 rounded-xl border" style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a' }}>
+                  <span className="text-[10px] font-bold uppercase" style={{ color: '#64748b' }}>General Expense</span>
+                  <div className="text-base font-black mt-0.5" style={{ color: '#0f172a' }}>
                     {settlementResult.totalGeneralExpenses.toFixed(2)} {group.currency}
                   </div>
-                  <span className="text-[10px] text-slate-500">Shared equally</span>
+                  <span className="text-[10px]" style={{ color: '#64748b' }}>Shared equally</span>
                 </div>
 
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">Utilities (DEWA & WiFi)</span>
-                  <div className="text-base font-black text-slate-900 mt-0.5">
+                <div className="p-3 rounded-xl border" style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a' }}>
+                  <span className="text-[10px] font-bold uppercase" style={{ color: '#64748b' }}>Utilities (DEWA & WiFi)</span>
+                  <div className="text-base font-black mt-0.5" style={{ color: '#0f172a' }}>
                     {settlementResult.totalUtilities.toFixed(2)} {group.currency}
                   </div>
-                  <span className="text-[10px] text-slate-500">DEWA, WiFi Bills</span>
+                  <span className="text-[10px]" style={{ color: '#64748b' }}>DEWA, WiFi Bills</span>
                 </div>
 
-                <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-300">
-                  <span className="text-[10px] font-bold text-emerald-800 uppercase">Grand Total</span>
-                  <div className="text-base font-black text-emerald-950 mt-0.5">
+                <div className="p-3 rounded-xl border" style={{ backgroundColor: '#ecfdf5', borderColor: '#6ee7b7', color: '#064e3b' }}>
+                  <span className="text-[10px] font-bold uppercase" style={{ color: '#065f46' }}>Grand Total</span>
+                  <div className="text-base font-black mt-0.5" style={{ color: '#022c22' }}>
                     {settlementResult.grandTotalExpenses.toFixed(2)} {group.currency}
                   </div>
-                  <span className="text-[10px] text-emerald-700 font-semibold">{group.members.length} Members</span>
+                  <span className="text-[10px] font-semibold" style={{ color: '#047857' }}>{group.members.length} Members</span>
                 </div>
               </div>
 
               {/* Member-wise Calculation Table */}
               <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 mb-2 pb-1 border-b border-slate-200 flex items-center justify-between">
+                <h3 className="text-xs font-black uppercase tracking-wider mb-2 pb-1 border-b flex items-center justify-between" style={{ color: '#1e293b', borderColor: '#e2e8f0' }}>
                   <span>1. Member-wise Calculation Breakdown</span>
-                  <span className="text-slate-500 font-normal">Daily Rate: {settlementResult.dailyMealRate.toFixed(2)} {group.currency}/day</span>
+                  <span className="font-normal" style={{ color: '#64748b' }}>Daily Rate: {settlementResult.dailyMealRate.toFixed(2)} {group.currency}/day</span>
                 </h3>
 
-                <table className="w-full text-left border-collapse border border-slate-200">
+                <table className="w-full text-left border-collapse border" style={{ borderColor: '#e2e8f0' }}>
                   <thead>
-                    <tr className="bg-slate-100 text-slate-700 uppercase font-bold text-[10px]">
-                      <th className="p-2 border border-slate-200">Member</th>
-                      <th className="p-2 border border-slate-200 text-center">Days Present</th>
-                      <th className="p-2 border border-slate-200 text-right">Actual Share</th>
-                      <th className="p-2 border border-slate-200 text-right">Amount Paid</th>
-                      <th className="p-2 border border-slate-200 text-right">Final Balance</th>
+                    <tr className="uppercase font-bold text-[10px]" style={{ backgroundColor: '#f1f5f9', color: '#334155' }}>
+                      <th className="p-2 border" style={{ borderColor: '#e2e8f0' }}>Member</th>
+                      <th className="p-2 border text-center" style={{ borderColor: '#e2e8f0' }}>Days Present</th>
+                      <th className="p-2 border text-right" style={{ borderColor: '#e2e8f0' }}>Actual Share</th>
+                      <th className="p-2 border text-right" style={{ borderColor: '#e2e8f0' }}>Amount Paid</th>
+                      <th className="p-2 border text-right" style={{ borderColor: '#e2e8f0' }}>Final Balance</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 font-medium">
-                    {settlementResult.memberSummaries.map((ms) => {
+                  <tbody className="divide-y font-medium" style={{ borderColor: '#e2e8f0' }}>
+                    {settlementResult.memberSummaries.map((ms, idx) => {
                       const isOverpaid = ms.balance >= 0;
                       return (
-                        <tr key={ms.memberId} className="even:bg-slate-50">
-                          <td className="p-2 border border-slate-200 font-bold text-slate-900">
+                        <tr key={ms.memberId} style={{ backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}>
+                          <td className="p-2 border font-bold" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>
                             {ms.memberName}
                           </td>
-                          <td className="p-2 border border-slate-200 text-center text-slate-700">
+                          <td className="p-2 border text-center" style={{ borderColor: '#e2e8f0', color: '#334155' }}>
                             {ms.daysPresent} days
                           </td>
-                          <td className="p-2 border border-slate-200 text-right text-slate-700">
+                          <td className="p-2 border text-right" style={{ borderColor: '#e2e8f0', color: '#334155' }}>
                             {ms.totalActualExpense.toFixed(2)} {group.currency}
                           </td>
-                          <td className="p-2 border border-slate-200 text-right font-bold text-amber-700">
+                          <td className="p-2 border text-right font-bold" style={{ borderColor: '#e2e8f0', color: '#b45309' }}>
                             {ms.totalAmountSpent.toFixed(2)} {group.currency}
                           </td>
-                          <td className="p-2 border border-slate-200 text-right font-black">
-                            <span className={isOverpaid ? 'text-emerald-700' : 'text-rose-700'}>
+                          <td className="p-2 border text-right font-black" style={{ borderColor: '#e2e8f0' }}>
+                            <span style={{ color: isOverpaid ? '#047857' : '#be123c' }}>
                               {isOverpaid
                                 ? `+${ms.balance.toFixed(2)} ${group.currency} (Gets Back)`
                                 : `${ms.balance.toFixed(2)} ${group.currency} (DUE)`}
@@ -823,7 +802,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
               {/* Simplified Debt Settlement Flow Table */}
               <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 mb-2 pb-1 border-b border-slate-200">
+                <h3 className="text-xs font-black uppercase tracking-wider mb-2 pb-1 border-b" style={{ color: '#1e293b', borderColor: '#e2e8f0' }}>
                   2. Simplified Debt Settlement Transactions
                 </h3>
 
@@ -832,43 +811,44 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                     {settlementResult.settlementFlows.map((flow) => (
                       <div
                         key={flow.id}
-                        className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-xs"
+                        className="p-2.5 rounded-lg border flex items-center justify-between text-xs"
+                        style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a' }}
                       >
-                        <span className="font-bold text-rose-700">{flow.fromMemberName} (Payer)</span>
-                        <div className="flex items-center gap-1.5 text-slate-600 font-bold">
+                        <span className="font-bold" style={{ color: '#be123c' }}>{flow.fromMemberName} (Payer)</span>
+                        <div className="flex items-center gap-1.5 font-bold" style={{ color: '#475569' }}>
                           <span>pays</span>
-                          <ArrowRight className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="text-slate-900 font-black px-2 py-0.5 bg-amber-100 rounded border border-amber-300">
+                          <ArrowRight className="w-3.5 h-3.5" style={{ color: '#059669' }} />
+                          <span className="font-black px-2 py-0.5 rounded border" style={{ backgroundColor: '#fef3c7', borderColor: '#fcd34d', color: '#0f172a' }}>
                             {flow.amount.toFixed(2)} {group.currency}
                           </span>
                         </div>
-                        <span className="font-bold text-emerald-700">{flow.toMemberName} (Receiver)</span>
+                        <span className="font-bold" style={{ color: '#047857' }}>{flow.toMemberName} (Receiver)</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-emerald-700 font-bold p-2 bg-emerald-50 rounded border border-emerald-200">
+                  <p className="text-xs font-bold p-2 rounded border" style={{ backgroundColor: '#ecfdf5', borderColor: '#a7f3d0', color: '#047857' }}>
                     ✓ All member balances are fully settled in this cycle.
                   </p>
                 )}
               </div>
 
               {/* Document Signatures & Stamp */}
-              <div className="pt-6 border-t border-slate-200 flex items-end justify-between text-[11px] text-slate-500">
+              <div className="pt-6 border-t flex items-end justify-between text-[11px]" style={{ borderColor: '#e2e8f0', color: '#64748b' }}>
                 <div>
-                  <p className="font-bold text-slate-800">Verified & Approved By:</p>
-                  <p className="mt-6 border-t border-slate-300 pt-1 font-semibold">Room Manager Signature</p>
+                  <p className="font-bold" style={{ color: '#1e293b' }}>Verified & Approved By:</p>
+                  <p className="mt-6 border-t pt-1 font-semibold" style={{ borderColor: '#cbd5e1' }}>Room Manager Signature</p>
                 </div>
                 <div className="text-right">
-                  <div className="inline-block px-3 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded font-black text-[10px] uppercase">
+                  <div className="inline-block px-3 py-1 rounded font-black text-[10px] uppercase border" style={{ backgroundColor: '#d1fae5', color: '#065f46', borderColor: '#6ee7b7' }}>
                     OFFICIAL MESS AUDIT STAMP
                   </div>
-                  <p className="mt-1 text-[10px] text-slate-400">Generated by Room Suite Portal</p>
+                  <p className="mt-1 text-[10px]" style={{ color: '#94a3b8' }}>Generated by Room Suite Portal</p>
                 </div>
               </div>
 
               {/* Developer / Application Creator Footer */}
-              <div className="pt-4 border-t border-slate-200 text-center text-slate-700 text-xs font-bold leading-tight">
+              <div className="pt-4 border-t text-center text-xs font-bold leading-tight" style={{ borderColor: '#e2e8f0', color: '#334155' }}>
                 <p>This application created by AL AMIN</p>
                 <p>Mobile No. +971 54 487 4028</p>
               </div>

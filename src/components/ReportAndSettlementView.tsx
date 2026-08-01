@@ -54,6 +54,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   const [isCopied, setIsCopied] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isSharingPdf, setIsSharingPdf] = useState(false);
+  const cachedPdfFileRef = useRef<File | null>(null);
 
   // Category filter checkboxes (Room rent is excluded from settlement breakdown as per landlord rent box rule)
   const [includeCategories, setIncludeCategories] = useState({
@@ -71,6 +72,38 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     includeCategories
   );
 
+  // Pre-generate PDF file as soon as PDF preview modal opens
+  useEffect(() => {
+    if (!isPdfPreviewOpen) {
+      cachedPdfFileRef.current = null;
+      return;
+    }
+
+    const pregenerate = async () => {
+      const element = document.getElementById('pdf-report-document');
+      if (!element) return;
+      try {
+        const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
+        const opt = {
+          margin: 6,
+          filename: fileName,
+          image: { type: 'jpeg' as const, quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+        };
+        const worker = html2pdf().set(opt).from(element);
+        const blob = await worker.output('blob');
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+        cachedPdfFileRef.current = file;
+      } catch (err) {
+        console.warn('Background PDF pregeneration for share failed:', err);
+      }
+    };
+
+    const timer = setTimeout(pregenerate, 350);
+    return () => clearTimeout(timer);
+  }, [isPdfPreviewOpen, fromDate, toDate, group.name, settlementResult]);
+
   const toggleCategory = (key: keyof typeof includeCategories) => {
     setIncludeCategories({
       ...includeCategories,
@@ -78,85 +111,76 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     });
   };
 
-  // Helper canvas context for normalizing oklch/computed colors into standard sRGB hex or rgba
-  const normalizeCssColor = (colorStr: string): string => {
-    if (!colorStr || colorStr === 'transparent' || colorStr === 'rgba(0, 0, 0, 0)' || colorStr === 'none') {
-      return 'transparent';
-    }
-    if (/^#([0-9a-f]{3}){1,2}$/i.test(colorStr) || /^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+/i.test(colorStr)) {
-      return colorStr;
-    }
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1;
-      canvas.height = 1;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillStyle = colorStr;
-        return ctx.fillStyle || '#ffffff';
-      }
-    } catch {
-      // ignore
-    }
-    return '#ffffff';
-  };
+  const sanitizeCssText = (text: string): string => {
+    if (!text) return text;
+    let css = text;
 
-  // Helper to safely resolve html2pdf in modern ES Module / Vite / Vercel bundlers
-  const getHtml2Pdf = () => {
-    if (typeof html2pdf === 'function') return html2pdf;
-    if ((html2pdf as any)?.default && typeof (html2pdf as any).default === 'function') {
-      return (html2pdf as any).default;
+    css = css.replace(/\bin\s+(oklab|oklch)\b/gi, 'in srgb');
+
+    const targets = ['oklch(', 'oklab(', 'color-mix(', 'light-dark(', 'color('];
+    let passCount = 0;
+
+    while (passCount < 30) {
+      passCount++;
+      let foundIndex = -1;
+      let foundTargetLen = 0;
+
+      const lower = css.toLowerCase();
+      for (const t of targets) {
+        const idx = lower.indexOf(t);
+        if (idx !== -1 && (foundIndex === -1 || idx < foundIndex)) {
+          foundIndex = idx;
+          foundTargetLen = t.length;
+        }
+      }
+
+      if (foundIndex === -1) break;
+
+      let depth = 0;
+      let endIdx = foundIndex;
+      for (let i = foundIndex; i < css.length; i++) {
+        if (css[i] === '(') depth++;
+        else if (css[i] === ')') {
+          depth--;
+          if (depth === 0) {
+            endIdx = i + 1;
+            break;
+          }
+        }
+      }
+
+      if (endIdx > foundIndex) {
+        css = css.substring(0, foundIndex) + '#1e293b' + css.substring(endIdx);
+      } else {
+        css = css.substring(0, foundIndex) + '#1e293b' + css.substring(foundIndex + foundTargetLen);
+      }
     }
-    if ((window as any)?.html2pdf && typeof (window as any).html2pdf === 'function') {
-      return (window as any).html2pdf;
-    }
-    return null;
+
+    css = css.replace(/\b(oklab|oklch)\b/gi, 'srgb');
+
+    return css;
   };
 
   const sanitizeDocumentForHtml2Canvas = (clonedDoc: Document) => {
     try {
-      const clonedDocEl = clonedDoc.getElementById('pdf-report-document');
-      if (clonedDocEl) {
-        clonedDocEl.style.backgroundColor = '#ffffff';
-        clonedDocEl.style.color = '#0f172a';
+      const styles = clonedDoc.querySelectorAll('style');
+      styles.forEach((s) => {
+        if (s.textContent) {
+          s.textContent = sanitizeCssText(s.textContent);
+        }
+      });
 
-        // Sanitize any style elements in cloned iframe
-        const styleEls = clonedDoc.querySelectorAll('style');
-        styleEls.forEach((s) => {
-          if (s.textContent) {
-            s.textContent = s.textContent
-              .replace(/oklch\([^)]*\)/gi, '#1e293b')
-              .replace(/oklab\([^)]*\)/gi, '#1e293b')
-              .replace(/color-mix\([^)]*\)/gi, '#1e293b');
-          }
-        });
-
-        // Strip oklch/oklab from inline styles in cloned elements
-        const allClonedElements = clonedDocEl.querySelectorAll('*');
-        allClonedElements.forEach((el) => {
-          const htmlEl = el as HTMLElement;
-          if (htmlEl && htmlEl.getAttribute) {
-            const styleAttr = htmlEl.getAttribute('style');
-            if (styleAttr && (styleAttr.includes('oklch') || styleAttr.includes('oklab') || styleAttr.includes('color-mix'))) {
-              htmlEl.setAttribute(
-                'style',
-                styleAttr
-                  .replace(/oklch\([^)]*\)/gi, '#1e293b')
-                  .replace(/oklab\([^)]*\)/gi, '#1e293b')
-                  .replace(/color-mix\([^)]*\)/gi, '#1e293b')
-              );
-            }
-          }
-        });
-      }
+      const elements = clonedDoc.querySelectorAll('*');
+      elements.forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        const styleAttr = htmlEl.getAttribute('style');
+        if (styleAttr) {
+          htmlEl.setAttribute('style', sanitizeCssText(styleAttr));
+        }
+      });
     } catch (e) {
-      console.warn('Sanitize document for html2canvas notice:', e);
+      console.warn('Sanitize document for html2canvas failed:', e);
     }
-  };
-
-  const handleDirectPrint = () => {
-    window.print();
   };
 
   const handlePrintPdf = async () => {
@@ -168,30 +192,17 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
     try {
       setIsGeneratingPdf(true);
-      const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
-      const html2pdfFunc = getHtml2Pdf();
+      const opt = {
+        margin: 6,
+        filename: `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+      };
 
-      if (typeof html2pdfFunc === 'function') {
-        const opt = {
-          margin: [8, 8, 8, 8],
-          filename: fileName,
-          image: { type: 'jpeg' as const, quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            logging: false,
-            onclone: sanitizeDocumentForHtml2Canvas,
-          },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-        };
-
-        await html2pdfFunc().set(opt).from(element).save();
-      } else {
-        window.print();
-      }
+      await html2pdf().set(opt).from(element).save();
     } catch (err) {
-      console.error('PDF export error, falling back to browser print dialog:', err);
+      console.error('PDF export error, using fallback print():', err);
       window.print();
     } finally {
       setIsGeneratingPdf(false);
@@ -200,78 +211,88 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
   const handleShareReport = async () => {
     const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
-    setIsSharingPdf(true);
-    try {
-      const element = document.getElementById('pdf-report-document');
-      const html2pdfFunc = getHtml2Pdf();
+    const summaryText = `📋 *${group.name} - Settlement Report*\n📅 Period: ${fromDate} to ${toDate}\n\n💰 Grand Total: ${settlementResult.grandTotalExpenses.toFixed(2)} ${group.currency}\n🍲 Daily Meal Rate: ${settlementResult.dailyMealRate.toFixed(2)} ${group.currency}/day\n\n*Settlement Transactions:*\n${
+      settlementResult.settlementFlows.length > 0
+        ? settlementResult.settlementFlows
+            .map((f) => `• ${f.fromMemberName} pays ${f.toMemberName}: ${f.amount.toFixed(2)} ${group.currency}`)
+            .join('\n')
+        : 'All balances cleared!'
+    }`;
 
-      let targetFile: File | null = null;
-      if (element && typeof html2pdfFunc === 'function') {
+    let targetFile = cachedPdfFileRef.current;
+
+    // If pre-generated file isn't ready yet, generate it on demand
+    if (!targetFile) {
+      const element = document.getElementById('pdf-report-document');
+      if (element) {
         try {
+          setIsSharingPdf(true);
           const opt = {
-            margin: [8, 8, 8, 8],
+            margin: 6,
             filename: fileName,
             image: { type: 'jpeg' as const, quality: 0.98 },
-            html2canvas: {
-              scale: 2,
-              useCORS: true,
-              allowTaint: true,
-              logging: false,
-              onclone: sanitizeDocumentForHtml2Canvas,
-            },
+            html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
           };
 
-          const worker = html2pdfFunc().set(opt).from(element);
-          let blob: Blob | null = null;
-          try {
-            blob = await worker.output('blob');
-          } catch {
-            blob = await worker.outputPdf('blob');
-          }
-
-          if (blob) {
-            targetFile = new File([blob], fileName, { type: 'application/pdf', lastModified: Date.now() });
-          }
-        } catch (pdfErr) {
-          console.warn('html2pdf worker output blob failed:', pdfErr);
+          const worker = html2pdf().set(opt).from(element);
+          const blob = await worker.output('blob');
+          targetFile = new File([blob], fileName, { type: 'application/pdf' });
+          cachedPdfFileRef.current = targetFile;
+        } catch (err) {
+          console.warn('On-demand PDF generation for share failed:', err);
+        } finally {
+          setIsSharingPdf(false);
         }
       }
+    }
 
-      // 1. Native Web Share API with attached real PDF file ONLY (no text caption to prevent apps from ignoring file)
-      if (targetFile && navigator.canShare && navigator.canShare({ files: [targetFile] })) {
-        try {
+    // 1. Attempt native system share dialog with attached PDF file
+    if (targetFile) {
+      try {
+        if (navigator.canShare && navigator.canShare({ files: [targetFile] })) {
           await navigator.share({
             title: `${group.name} Settlement Report`,
+            text: summaryText,
+            files: [targetFile],
+          });
+          return; // Successfully opened native share sheet with PDF file attached!
+        } else if (navigator.share) {
+          await navigator.share({
+            title: `${group.name} Settlement Report`,
+            text: summaryText,
             files: [targetFile],
           });
           return;
-        } catch (shareErr: any) {
-          if (shareErr?.name === 'AbortError') return; // User intentionally canceled native share sheet
-          console.warn('Native canShare with file failed:', shareErr);
         }
+      } catch (shareErr: any) {
+        if (shareErr?.name === 'AbortError') {
+          return; // User canceled the native share dialog intentionally
+        }
+        console.warn('Native PDF file share rejected or unsupported:', shareErr);
       }
+    }
 
-      // 2. Fallback for Desktop / unsupported share target: Directly download the real PDF File
-      if (targetFile) {
-        const url = URL.createObjectURL(targetFile);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
+    // 2. Fallback to native text share if file sharing failed or is unsupported
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${group.name} Settlement Report`,
+          text: summaryText,
+        });
         return;
+      } catch (e: any) {
+        if (e?.name === 'AbortError') return;
       }
+    }
 
-      // 3. Fallback: Trigger standard PDF download / save
-      await handlePrintPdf();
-    } catch (err) {
-      console.error('Share report error:', err);
-      window.print();
-    } finally {
-      setIsSharingPdf(false);
+    // 3. Desktop Clipboard Fallback (Copies summary text without auto-downloading files)
+    try {
+      await navigator.clipboard.writeText(summaryText);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 3000);
+    } catch (e) {
+      // ignore
     }
   };
 
@@ -621,11 +642,11 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
       {/* PDF REPORT PREVIEW MODAL */}
       {isPdfPreviewOpen && (
-        <div className="fixed inset-0 z-[9999] bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-start p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
-          {/* Top Control Header Bar - Sticky */}
-          <div className="sticky top-0 z-50 w-full max-w-5xl bg-slate-900 border-2 border-slate-700 p-3 sm:p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-white shadow-2xl shrink-0 my-2">
+        <div className="fixed inset-0 z-50 bg-slate-100/95 backdrop-blur-md flex flex-col items-center justify-start p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+          {/* Top Control Header Bar */}
+          <div className="w-full max-w-5xl bg-slate-900 border border-black p-3 sm:p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-white shadow-xl shrink-0 mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#F9A826] text-[#0B4A3F] font-black flex items-center justify-center shadow-md shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-[#F9A826] text-[#0B4A3F] font-black flex items-center justify-center shadow-md">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
@@ -641,18 +662,18 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2">
               {/* Save / Download PDF Button */}
               <button
                 type="button"
                 onClick={handlePrintPdf}
-                disabled={isGeneratingPdf || isSharingPdf}
-                className="bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black px-3.5 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-60 shrink-0"
+                disabled={isGeneratingPdf}
+                className="bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black px-4 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-60"
               >
                 {isGeneratingPdf ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Downloading...</span>
+                    <span>Downloading PDF...</span>
                   </>
                 ) : (
                   <>
@@ -662,38 +683,27 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                 )}
               </button>
 
-              {/* Direct Print Button */}
-              <button
-                type="button"
-                onClick={handleDirectPrint}
-                className="bg-slate-800 hover:bg-slate-700 text-white font-extrabold px-3 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-1.5 border border-slate-600 transition-all active:scale-95 cursor-pointer shadow-md shrink-0"
-                title="Print Report directly"
-              >
-                <Printer className="w-4 h-4 text-amber-400" />
-                <span className="hidden sm:inline">Print</span>
-              </button>
-
               {/* Share Button */}
               <button
                 type="button"
                 onClick={handleShareReport}
                 disabled={isSharingPdf || isGeneratingPdf}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-3.5 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-1.5 border border-emerald-700 transition-all active:scale-95 cursor-pointer disabled:opacity-60 shadow-md shrink-0"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-3.5 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-1.5 border border-emerald-700 transition-all active:scale-95 cursor-pointer disabled:opacity-60 shadow-md"
               >
                 {isSharingPdf ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    <span>Preparing...</span>
+                    <span>Preparing PDF...</span>
                   </>
                 ) : isCopied ? (
                   <>
                     <Check className="w-4 h-4 text-emerald-200" />
-                    <span className="text-emerald-100">Copied!</span>
+                    <span className="text-emerald-100">Copied Report!</span>
                   </>
                 ) : (
                   <>
                     <Share2 className="w-4 h-4 text-white" />
-                    <span>Share PDF</span>
+                    <span>Share</span>
                   </>
                 )}
               </button>
@@ -701,15 +711,11 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               {/* Close Modal Button */}
               <button
                 type="button"
-                onClick={() => {
-                  setIsPdfPreviewOpen(false);
-                  setIsGeneratingPdf(false);
-                  setIsSharingPdf(false);
-                }}
-                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white hover:text-amber-300 flex items-center justify-center transition-all cursor-pointer border border-white/20 shadow-md active:scale-95 shrink-0"
+                onClick={() => setIsPdfPreviewOpen(false)}
+                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition-all cursor-pointer border border-white/15"
                 title="Close Preview"
               >
-                <X className="w-5 h-5 stroke-[2.5]" />
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -750,75 +756,75 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
               {/* Key Summary Totals Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl border" style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a' }}>
-                  <span className="text-[10px] font-bold uppercase" style={{ color: '#64748b' }}>Total Mess Expense</span>
-                  <div className="text-base font-black mt-0.5" style={{ color: '#0f172a' }}>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Total Mess Expense</span>
+                  <div className="text-base font-black text-slate-900 mt-0.5">
                     {settlementResult.totalMessExpenses.toFixed(2)} {group.currency}
                   </div>
-                  <span className="text-[10px]" style={{ color: '#64748b' }}>Rate: {settlementResult.dailyMealRate.toFixed(2)} {group.currency}/day</span>
+                  <span className="text-[10px] text-slate-500">Rate: {settlementResult.dailyMealRate.toFixed(2)} {group.currency}/day</span>
                 </div>
 
-                <div className="p-3 rounded-xl border" style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a' }}>
-                  <span className="text-[10px] font-bold uppercase" style={{ color: '#64748b' }}>General Expense</span>
-                  <div className="text-base font-black mt-0.5" style={{ color: '#0f172a' }}>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">General Expense</span>
+                  <div className="text-base font-black text-slate-900 mt-0.5">
                     {settlementResult.totalGeneralExpenses.toFixed(2)} {group.currency}
                   </div>
-                  <span className="text-[10px]" style={{ color: '#64748b' }}>Shared equally</span>
+                  <span className="text-[10px] text-slate-500">Shared equally</span>
                 </div>
 
-                <div className="p-3 rounded-xl border" style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a' }}>
-                  <span className="text-[10px] font-bold uppercase" style={{ color: '#64748b' }}>Utilities (DEWA & WiFi)</span>
-                  <div className="text-base font-black mt-0.5" style={{ color: '#0f172a' }}>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Utilities (DEWA & WiFi)</span>
+                  <div className="text-base font-black text-slate-900 mt-0.5">
                     {settlementResult.totalUtilities.toFixed(2)} {group.currency}
                   </div>
-                  <span className="text-[10px]" style={{ color: '#64748b' }}>DEWA, WiFi Bills</span>
+                  <span className="text-[10px] text-slate-500">DEWA, WiFi Bills</span>
                 </div>
 
-                <div className="p-3 rounded-xl border" style={{ backgroundColor: '#ecfdf5', borderColor: '#6ee7b7', color: '#064e3b' }}>
-                  <span className="text-[10px] font-bold uppercase" style={{ color: '#065f46' }}>Grand Total</span>
-                  <div className="text-base font-black mt-0.5" style={{ color: '#022c22' }}>
+                <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-300">
+                  <span className="text-[10px] font-bold text-emerald-800 uppercase">Grand Total</span>
+                  <div className="text-base font-black text-emerald-950 mt-0.5">
                     {settlementResult.grandTotalExpenses.toFixed(2)} {group.currency}
                   </div>
-                  <span className="text-[10px] font-semibold" style={{ color: '#047857' }}>{group.members.length} Members</span>
+                  <span className="text-[10px] text-emerald-700 font-semibold">{group.members.length} Members</span>
                 </div>
               </div>
 
               {/* Member-wise Calculation Table */}
               <div>
-                <h3 className="text-xs font-black uppercase tracking-wider mb-2 pb-1 border-b flex items-center justify-between" style={{ color: '#1e293b', borderColor: '#e2e8f0' }}>
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 mb-2 pb-1 border-b border-slate-200 flex items-center justify-between">
                   <span>1. Member-wise Calculation Breakdown</span>
-                  <span className="font-normal" style={{ color: '#64748b' }}>Daily Rate: {settlementResult.dailyMealRate.toFixed(2)} {group.currency}/day</span>
+                  <span className="text-slate-500 font-normal">Daily Rate: {settlementResult.dailyMealRate.toFixed(2)} {group.currency}/day</span>
                 </h3>
 
-                <table className="w-full text-left border-collapse border" style={{ borderColor: '#e2e8f0' }}>
+                <table className="w-full text-left border-collapse border border-slate-200">
                   <thead>
-                    <tr className="uppercase font-bold text-[10px]" style={{ backgroundColor: '#f1f5f9', color: '#334155' }}>
-                      <th className="p-2 border" style={{ borderColor: '#e2e8f0' }}>Member</th>
-                      <th className="p-2 border text-center" style={{ borderColor: '#e2e8f0' }}>Days Present</th>
-                      <th className="p-2 border text-right" style={{ borderColor: '#e2e8f0' }}>Actual Share</th>
-                      <th className="p-2 border text-right" style={{ borderColor: '#e2e8f0' }}>Amount Paid</th>
-                      <th className="p-2 border text-right" style={{ borderColor: '#e2e8f0' }}>Final Balance</th>
+                    <tr className="bg-slate-100 text-slate-700 uppercase font-bold text-[10px]">
+                      <th className="p-2 border border-slate-200">Member</th>
+                      <th className="p-2 border border-slate-200 text-center">Days Present</th>
+                      <th className="p-2 border border-slate-200 text-right">Actual Share</th>
+                      <th className="p-2 border border-slate-200 text-right">Amount Paid</th>
+                      <th className="p-2 border border-slate-200 text-right">Final Balance</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y font-medium" style={{ borderColor: '#e2e8f0' }}>
-                    {settlementResult.memberSummaries.map((ms, idx) => {
+                  <tbody className="divide-y divide-slate-200 font-medium">
+                    {settlementResult.memberSummaries.map((ms) => {
                       const isOverpaid = ms.balance >= 0;
                       return (
-                        <tr key={ms.memberId} style={{ backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}>
-                          <td className="p-2 border font-bold" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>
+                        <tr key={ms.memberId} className="even:bg-slate-50">
+                          <td className="p-2 border border-slate-200 font-bold text-slate-900">
                             {ms.memberName}
                           </td>
-                          <td className="p-2 border text-center" style={{ borderColor: '#e2e8f0', color: '#334155' }}>
+                          <td className="p-2 border border-slate-200 text-center text-slate-700">
                             {ms.daysPresent} days
                           </td>
-                          <td className="p-2 border text-right" style={{ borderColor: '#e2e8f0', color: '#334155' }}>
+                          <td className="p-2 border border-slate-200 text-right text-slate-700">
                             {ms.totalActualExpense.toFixed(2)} {group.currency}
                           </td>
-                          <td className="p-2 border text-right font-bold" style={{ borderColor: '#e2e8f0', color: '#b45309' }}>
+                          <td className="p-2 border border-slate-200 text-right font-bold text-amber-700">
                             {ms.totalAmountSpent.toFixed(2)} {group.currency}
                           </td>
-                          <td className="p-2 border text-right font-black" style={{ borderColor: '#e2e8f0' }}>
-                            <span style={{ color: isOverpaid ? '#047857' : '#be123c' }}>
+                          <td className="p-2 border border-slate-200 text-right font-black">
+                            <span className={isOverpaid ? 'text-emerald-700' : 'text-rose-700'}>
                               {isOverpaid
                                 ? `+${ms.balance.toFixed(2)} ${group.currency} (Gets Back)`
                                 : `${ms.balance.toFixed(2)} ${group.currency} (DUE)`}
@@ -833,7 +839,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
               {/* Simplified Debt Settlement Flow Table */}
               <div>
-                <h3 className="text-xs font-black uppercase tracking-wider mb-2 pb-1 border-b" style={{ color: '#1e293b', borderColor: '#e2e8f0' }}>
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 mb-2 pb-1 border-b border-slate-200">
                   2. Simplified Debt Settlement Transactions
                 </h3>
 
@@ -842,44 +848,43 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                     {settlementResult.settlementFlows.map((flow) => (
                       <div
                         key={flow.id}
-                        className="p-2.5 rounded-lg border flex items-center justify-between text-xs"
-                        style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#0f172a' }}
+                        className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-xs"
                       >
-                        <span className="font-bold" style={{ color: '#be123c' }}>{flow.fromMemberName} (Payer)</span>
-                        <div className="flex items-center gap-1.5 font-bold" style={{ color: '#475569' }}>
+                        <span className="font-bold text-rose-700">{flow.fromMemberName} (Payer)</span>
+                        <div className="flex items-center gap-1.5 text-slate-600 font-bold">
                           <span>pays</span>
-                          <ArrowRight className="w-3.5 h-3.5" style={{ color: '#059669' }} />
-                          <span className="font-black px-2 py-0.5 rounded border" style={{ backgroundColor: '#fef3c7', borderColor: '#fcd34d', color: '#0f172a' }}>
+                          <ArrowRight className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-slate-900 font-black px-2 py-0.5 bg-amber-100 rounded border border-amber-300">
                             {flow.amount.toFixed(2)} {group.currency}
                           </span>
                         </div>
-                        <span className="font-bold" style={{ color: '#047857' }}>{flow.toMemberName} (Receiver)</span>
+                        <span className="font-bold text-emerald-700">{flow.toMemberName} (Receiver)</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs font-bold p-2 rounded border" style={{ backgroundColor: '#ecfdf5', borderColor: '#a7f3d0', color: '#047857' }}>
+                  <p className="text-xs text-emerald-700 font-bold p-2 bg-emerald-50 rounded border border-emerald-200">
                     ✓ All member balances are fully settled in this cycle.
                   </p>
                 )}
               </div>
 
               {/* Document Signatures & Stamp */}
-              <div className="pt-6 border-t flex items-end justify-between text-[11px]" style={{ borderColor: '#e2e8f0', color: '#64748b' }}>
+              <div className="pt-6 border-t border-slate-200 flex items-end justify-between text-[11px] text-slate-500">
                 <div>
-                  <p className="font-bold" style={{ color: '#1e293b' }}>Verified & Approved By:</p>
-                  <p className="mt-6 border-t pt-1 font-semibold" style={{ borderColor: '#cbd5e1' }}>Room Manager Signature</p>
+                  <p className="font-bold text-slate-800">Verified & Approved By:</p>
+                  <p className="mt-6 border-t border-slate-300 pt-1 font-semibold">Room Manager Signature</p>
                 </div>
                 <div className="text-right">
-                  <div className="inline-block px-3 py-1 rounded font-black text-[10px] uppercase border" style={{ backgroundColor: '#d1fae5', color: '#065f46', borderColor: '#6ee7b7' }}>
+                  <div className="inline-block px-3 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded font-black text-[10px] uppercase">
                     OFFICIAL MESS AUDIT STAMP
                   </div>
-                  <p className="mt-1 text-[10px]" style={{ color: '#94a3b8' }}>Generated by Room Suite Portal</p>
+                  <p className="mt-1 text-[10px] text-slate-400">Generated by Room Suite Portal</p>
                 </div>
               </div>
 
               {/* Developer / Application Creator Footer */}
-              <div className="pt-4 border-t text-center text-xs font-bold leading-tight" style={{ borderColor: '#e2e8f0', color: '#334155' }}>
+              <div className="pt-4 border-t border-slate-200 text-center text-slate-700 text-xs font-bold leading-tight">
                 <p>This application created by AL AMIN</p>
                 <p>Mobile No. +971 54 487 4028</p>
               </div>

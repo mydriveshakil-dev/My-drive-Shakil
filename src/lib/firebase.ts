@@ -1,10 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   getFirestore,
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
-  memoryLocalCache,
   doc,
   setDoc,
   getDoc,
@@ -29,31 +25,10 @@ import { Group, Expense, UtilityBill, RentContribution, ChatMessage, UserAuthPro
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Safely initialize Firestore with fallback cache options to handle IndexedDB closing connections in iframe / multi-tab
-function createFirestoreInstance() {
-  const dbId = (firebaseConfig as any).firestoreDatabaseId || undefined;
-  
-  // Try initializing with multi-tab persistent cache first
-  try {
-    return initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager()
-      })
-    }, dbId);
-  } catch (e1) {
-    console.warn('Firestore multi-tab persistent cache init failed, attempting memory cache:', e1);
-    try {
-      return initializeFirestore(app, {
-        localCache: memoryLocalCache()
-      }, dbId);
-    } catch (e2) {
-      console.warn('Firestore memory cache init failed, falling back to default getFirestore:', e2);
-      return dbId ? getFirestore(app, dbId) : getFirestore(app);
-    }
-  }
-}
-
-export const db = createFirestoreInstance();
+// Initialize Firestore with specific databaseId if provided
+export const db = firebaseConfig.firestoreDatabaseId
+  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
+  : getFirestore(app);
 
 // Initialize Auth & Google Provider
 export const auth = getAuth(app);

@@ -54,7 +54,6 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   const [isCopied, setIsCopied] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isSharingPdf, setIsSharingPdf] = useState(false);
-  const cachedPdfFileRef = useRef<File | null>(null);
 
   // Category filter checkboxes (Room rent is excluded from settlement breakdown as per landlord rent box rule)
   const [includeCategories, setIncludeCategories] = useState({
@@ -72,49 +71,35 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     includeCategories
   );
 
-  // Pre-generate PDF file as soon as PDF preview modal opens
-  useEffect(() => {
-    if (!isPdfPreviewOpen) {
-      cachedPdfFileRef.current = null;
-      return;
-    }
-
-    let isMounted = true;
-    const pregenerate = async () => {
-      const element = document.getElementById('pdf-report-document');
-      if (!element) return;
-      try {
-        const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
-        const opt = {
-          margin: 6,
-          filename: fileName,
-          image: { type: 'jpeg' as const, quality: 0.95 },
-          html2canvas: { scale: 1.5, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-        };
-        const worker = html2pdf().set(opt).from(element);
-        const blob = await worker.output('blob');
-        if (isMounted) {
-          const file = new File([blob], fileName, { type: 'application/pdf', lastModified: Date.now() });
-          cachedPdfFileRef.current = file;
-        }
-      } catch (err) {
-        console.warn('Background PDF pregeneration for share failed:', err);
-      }
-    };
-
-    const timer = setTimeout(pregenerate, 150);
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
-  }, [isPdfPreviewOpen, fromDate, toDate, group.name, settlementResult]);
-
   const toggleCategory = (key: keyof typeof includeCategories) => {
     setIncludeCategories({
       ...includeCategories,
       [key]: !includeCategories[key],
     });
+  };
+
+  // Helper canvas context for normalizing oklch/computed colors into standard sRGB hex or rgba
+  const normalizeCssColor = (colorStr: string): string => {
+    if (!colorStr || colorStr === 'transparent' || colorStr === 'rgba(0, 0, 0, 0)' || colorStr === 'none') {
+      return 'transparent';
+    }
+    if (/^#([0-9a-f]{3}){1,2}$/i.test(colorStr) || /^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+/i.test(colorStr)) {
+      return colorStr;
+    }
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = colorStr;
+        return ctx.fillStyle || '#ffffff';
+      }
+    } catch {
+      // ignore
+    }
+    return '#ffffff';
   };
 
   const sanitizeDocumentForHtml2Canvas = (clonedDoc: Document) => {
@@ -123,25 +108,45 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       const clonedDocEl = clonedDoc.getElementById('pdf-report-document');
 
       if (origDocEl && clonedDocEl) {
-        const origElements = Array.from(origDocEl.querySelectorAll('*'));
-        const clonedElements = Array.from(clonedDocEl.querySelectorAll('*'));
-
         clonedDocEl.style.backgroundColor = '#ffffff';
         clonedDocEl.style.color = '#0f172a';
+        clonedDocEl.style.borderColor = '#0f172a';
+
+        // Sanitize style tags in cloned document to strip oklch syntax that breaks html2canvas
+        const styleEls = clonedDoc.querySelectorAll('style');
+        styleEls.forEach((s) => {
+          if (s.textContent) {
+            s.textContent = s.textContent
+              .replace(/oklch\([^)]*\)/gi, '#1e293b')
+              .replace(/oklab\([^)]*\)/gi, '#1e293b')
+              .replace(/color-mix\([^)]*\)/gi, '#1e293b');
+          }
+        });
+
+        const origElements = Array.from(origDocEl.querySelectorAll('*'));
+        const clonedElements = Array.from(clonedDocEl.querySelectorAll('*'));
 
         for (let i = 0; i < clonedElements.length; i++) {
           const origEl = origElements[i] as HTMLElement;
           const clonedEl = clonedElements[i] as HTMLElement;
           if (origEl && clonedEl && clonedEl.style) {
             const computed = window.getComputedStyle(origEl);
-            if (computed.backgroundColor && computed.backgroundColor !== 'transparent' && computed.backgroundColor !== 'rgba(0, 0, 0, 0)') {
-              clonedEl.style.backgroundColor = computed.backgroundColor;
+
+            const bg = computed.backgroundColor;
+            if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+              clonedEl.style.backgroundColor = normalizeCssColor(bg);
+            } else {
+              clonedEl.style.backgroundColor = 'transparent';
             }
-            if (computed.color) {
-              clonedEl.style.color = computed.color;
+
+            const fg = computed.color;
+            if (fg) {
+              clonedEl.style.color = normalizeCssColor(fg);
             }
-            if (computed.borderColor) {
-              clonedEl.style.borderColor = computed.borderColor;
+
+            const border = computed.borderColor;
+            if (border && border !== 'transparent' && border !== 'rgba(0, 0, 0, 0)') {
+              clonedEl.style.borderColor = normalizeCssColor(border);
             }
           }
         }
@@ -165,7 +170,12 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         margin: 6,
         filename: fileName,
         image: { type: 'jpeg' as const, quality: 0.95 },
-        html2canvas: { scale: 1.5, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+        html2canvas: {
+          scale: 1.5,
+          useCORS: true,
+          logging: false,
+          onclone: sanitizeDocumentForHtml2Canvas,
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
       };
 
@@ -180,48 +190,41 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
   const handleShareReport = async () => {
     const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
-    let targetFile = cachedPdfFileRef.current;
-
     setIsSharingPdf(true);
     try {
-      // If pre-generated file isn't ready yet, generate it on demand
-      if (!targetFile) {
-        const element = document.getElementById('pdf-report-document');
-        if (element) {
-          const opt = {
-            margin: 6,
-            filename: fileName,
-            image: { type: 'jpeg' as const, quality: 0.95 },
-            html2canvas: { scale: 1.5, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-          };
-
-          const worker = html2pdf().set(opt).from(element);
-          const blob = await worker.output('blob');
-          targetFile = new File([blob], fileName, { type: 'application/pdf', lastModified: Date.now() });
-          cachedPdfFileRef.current = targetFile;
-        }
-      }
-
-      if (!targetFile) {
-        alert('Unable to generate PDF report for sharing. Downloading PDF instead.');
+      const element = document.getElementById('pdf-report-document');
+      if (!element) {
         await handlePrintPdf();
         return;
       }
 
-      // 1. Attempt native system share sheet with attached PDF file ONLY (supported on mobile Chrome/Safari)
-      let sharedSuccessfully = false;
+      const opt = {
+        margin: 6,
+        filename: fileName,
+        image: { type: 'jpeg' as const, quality: 0.95 },
+        html2canvas: {
+          scale: 1.5,
+          useCORS: true,
+          logging: false,
+          onclone: sanitizeDocumentForHtml2Canvas,
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+      };
+
+      const worker = html2pdf().set(opt).from(element);
+      const blob = await worker.output('blob');
+      const targetFile = new File([blob], fileName, { type: 'application/pdf', lastModified: Date.now() });
+
+      let shared = false;
       if (navigator.canShare && navigator.canShare({ files: [targetFile] })) {
         try {
           await navigator.share({
             title: `${group.name} Settlement Report`,
             files: [targetFile],
           });
-          sharedSuccessfully = true;
+          shared = true;
         } catch (shareErr: any) {
-          if (shareErr?.name === 'AbortError') {
-            return; // User canceled the native share dialog intentionally
-          }
+          if (shareErr?.name === 'AbortError') return; // User intentionally canceled native share
           console.warn('Native canShare failed:', shareErr);
         }
       } else if (navigator.share) {
@@ -230,18 +233,16 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
             title: `${group.name} Settlement Report`,
             files: [targetFile],
           });
-          sharedSuccessfully = true;
+          shared = true;
         } catch (shareErr: any) {
-          if (shareErr?.name === 'AbortError') {
-            return; // User canceled intentionally
-          }
+          if (shareErr?.name === 'AbortError') return; // User canceled
           console.warn('Native share failed:', shareErr);
         }
       }
 
-      if (sharedSuccessfully) return;
+      if (shared) return;
 
-      // 2. Desktop & unsupported browsers fallback: Download PDF file directly to user's device
+      // Universal Fallback for Desktop browsers / unsupported share sheet: Direct Download
       const url = URL.createObjectURL(targetFile);
       const a = document.createElement('a');
       a.href = url;
@@ -252,7 +253,6 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch (err) {
       console.error('Share report handler error:', err);
-      // Fallback to print / save
       await handlePrintPdf();
     } finally {
       setIsSharingPdf(false);
@@ -605,11 +605,11 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
       {/* PDF REPORT PREVIEW MODAL */}
       {isPdfPreviewOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-100/95 backdrop-blur-md flex flex-col items-center justify-start p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
-          {/* Top Control Header Bar */}
-          <div className="w-full max-w-5xl bg-slate-900 border border-black p-3 sm:p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-white shadow-xl shrink-0 mb-3">
+        <div className="fixed inset-0 z-[9999] bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-start p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+          {/* Top Control Header Bar - Sticky */}
+          <div className="sticky top-0 z-50 w-full max-w-5xl bg-slate-900 border-2 border-slate-700 p-3 sm:p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-white shadow-2xl shrink-0 my-2">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#F9A826] text-[#0B4A3F] font-black flex items-center justify-center shadow-md">
+              <div className="w-10 h-10 rounded-xl bg-[#F9A826] text-[#0B4A3F] font-black flex items-center justify-center shadow-md shrink-0">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
@@ -625,12 +625,12 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {/* Save / Download PDF Button */}
               <button
                 type="button"
                 onClick={handlePrintPdf}
-                disabled={isGeneratingPdf}
+                disabled={isGeneratingPdf || isSharingPdf}
                 className="bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black px-4 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-60"
               >
                 {isGeneratingPdf ? (
@@ -661,12 +661,12 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                 ) : isCopied ? (
                   <>
                     <Check className="w-4 h-4 text-emerald-200" />
-                    <span className="text-emerald-100">Copied Report!</span>
+                    <span className="text-emerald-100">Copied!</span>
                   </>
                 ) : (
                   <>
                     <Share2 className="w-4 h-4 text-white" />
-                    <span>Share</span>
+                    <span>Share PDF</span>
                   </>
                 )}
               </button>
@@ -674,11 +674,15 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               {/* Close Modal Button */}
               <button
                 type="button"
-                onClick={() => setIsPdfPreviewOpen(false)}
-                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition-all cursor-pointer border border-white/15"
+                onClick={() => {
+                  setIsPdfPreviewOpen(false);
+                  setIsGeneratingPdf(false);
+                  setIsSharingPdf(false);
+                }}
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white hover:text-amber-300 flex items-center justify-center transition-all cursor-pointer border border-white/20 shadow-md active:scale-95"
                 title="Close Preview"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 stroke-[2.5]" />
               </button>
             </div>
           </div>

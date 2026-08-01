@@ -118,53 +118,13 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   };
 
   const sanitizeCssText = (text: string): string => {
-    if (!text) return text;
-    let css = text;
-
-    css = css.replace(/\bin\s+(oklab|oklch)\b/gi, 'in srgb');
-
-    const targets = ['oklch(', 'oklab(', 'color-mix(', 'light-dark(', 'color('];
-    let passCount = 0;
-
-    while (passCount < 30) {
-      passCount++;
-      let foundIndex = -1;
-      let foundTargetLen = 0;
-
-      const lower = css.toLowerCase();
-      for (const t of targets) {
-        const idx = lower.indexOf(t);
-        if (idx !== -1 && (foundIndex === -1 || idx < foundIndex)) {
-          foundIndex = idx;
-          foundTargetLen = t.length;
-        }
-      }
-
-      if (foundIndex === -1) break;
-
-      let depth = 0;
-      let endIdx = foundIndex;
-      for (let i = foundIndex; i < css.length; i++) {
-        if (css[i] === '(') depth++;
-        else if (css[i] === ')') {
-          depth--;
-          if (depth === 0) {
-            endIdx = i + 1;
-            break;
-          }
-        }
-      }
-
-      if (endIdx > foundIndex) {
-        css = css.substring(0, foundIndex) + '#1e293b' + css.substring(endIdx);
-      } else {
-        css = css.substring(0, foundIndex) + '#1e293b' + css.substring(foundIndex + foundTargetLen);
-      }
-    }
-
-    css = css.replace(/\b(oklab|oklch)\b/gi, 'srgb');
-
-    return css;
+    if (!text) return '';
+    return text
+      .replace(/\boklch\([^)]*\)/gi, '#1e293b')
+      .replace(/\boklab\([^)]*\)/gi, '#1e293b')
+      .replace(/\bcolor-mix\([^)]*\)/gi, '#1e293b')
+      .replace(/\blight-dark\([^)]*\)/gi, '#1e293b')
+      .replace(/\bin\s+(oklab|oklch)\b/gi, 'in srgb');
   };
 
   const sanitizeDocumentForHtml2Canvas = (clonedDoc: Document) => {
@@ -177,12 +137,12 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         }
       });
 
-      // 2. Inline and sanitize cross-origin / link stylesheets if accessible
+      // 2. Inline and sanitize stylesheet rules if accessible
       const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
       links.forEach((link) => {
         try {
           const sheet = (link as HTMLLinkElement).sheet;
-          if (sheet) {
+          if (sheet && sheet.cssRules) {
             let cssText = '';
             for (let i = 0; i < sheet.cssRules.length; i++) {
               cssText += sheet.cssRules[i].cssText + '\n';
@@ -194,7 +154,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
             }
           }
         } catch (e) {
-          // Cross-origin rules might throw, ignore
+          // Ignore cross-origin rules access errors
         }
       });
 
@@ -221,11 +181,12 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
     try {
       setIsGeneratingPdf(true);
+      const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
       const opt = {
         margin: 6,
-        filename: `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`,
+        filename: fileName,
         image: { type: 'jpeg' as const, quality: 0.95 },
-        html2canvas: { scale: 1.5, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+        html2canvas: { scale: 1.5, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
       };
 
@@ -242,17 +203,17 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
     let targetFile = cachedPdfFileRef.current;
 
-    // If pre-generated file isn't ready yet, generate it on demand
-    if (!targetFile) {
-      const element = document.getElementById('pdf-report-document');
-      if (element) {
-        try {
-          setIsSharingPdf(true);
+    setIsSharingPdf(true);
+    try {
+      // If pre-generated file isn't ready yet, generate it on demand
+      if (!targetFile) {
+        const element = document.getElementById('pdf-report-document');
+        if (element) {
           const opt = {
             margin: 6,
             filename: fileName,
             image: { type: 'jpeg' as const, quality: 0.95 },
-            html2canvas: { scale: 1.5, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+            html2canvas: { scale: 1.5, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
           };
 
@@ -260,44 +221,48 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           const blob = await worker.output('blob');
           targetFile = new File([blob], fileName, { type: 'application/pdf', lastModified: Date.now() });
           cachedPdfFileRef.current = targetFile;
-        } catch (err) {
-          console.warn('On-demand PDF generation for share failed:', err);
-        } finally {
-          setIsSharingPdf(false);
         }
       }
-    }
 
-    if (!targetFile) {
-      alert('Unable to generate PDF report for sharing. Please try clicking Download PDF.');
-      return;
-    }
-
-    // 1. Attempt native system share sheet with attached PDF file ONLY (supported on Android Chrome, iOS Safari)
-    try {
-      if (navigator.canShare && navigator.canShare({ files: [targetFile] })) {
-        await navigator.share({
-          title: `${group.name} Settlement Report`,
-          files: [targetFile],
-        });
-        return; // Successfully opened native share sheet with PDF file attached!
-      } else if (navigator.share) {
-        await navigator.share({
-          title: `${group.name} Settlement Report`,
-          files: [targetFile],
-        });
+      if (!targetFile) {
+        alert('Unable to generate PDF report for sharing. Downloading PDF instead.');
+        await handlePrintPdf();
         return;
       }
-    } catch (shareErr: any) {
-      if (shareErr?.name === 'AbortError') {
-        return; // User canceled the native share dialog intentionally
-      }
-      console.warn('Native PDF file share rejected or unsupported on this device/browser:', shareErr);
-    }
 
-    // 2. Universal Fallback for Desktop & Unsupported Browsers (e.g. Vercel on Desktop / Firefox):
-    // Download the PDF file directly to user's device so they always receive the PDF report!
-    try {
+      // 1. Attempt native system share sheet with attached PDF file ONLY (supported on mobile Chrome/Safari)
+      let sharedSuccessfully = false;
+      if (navigator.canShare && navigator.canShare({ files: [targetFile] })) {
+        try {
+          await navigator.share({
+            title: `${group.name} Settlement Report`,
+            files: [targetFile],
+          });
+          sharedSuccessfully = true;
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') {
+            return; // User canceled the native share dialog intentionally
+          }
+          console.warn('Native canShare failed:', shareErr);
+        }
+      } else if (navigator.share) {
+        try {
+          await navigator.share({
+            title: `${group.name} Settlement Report`,
+            files: [targetFile],
+          });
+          sharedSuccessfully = true;
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') {
+            return; // User canceled intentionally
+          }
+          console.warn('Native share failed:', shareErr);
+        }
+      }
+
+      if (sharedSuccessfully) return;
+
+      // 2. Desktop & unsupported browsers fallback: Download PDF file directly to user's device
       const url = URL.createObjectURL(targetFile);
       const a = document.createElement('a');
       a.href = url;
@@ -306,8 +271,12 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 2000);
-    } catch (e) {
-      console.warn('Fallback PDF download failed:', e);
+    } catch (err) {
+      console.error('Share report handler error:', err);
+      // Fallback to print / save
+      await handlePrintPdf();
+    } finally {
+      setIsSharingPdf(false);
     }
   };
 

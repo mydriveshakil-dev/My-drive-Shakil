@@ -731,7 +731,7 @@ export default function App() {
       date: newExpData.date,
       receiptUrl: newExpData.receiptUrl,
       note: newExpData.note,
-      cycle: group.cycleId,
+      cycle: newExpData.date ? newExpData.date.slice(0, 7) : group.cycleId,
       createdAt: new Date().toISOString(),
     };
 
@@ -1116,6 +1116,7 @@ export default function App() {
           onToggleCycle={setBillingCycleType}
           selectedPreviousCycle={selectedPreviousCycle}
           onSelectPreviousCycle={setSelectedPreviousCycle}
+          expenses={expenses}
           sheetsConfig={sheetsConfig}
           onSyncNow={() => fetchFromSheet(false)}
           onOpenAddGroup={() => setActiveTab('group')}

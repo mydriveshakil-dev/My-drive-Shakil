@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Group, ExpenseCategory, UserAuthProfile } from '../types';
-import { X, Utensils, ShoppingBag, Upload, Calendar as CalendarIcon, UserCheck, DollarSign, Check, Calculator } from 'lucide-react';
+import { X, Utensils, ShoppingBag, Upload, Calendar as CalendarIcon, UserCheck, DollarSign, Check, Calculator, AlertCircle } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
 import { evaluateMathExpression } from '../utils/mathEvaluator';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
@@ -162,8 +162,54 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
     setTimeout(focusAmountInput, 0);
   };
 
+  const checkExpenseDateValidity = (selectedDateStr: string, role?: string) => {
+    if (role === 'admin') {
+      return { isAllowed: true };
+    }
+    if (!selectedDateStr) return { isAllowed: true };
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonthIdx = now.getMonth(); // 0 to 11
+    const currentDay = now.getDate(); // 1 to 31
+
+    const parts = selectedDateStr.split('-');
+    if (parts.length < 3) return { isAllowed: true };
+
+    const expYear = parseInt(parts[0], 10);
+    const expMonthIdx = parseInt(parts[1], 10) - 1;
+
+    const monthsDiff = (currentYear - expYear) * 12 + (currentMonthIdx - expMonthIdx);
+
+    if (monthsDiff === 0 || monthsDiff < 0) {
+      return { isAllowed: true };
+    }
+
+    if (monthsDiff === 1) {
+      if (currentDay <= 7) {
+        return { isAllowed: true };
+      } else {
+        return {
+          isAllowed: false,
+          errorMessage:
+            'Expense entry locked: Standard users can only backdate previous month expenses up to the 7th day of the current month. The 7-day grace period has expired. Please contact an Admin to enter past expenses.',
+        };
+      }
+    }
+
+    return {
+      isAllowed: false,
+      errorMessage:
+        'Expense entry locked: Standard users cannot add expenses for dates prior to the previous month. Please contact an Admin to enter older expenses.',
+    };
+  };
+
+  const dateValidation = checkExpenseDateValidity(date, currentUser?.role);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!dateValidation.isAllowed) return;
+
     const res = evaluateMathExpression(amount);
     const parsedAmount = res.calculatedValue ?? parseFloat(amount);
     if (!parsedAmount || parsedAmount <= 0) return;
@@ -474,17 +520,34 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
 
           {/* Date Picker */}
           <div>
-            <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-1.5">
-              Expense Date
+            <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+              <span>Expense Date *</span>
+              {currentUser?.role === 'admin' && (
+                <span className="text-[10px] font-black bg-black text-white px-2 py-0.5 rounded-full border border-black">
+                  Admin (No Date Limit)
+                </span>
+              )}
             </label>
             <div className="relative">
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-black rounded-xl text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                className={`w-full px-4 py-3 bg-white border-2 rounded-xl text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none ${
+                  !dateValidation.isAllowed ? 'border-rose-600 bg-rose-50/50' : 'border-black'
+                }`}
               />
             </div>
+
+            {!dateValidation.isAllowed && (
+              <div className="mt-2 p-3 bg-rose-50 border-2 border-rose-600 rounded-xl text-rose-900 text-xs font-bold space-y-1 animate-in fade-in">
+                <div className="flex items-center gap-1.5 font-black text-rose-950">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>Previous Cycle Expense Entry Locked</span>
+                </div>
+                <p>{dateValidation.errorMessage}</p>
+              </div>
+            )}
           </div>
 
           {/* Note / Memo */}
@@ -532,9 +595,14 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
           <div className="pt-3">
             <button
               type="submit"
-              className="w-full bg-black hover:bg-slate-800 text-white font-black py-4 rounded-2xl shadow-md transition-all text-sm flex items-center justify-center gap-2 active:scale-98 border-2 border-black tracking-wider uppercase cursor-pointer"
+              disabled={!dateValidation.isAllowed}
+              className={`w-full font-black py-4 rounded-2xl shadow-md transition-all text-sm flex items-center justify-center gap-2 active:scale-98 border-2 border-black tracking-wider uppercase cursor-pointer ${
+                !dateValidation.isAllowed
+                  ? 'bg-slate-300 text-slate-500 border-slate-400 cursor-not-allowed opacity-70'
+                  : 'bg-black hover:bg-slate-800 text-white'
+              }`}
             >
-              <span>SAVE YOUR EXPENSE</span>
+              <span>{dateValidation.isAllowed ? 'SAVE YOUR EXPENSE' : 'ENTRY LOCKED (EXPENSES PAST 7TH DAY)'}</span>
             </button>
           </div>
         </form>

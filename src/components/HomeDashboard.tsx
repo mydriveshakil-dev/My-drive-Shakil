@@ -21,6 +21,7 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 import { GlassContainer } from './GlassContainer';
+import { cleanExpenseTitle } from '../utils/textCleaner';
 
 interface HomeDashboardProps {
   group: Group;
@@ -86,16 +87,19 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   const totalMessDays = group.members.reduce((sum, m) => sum + (m.daysPresent || 0), 0) || 1;
   const dailyMealRate = messTotal / totalMessDays;
 
-  // Top Contributors Pie Chart Data
-  const contributorData = group.members.map((member) => {
-    const totalPaid = expenses
-      .filter((e) => e.paidById === member.id)
-      .reduce((sum, e) => sum + e.amount, 0);
-    return {
-      name: member.name,
-      value: Math.round(totalPaid * 100) / 100,
-    };
-  }).filter((item) => item.value > 0);
+  // Top Contributors Pie Chart Data (Sorted descending by highest expense amount)
+  const contributorData = group.members
+    .map((member) => {
+      const totalPaid = expenses
+        .filter((e) => e.paidById === member.id)
+        .reduce((sum, e) => sum + e.amount, 0);
+      return {
+        name: member.name,
+        value: Math.round(totalPaid * 100) / 100,
+      };
+    })
+    .filter((item) => item.value > 0)
+    .sort((a, b) => b.value - a.value);
 
   return (
     <div className="space-y-6 pb-28">
@@ -580,7 +584,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-black text-slate-950 line-clamp-1">{exp.title}</h4>
+                          <h4 className="text-sm font-black text-slate-950 line-clamp-1">{cleanExpenseTitle(exp.title)}</h4>
                           <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-black bg-slate-100 text-slate-900">
                             {isMess ? 'Mess Food' : 'General'}
                           </span>

@@ -52,6 +52,7 @@ export interface RentContribution {
   status: 'paid' | 'pending';
   perMemberAmount: number;
   paidMemberIds: string[];
+  temporaryMembers?: string[];
 }
 
 export interface Group {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Group, UtilityBill, RentContribution, UserAuthProfile } from '../types';
-import { Zap, Home as HomeIcon, Plus, CheckCircle2, Clock, Edit2, AlertCircle, DollarSign, Calculator, Trash2, Lock, Unlock } from 'lucide-react';
+import { Zap, Home as HomeIcon, Plus, CheckCircle2, Clock, Edit2, AlertCircle, DollarSign, Calculator, Trash2, Lock, Unlock, X } from 'lucide-react';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 import { GlassContainer } from './GlassContainer';
 import { evaluateMathExpression } from '../utils/mathEvaluator';
@@ -104,13 +104,47 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
   );
   const rentParticipatingCount = rentParticipatingMembers.length || 1;
 
+  const tempMembers = rent?.temporaryMembers || [];
+  const tempMembersCount = tempMembers.length;
+  const totalRentSplitCount = rentParticipatingCount + tempMembersCount;
+
   const totalUtilities = utilities.reduce((sum, u) => sum + u.amount, 0);
   const activeMembersCount = group.members.filter((m) => m.active !== false).length || 1;
   const perMemberUtil = totalUtilities / activeMembersCount;
-  const perMemberRent = (rent?.totalRent || 0) / rentParticipatingCount;
+  const perMemberRent = (rent?.totalRent || 0) / totalRentSplitCount;
 
   const parsedTotalRent = parseFloat(totalRentInput) || rent?.totalRent || 0;
-  const currentMemberRentShare = parsedTotalRent / rentParticipatingCount;
+  const currentMemberRentShare = parsedTotalRent / totalRentSplitCount;
+
+  const [newTempName, setNewTempName] = useState('');
+  const [showAddTempInput, setShowAddTempInput] = useState(false);
+
+  const handleAddTempMember = () => {
+    if (!newTempName.trim()) return;
+    const updatedTemp = [...tempMembers, newTempName.trim()];
+    const updatedRent: RentContribution = {
+      ...rent,
+      temporaryMembers: updatedTemp,
+      perMemberAmount: (rent?.totalRent || 0) / (rentParticipatingCount + updatedTemp.length),
+    };
+    if (onUpdateRent) {
+      onUpdateRent(updatedRent);
+    }
+    setNewTempName('');
+    setShowAddTempInput(false);
+  };
+
+  const handleRemoveTempMember = (indexToRemove: number) => {
+    const updatedTemp = tempMembers.filter((_, idx) => idx !== indexToRemove);
+    const updatedRent: RentContribution = {
+      ...rent,
+      temporaryMembers: updatedTemp,
+      perMemberAmount: (rent?.totalRent || 0) / (rentParticipatingCount + updatedTemp.length),
+    };
+    if (onUpdateRent) {
+      onUpdateRent(updatedRent);
+    }
+  };
 
   const handleRentInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isRentInputLocked) return;
@@ -121,7 +155,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
       const updatedRent: RentContribution = {
         ...rent,
         totalRent: parsed,
-        perMemberAmount: parsed / rentParticipatingCount,
+        perMemberAmount: parsed / totalRentSplitCount,
         cycle: rent.cycle || currentMonthCycle,
       };
       if (onUpdateRent) {
@@ -463,10 +497,102 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 {currentMemberRentShare.toFixed(2)} AED
               </span>
               <span className="text-[10px] text-slate-600 block">
-                Split equally among {rentParticipatingCount} participating member(s)
+                Split equally among {totalRentSplitCount} person(s) ({rentParticipatingCount} members {tempMembersCount > 0 ? `+ ${tempMembersCount} temp splitters` : ''})
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Temporary Rent Splitters Section (Admin Only & Public View) */}
+        <div className="bg-slate-100 p-3.5 rounded-2xl border border-black/30 space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h4 className="text-xs font-black text-slate-950 uppercase tracking-wider flex items-center gap-1.5">
+                <span>Temporary Rent Splitters</span>
+                <span className="text-[10px] font-bold bg-slate-900 text-white px-2 py-0.5 rounded-full">
+                  Rent Module Only
+                </span>
+              </h4>
+              <p className="text-[11px] text-slate-600">
+                Text-based names strictly for splitting rent (No database accounts created).
+              </p>
+            </div>
+
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setShowAddTempInput(!showAddTempInput)}
+                className="px-2.5 py-1 bg-black text-white rounded-xl text-xs font-bold border border-black hover:bg-slate-800 transition-all cursor-pointer flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Add Temporary Member</span>
+              </button>
+            )}
+          </div>
+
+          {/* Inline Add Temporary Member Input Form */}
+          {isAdmin && showAddTempInput && (
+            <div className="p-2.5 bg-white rounded-xl border border-black flex items-center gap-2 animate-in fade-in">
+              <input
+                type="text"
+                placeholder="e.g. Guest Roommate (Rahat)"
+                value={newTempName}
+                onChange={(e) => setNewTempName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddTempMember();
+                  }
+                }}
+                className="flex-1 px-3 py-1.5 bg-slate-50 border border-black rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-black"
+              />
+              <button
+                type="button"
+                onClick={handleAddTempMember}
+                className="px-3 py-1.5 bg-black text-white text-xs font-black rounded-lg border border-black hover:bg-slate-800 cursor-pointer"
+              >
+                Add
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewTempName('');
+                  setShowAddTempInput(false);
+                }}
+                className="px-2.5 py-1.5 bg-slate-200 text-slate-800 text-xs font-bold rounded-lg border border-slate-400 hover:bg-slate-300 cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
+          {/* List of active temporary members */}
+          {tempMembers.length > 0 ? (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {tempMembers.map((name, idx) => (
+                <div
+                  key={`temp-${idx}`}
+                  className="bg-white border border-black px-3 py-1 rounded-xl text-xs font-black text-slate-900 flex items-center gap-2 shadow-xs"
+                >
+                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                  <span>{name} (Temp)</span>
+                  <span className="text-[10px] text-slate-500 font-normal">({currentMemberRentShare.toFixed(0)} AED)</span>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTempMember(idx)}
+                      className="text-slate-400 hover:text-rose-600 transition-colors p-0.5 ml-1 cursor-pointer"
+                      title="Remove temporary rent splitter"
+                    >
+                      <X className="w-3.5 h-3.5 stroke-[3]" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[11px] text-slate-500 italic">No temporary rent splitters added for this cycle.</p>
+          )}
         </div>
 
         {/* Member rent status list with checkboxes */}

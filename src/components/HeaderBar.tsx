@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Group, GoogleSheetsConfig, BillingCycleType, UserAuthProfile } from '../types';
+import { Group, GoogleSheetsConfig, BillingCycleType, UserAuthProfile, Expense } from '../types';
 import { ChevronDown, RefreshCw, Layers, Plus, Code, CheckCircle2, Coins, ShieldCheck, LogOut, ExternalLink } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
 import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
@@ -13,6 +13,7 @@ interface HeaderBarProps {
   onToggleCycle: (type: BillingCycleType) => void;
   selectedPreviousCycle?: string;
   onSelectPreviousCycle?: (cycleId: string) => void;
+  expenses?: Expense[];
   sheetsConfig: GoogleSheetsConfig;
   onSyncNow: () => void;
   onOpenAddGroup: () => void;
@@ -33,6 +34,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onToggleCycle,
   selectedPreviousCycle,
   onSelectPreviousCycle,
+  expenses = [],
   sheetsConfig,
   onSyncNow,
   onOpenAddGroup,
@@ -47,6 +49,19 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   const previousCycleOptions = getPreviousCycleOptions(12);
   const isAdmin = currentUser?.role === 'admin';
   const [showGroupDropdown, setShowGroupDropdown] = useState(false);
+
+  // Helper to calculate total expenses for a specific cycleId
+  const getCycleTotalExpenses = (cId: string) => {
+    return expenses
+      .filter((e) => {
+        const expCycle = e.cycle || (e.date ? e.date.slice(0, 7) : '');
+        return expCycle === cId;
+      })
+      .reduce((sum, e) => sum + e.amount, 0);
+  };
+
+  const activeSelectedPreviousCycleId = selectedPreviousCycle || previousCycleOptions[0]?.cycleId || '2026-06';
+  const activePreviousCycleTotal = getCycleTotalExpenses(activeSelectedPreviousCycleId);
 
   return (
     <header className="pt-4 pb-4 px-4 md:px-8 z-30 relative">
@@ -268,21 +283,31 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               </div>
 
               {billingCycleType === 'previous' && (
-                <select
-                  value={selectedPreviousCycle || previousCycleOptions[0]?.cycleId}
-                  onChange={(e) => {
-                    if (onSelectPreviousCycle) {
-                      onSelectPreviousCycle(e.target.value);
-                    }
-                  }}
-                  className="bg-white text-slate-900 font-black text-xs px-3 py-1.5 rounded-xl border border-black focus:outline-none cursor-pointer shadow-xs"
-                >
-                  {previousCycleOptions.map((opt) => (
-                    <option key={opt.cycleId} value={opt.cycleId}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedPreviousCycle || previousCycleOptions[0]?.cycleId}
+                    onChange={(e) => {
+                      if (onSelectPreviousCycle) {
+                        onSelectPreviousCycle(e.target.value);
+                      }
+                    }}
+                    className="bg-white text-slate-900 font-black text-xs px-3 py-1.5 rounded-xl border border-black focus:outline-none cursor-pointer shadow-xs"
+                  >
+                    {previousCycleOptions.map((opt) => {
+                      const cycleTotal = getCycleTotalExpenses(opt.cycleId);
+                      return (
+                        <option key={opt.cycleId} value={opt.cycleId}>
+                          {opt.label} • ({cycleTotal.toFixed(2)} {group.currency})
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  <div className="bg-black text-white font-black text-xs px-3 py-1.5 rounded-xl border border-black shadow-xs flex items-center gap-1 shrink-0">
+                    <span className="text-amber-300 font-extrabold text-[10px] uppercase">Total:</span>
+                    <span>{activePreviousCycleTotal.toFixed(2)} {group.currency}</span>
+                  </div>
+                </div>
               )}
             </div>
           </div>

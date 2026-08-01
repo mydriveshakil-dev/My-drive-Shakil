@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import html2pdf from 'html2pdf.js';
 import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
 import { Group, Expense, UtilityBill, RentContribution } from '../types';
@@ -54,6 +54,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   const [isCopied, setIsCopied] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isSharingPdf, setIsSharingPdf] = useState(false);
+  const cachedPdfFileRef = useRef<File | null>(null);
 
   // Category filter checkboxes (Room rent is excluded from settlement breakdown as per landlord rent box rule)
   const [includeCategories, setIncludeCategories] = useState({
@@ -70,6 +71,38 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     rent,
     includeCategories
   );
+
+  // Pre-generate PDF file as soon as PDF preview modal opens
+  useEffect(() => {
+    if (!isPdfPreviewOpen) {
+      cachedPdfFileRef.current = null;
+      return;
+    }
+
+    const pregenerate = async () => {
+      const element = document.getElementById('pdf-report-document');
+      if (!element) return;
+      try {
+        const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
+        const opt = {
+          margin: 6,
+          filename: fileName,
+          image: { type: 'jpeg' as const, quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+        };
+        const worker = html2pdf().set(opt).from(element);
+        const blob = await worker.output('blob');
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+        cachedPdfFileRef.current = file;
+      } catch (err) {
+        console.warn('Background PDF pregeneration for share failed:', err);
+      }
+    };
+
+    const timer = setTimeout(pregenerate, 350);
+    return () => clearTimeout(timer);
+  }, [isPdfPreviewOpen, fromDate, toDate, group.name, settlementResult]);
 
   const toggleCategory = (key: keyof typeof includeCategories) => {
     setIncludeCategories({
@@ -186,64 +219,79 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         : 'All balances cleared!'
     }`;
 
-    const element = document.getElementById('pdf-report-document');
-    let generatedFile: File | null = null;
-    let generatedBlob: Blob | null = null;
+    let targetFile = cachedPdfFileRef.current;
 
-    if (element) {
-      try {
-        setIsSharingPdf(true);
-        const opt = {
-          margin: 6,
-          filename: fileName,
-          image: { type: 'jpeg' as const, quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-        };
+    // If pre-generated file isn't ready yet, generate it on demand
+    if (!targetFile) {
+      const element = document.getElementById('pdf-report-document');
+      if (element) {
+        try {
+          setIsSharingPdf(true);
+          const opt = {
+            margin: 6,
+            filename: fileName,
+            image: { type: 'jpeg' as const, quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+          };
 
-        const worker = html2pdf().set(opt).from(element);
-        generatedBlob = await worker.output('blob');
-        generatedFile = new File([generatedBlob], fileName, { type: 'application/pdf' });
-      } catch (err) {
-        console.warn('PDF generation for share failed:', err);
-      } finally {
-        setIsSharingPdf(false);
+          const worker = html2pdf().set(opt).from(element);
+          const blob = await worker.output('blob');
+          targetFile = new File([blob], fileName, { type: 'application/pdf' });
+          cachedPdfFileRef.current = targetFile;
+        } catch (err) {
+          console.warn('On-demand PDF generation for share failed:', err);
+        } finally {
+          setIsSharingPdf(false);
+        }
       }
     }
 
-    // Attempt native system share dialog with attached PDF file (Supported on Android, iOS, Chrome mobile)
-    if (generatedFile && navigator.canShare && navigator.canShare({ files: [generatedFile] })) {
+    // 1. Attempt native system share dialog with attached PDF file ONLY (without text caption)
+    if (targetFile) {
+      try {
+        if (navigator.canShare && navigator.canShare({ files: [targetFile] })) {
+          await navigator.share({
+            title: `${group.name} Settlement Report`,
+            files: [targetFile],
+          });
+          return; // Successfully opened native share sheet with PDF file attached!
+        } else if (navigator.share) {
+          await navigator.share({
+            title: `${group.name} Settlement Report`,
+            files: [targetFile],
+          });
+          return;
+        }
+      } catch (shareErr: any) {
+        if (shareErr?.name === 'AbortError') {
+          return; // User canceled the native share dialog intentionally
+        }
+        console.warn('Native PDF file share rejected or unsupported:', shareErr);
+      }
+    }
+
+    // 2. Fallback to native text share if file sharing failed or is unsupported
+    if (navigator.share) {
       try {
         await navigator.share({
           title: `${group.name} Settlement Report`,
           text: summaryText,
-          files: [generatedFile],
         });
-        return; // Successfully opened native share sheet with PDF file attached!
-      } catch (shareErr: any) {
-        if (shareErr?.name === 'AbortError') {
-          return; // User canceled intentionally
-        }
-        console.warn('Native PDF file share rejected:', shareErr);
+        return;
+      } catch (e: any) {
+        if (e?.name === 'AbortError') return;
       }
     }
 
-    // Direct fallback for environments without native Web Share API file support (e.g. desktop web):
-    // 1. Download PDF directly to user's device
-    if (generatedBlob) {
-      const url = URL.createObjectURL(generatedBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    // 3. Desktop Clipboard Fallback (Copies summary text without auto-downloading files)
+    try {
+      await navigator.clipboard.writeText(summaryText);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 3000);
+    } catch (e) {
+      // ignore
     }
-
-    // 2. Open WhatsApp directly with formatted text summary
-    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(summaryText)}`;
-    window.open(whatsappUrl, '_blank');
   };
 
   return (
@@ -633,7 +681,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                 )}
               </button>
 
-              {/* Share WhatsApp Button */}
+              {/* Share Button */}
               <button
                 type="button"
                 onClick={handleShareReport}
@@ -648,12 +696,12 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                 ) : isCopied ? (
                   <>
                     <Check className="w-4 h-4 text-emerald-200" />
-                    <span className="text-emerald-100">Copied!</span>
+                    <span className="text-emerald-100">Copied Report!</span>
                   </>
                 ) : (
                   <>
-                    <MessageSquare className="w-4 h-4 text-white fill-white" />
-                    <span>Share WhatsApp</span>
+                    <Share2 className="w-4 h-4 text-white" />
+                    <span>Share</span>
                   </>
                 )}
               </button>
@@ -671,10 +719,10 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           </div>
 
           {/* PDF Preview Document Container (A4 Printable Document Sheet) */}
-          <div className="w-full max-w-5xl mb-4 pb-4 overflow-x-auto">
+          <div className="w-full max-w-5xl overflow-x-auto h-fit">
             <div
               id="pdf-report-document"
-              className="bg-white text-slate-900 rounded-2xl shadow-xl p-6 sm:p-10 w-full mx-auto space-y-6 text-xs font-sans border-2 border-black"
+              className="bg-white text-slate-900 rounded-2xl shadow-xl p-6 sm:p-10 w-full mx-auto space-y-6 text-xs font-sans border-2 border-black h-fit"
             >
               {/* Header Stamp & Title */}
               <div className="border-b-2 border-slate-900 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

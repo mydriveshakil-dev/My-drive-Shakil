@@ -102,17 +102,26 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     return '#ffffff';
   };
 
+  // Helper to safely resolve html2pdf in modern ES Module / Vite / Vercel bundlers
+  const getHtml2Pdf = () => {
+    if (typeof html2pdf === 'function') return html2pdf;
+    if ((html2pdf as any)?.default && typeof (html2pdf as any).default === 'function') {
+      return (html2pdf as any).default;
+    }
+    if ((window as any)?.html2pdf && typeof (window as any).html2pdf === 'function') {
+      return (window as any).html2pdf;
+    }
+    return null;
+  };
+
   const sanitizeDocumentForHtml2Canvas = (clonedDoc: Document) => {
     try {
-      const origDocEl = document.getElementById('pdf-report-document');
       const clonedDocEl = clonedDoc.getElementById('pdf-report-document');
-
-      if (origDocEl && clonedDocEl) {
+      if (clonedDocEl) {
         clonedDocEl.style.backgroundColor = '#ffffff';
         clonedDocEl.style.color = '#0f172a';
-        clonedDocEl.style.borderColor = '#0f172a';
 
-        // Sanitize style tags in cloned document to strip oklch syntax that breaks html2canvas
+        // Sanitize any style elements in cloned iframe
         const styleEls = clonedDoc.querySelectorAll('style');
         styleEls.forEach((s) => {
           if (s.textContent) {
@@ -123,37 +132,31 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           }
         });
 
-        const origElements = Array.from(origDocEl.querySelectorAll('*'));
-        const clonedElements = Array.from(clonedDocEl.querySelectorAll('*'));
-
-        for (let i = 0; i < clonedElements.length; i++) {
-          const origEl = origElements[i] as HTMLElement;
-          const clonedEl = clonedElements[i] as HTMLElement;
-          if (origEl && clonedEl && clonedEl.style) {
-            const computed = window.getComputedStyle(origEl);
-
-            const bg = computed.backgroundColor;
-            if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
-              clonedEl.style.backgroundColor = normalizeCssColor(bg);
-            } else {
-              clonedEl.style.backgroundColor = 'transparent';
-            }
-
-            const fg = computed.color;
-            if (fg) {
-              clonedEl.style.color = normalizeCssColor(fg);
-            }
-
-            const border = computed.borderColor;
-            if (border && border !== 'transparent' && border !== 'rgba(0, 0, 0, 0)') {
-              clonedEl.style.borderColor = normalizeCssColor(border);
+        // Strip oklch/oklab from inline styles in cloned elements
+        const allClonedElements = clonedDocEl.querySelectorAll('*');
+        allClonedElements.forEach((el) => {
+          const htmlEl = el as HTMLElement;
+          if (htmlEl && htmlEl.getAttribute) {
+            const styleAttr = htmlEl.getAttribute('style');
+            if (styleAttr && (styleAttr.includes('oklch') || styleAttr.includes('oklab') || styleAttr.includes('color-mix'))) {
+              htmlEl.setAttribute(
+                'style',
+                styleAttr
+                  .replace(/oklch\([^)]*\)/gi, '#1e293b')
+                  .replace(/oklab\([^)]*\)/gi, '#1e293b')
+                  .replace(/color-mix\([^)]*\)/gi, '#1e293b')
+              );
             }
           }
-        }
+        });
       }
     } catch (e) {
-      console.warn('Sanitize document for html2canvas failed:', e);
+      console.warn('Sanitize document for html2canvas notice:', e);
     }
+  };
+
+  const handleDirectPrint = () => {
+    window.print();
   };
 
   const handlePrintPdf = async () => {
@@ -166,22 +169,29 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     try {
       setIsGeneratingPdf(true);
       const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
-      const opt = {
-        margin: 6,
-        filename: fileName,
-        image: { type: 'jpeg' as const, quality: 0.95 },
-        html2canvas: {
-          scale: 1.5,
-          useCORS: true,
-          logging: false,
-          onclone: sanitizeDocumentForHtml2Canvas,
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-      };
+      const html2pdfFunc = getHtml2Pdf();
 
-      await html2pdf().set(opt).from(element).save();
+      if (typeof html2pdfFunc === 'function') {
+        const opt = {
+          margin: [8, 8, 8, 8],
+          filename: fileName,
+          image: { type: 'jpeg' as const, quality: 0.98 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            onclone: sanitizeDocumentForHtml2Canvas,
+          },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+        };
+
+        await html2pdfFunc().set(opt).from(element).save();
+      } else {
+        window.print();
+      }
     } catch (err) {
-      console.error('PDF export error, using fallback print():', err);
+      console.error('PDF export error, falling back to browser print dialog:', err);
       window.print();
     } finally {
       setIsGeneratingPdf(false);
@@ -193,67 +203,83 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     setIsSharingPdf(true);
     try {
       const element = document.getElementById('pdf-report-document');
-      if (!element) {
-        await handlePrintPdf();
+      const html2pdfFunc = getHtml2Pdf();
+
+      let targetFile: File | null = null;
+      if (element && typeof html2pdfFunc === 'function') {
+        try {
+          const opt = {
+            margin: [8, 8, 8, 8],
+            filename: fileName,
+            image: { type: 'jpeg' as const, quality: 0.98 },
+            html2canvas: {
+              scale: 2,
+              useCORS: true,
+              allowTaint: true,
+              logging: false,
+              onclone: sanitizeDocumentForHtml2Canvas,
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+          };
+
+          const worker = html2pdfFunc().set(opt).from(element);
+          const blob = await worker.output('blob');
+          targetFile = new File([blob], fileName, { type: 'application/pdf', lastModified: Date.now() });
+        } catch (pdfErr) {
+          console.warn('html2pdf worker output blob failed:', pdfErr);
+        }
+      }
+
+      // 1. Native Web Share API with attached PDF file
+      if (targetFile && navigator.canShare && navigator.canShare({ files: [targetFile] })) {
+        try {
+          await navigator.share({
+            title: `${group.name} Settlement Report`,
+            text: `Settlement Statement for ${group.name} (${fromDate} to ${toDate})`,
+            files: [targetFile],
+          });
+          return;
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') return; // User canceled native share
+          console.warn('Native canShare with file failed:', shareErr);
+        }
+      }
+
+      // 2. Share via Web Share API as text if file share is unsupported
+      const summaryText = `📋 UAE MESS SYSTEM - SETTLEMENT REPORT\nGroup: ${group.name}\nPeriod: ${fromDate} to ${toDate}\nGrand Total: ${settlementResult.grandTotalExpenses.toFixed(2)} ${group.currency}\nMeal Rate: ${settlementResult.dailyMealRate.toFixed(2)} ${group.currency}/day\nMembers: ${group.members.length}\n\nGenerated by UAE Mess Expense Management System`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: `${group.name} Settlement Report`,
+            text: summaryText,
+          });
+          return;
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') return;
+        }
+      }
+
+      // 3. Fallback: Download the file directly if generated
+      if (targetFile) {
+        const url = URL.createObjectURL(targetFile);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
         return;
       }
 
-      const opt = {
-        margin: 6,
-        filename: fileName,
-        image: { type: 'jpeg' as const, quality: 0.95 },
-        html2canvas: {
-          scale: 1.5,
-          useCORS: true,
-          logging: false,
-          onclone: sanitizeDocumentForHtml2Canvas,
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-      };
-
-      const worker = html2pdf().set(opt).from(element);
-      const blob = await worker.output('blob');
-      const targetFile = new File([blob], fileName, { type: 'application/pdf', lastModified: Date.now() });
-
-      let shared = false;
-      if (navigator.canShare && navigator.canShare({ files: [targetFile] })) {
-        try {
-          await navigator.share({
-            title: `${group.name} Settlement Report`,
-            files: [targetFile],
-          });
-          shared = true;
-        } catch (shareErr: any) {
-          if (shareErr?.name === 'AbortError') return; // User intentionally canceled native share
-          console.warn('Native canShare failed:', shareErr);
-        }
-      } else if (navigator.share) {
-        try {
-          await navigator.share({
-            title: `${group.name} Settlement Report`,
-            files: [targetFile],
-          });
-          shared = true;
-        } catch (shareErr: any) {
-          if (shareErr?.name === 'AbortError') return; // User canceled
-          console.warn('Native share failed:', shareErr);
-        }
-      }
-
-      if (shared) return;
-
-      // Universal Fallback for Desktop browsers / unsupported share sheet: Direct Download
-      const url = URL.createObjectURL(targetFile);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      // 4. Fallback: Copy summary text to clipboard
+      await navigator.clipboard.writeText(summaryText);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2500);
     } catch (err) {
-      console.error('Share report handler error:', err);
-      await handlePrintPdf();
+      console.error('Share report error:', err);
+      window.print();
     } finally {
       setIsSharingPdf(false);
     }
@@ -631,12 +657,12 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                 type="button"
                 onClick={handlePrintPdf}
                 disabled={isGeneratingPdf || isSharingPdf}
-                className="bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black px-4 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-60"
+                className="bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black px-3.5 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-60 shrink-0"
               >
                 {isGeneratingPdf ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Downloading PDF...</span>
+                    <span>Downloading...</span>
                   </>
                 ) : (
                   <>
@@ -646,17 +672,28 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                 )}
               </button>
 
+              {/* Direct Print Button */}
+              <button
+                type="button"
+                onClick={handleDirectPrint}
+                className="bg-slate-800 hover:bg-slate-700 text-white font-extrabold px-3 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-1.5 border border-slate-600 transition-all active:scale-95 cursor-pointer shadow-md shrink-0"
+                title="Print Report directly"
+              >
+                <Printer className="w-4 h-4 text-amber-400" />
+                <span className="hidden sm:inline">Print</span>
+              </button>
+
               {/* Share Button */}
               <button
                 type="button"
                 onClick={handleShareReport}
                 disabled={isSharingPdf || isGeneratingPdf}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-3.5 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-1.5 border border-emerald-700 transition-all active:scale-95 cursor-pointer disabled:opacity-60 shadow-md"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-3.5 py-2 sm:py-2.5 rounded-xl text-xs flex items-center gap-1.5 border border-emerald-700 transition-all active:scale-95 cursor-pointer disabled:opacity-60 shadow-md shrink-0"
               >
                 {isSharingPdf ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    <span>Preparing PDF...</span>
+                    <span>Preparing...</span>
                   </>
                 ) : isCopied ? (
                   <>
@@ -679,7 +716,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                   setIsGeneratingPdf(false);
                   setIsSharingPdf(false);
                 }}
-                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white hover:text-amber-300 flex items-center justify-center transition-all cursor-pointer border border-white/20 shadow-md active:scale-95"
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white hover:text-amber-300 flex items-center justify-center transition-all cursor-pointer border border-white/20 shadow-md active:scale-95 shrink-0"
                 title="Close Preview"
               >
                 <X className="w-5 h-5 stroke-[2.5]" />

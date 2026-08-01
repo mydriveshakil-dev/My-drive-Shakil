@@ -75,9 +75,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const activeMembersCount = activeMembers.length || 1;
   const avgPerPerson = totalGroupExpenses / activeMembersCount;
 
-  // Meal Rate calculation
-  const totalMessDays = group.members.reduce((sum, m) => sum + (m.daysPresent || 0), 0) || 1;
-  const dailyMealRate = messTotal / totalMessDays;
+  // Mess calculation
+  const messPerMember = messTotal / activeMembersCount;
 
   // Top Contributors Pie Chart Data (Sorted descending by highest expense amount)
   const contributorData = group.members
@@ -157,8 +156,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
               <div className="h-6 w-[1px] bg-black/20" />
               <div>
-                <span className="text-slate-600 block text-[10px] uppercase font-bold">Daily Meal Rate</span>
-                <span className="text-slate-950 font-extrabold">~{dailyMealRate.toFixed(2)} {group.currency}/day</span>
+                <span className="text-slate-600 block text-[10px] uppercase font-bold">Mess Per Member</span>
+                <span className="text-slate-950 font-extrabold">{messPerMember.toFixed(2)} {group.currency}</span>
               </div>
             </div>
 

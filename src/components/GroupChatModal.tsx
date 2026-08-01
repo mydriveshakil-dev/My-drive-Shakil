@@ -135,24 +135,44 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
         {/* Room Active Members Bar */}
         <div className="px-4 py-2 bg-slate-100 border-b border-black flex items-center justify-between overflow-x-auto text-xs shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-black text-slate-900 uppercase tracking-wider">
+            <span className="text-[11px] font-black text-slate-900 uppercase tracking-wider shrink-0">
               Room Mates:
             </span>
             <div className="flex items-center gap-1.5 overflow-x-auto">
-              {group.members.map((m) => (
-                <div
-                  key={m.id}
-                  className="flex items-center gap-1 bg-white text-slate-900 px-2 py-0.5 rounded-full border border-black text-[11px] font-bold whitespace-nowrap shadow-xs"
-                >
-                  <span className="w-5 h-5 rounded-full bg-black text-white text-[9px] font-black flex items-center justify-center">
-                    {m.avatar}
-                  </span>
-                  <span>{m.name.split(' ')[0]}</span>
-                </div>
-              ))}
+              {group.members.map((m) => {
+                const isMe =
+                  (loggedInMember && m.id === loggedInMember.id) ||
+                  (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
+                  (currentUser?.name && m.name.toLowerCase().includes(currentUser.name.toLowerCase()));
+
+                const isOnline = isMe || m.active !== false;
+
+                return (
+                  <div
+                    key={m.id}
+                    className="flex items-center gap-1.5 bg-white text-slate-900 px-2.5 py-1 rounded-full border border-black text-[11px] font-bold whitespace-nowrap shadow-xs"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-black text-white text-[9px] font-black flex items-center justify-center shrink-0">
+                      {m.avatar}
+                    </span>
+                    <span>{m.name.split(' ')[0]}</span>
+                    {isOnline ? (
+                      <span
+                        className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-300 animate-pulse shrink-0"
+                        title="Active Online"
+                      />
+                    ) : (
+                      <span
+                        className="w-2 h-2 rounded-full bg-slate-300 shrink-0"
+                        title="Offline"
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
-          <span className="text-[10px] font-extrabold text-slate-800 hidden sm:inline-block">
+          <span className="text-[10px] font-extrabold text-slate-800 hidden sm:inline-block shrink-0 ml-2">
             Auto-Sync to Google Sheet
           </span>
         </div>

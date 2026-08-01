@@ -83,9 +83,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
     .reduce((sum, e) => sum + e.amount, 0);
   const myPercentage = totalExpenses > 0 ? Math.round((mySpent / totalExpenses) * 100) : 0;
 
-  // Meal Rate calculation
-  const totalMessDays = group.members.reduce((sum, m) => sum + (m.daysPresent || 0), 0) || 1;
-  const dailyMealRate = messTotal / totalMessDays;
+  // Mess calculation per person
+  const messMembersCount = (group?.members || []).filter((m) => m.active).length || 1;
+  const messPerMember = messTotal / messMembersCount;
 
   // Top Contributors Pie Chart Data (Sorted descending by highest expense amount)
   const contributorData = group.members
@@ -207,25 +207,25 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
           <div className="bg-slate-50 p-3.5 rounded-2xl border border-black/20">
             <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider block">
-              Daily Meal Rate
+              Mess Share Per Member
             </span>
             <div className="text-2xl font-black text-slate-950 mt-1">
-              ~{dailyMealRate.toFixed(2)} <span className="text-sm font-bold text-slate-700">{group.currency}/day</span>
+              ~{messPerMember.toFixed(2)} <span className="text-sm font-bold text-slate-700">{group.currency}</span>
             </div>
             <span className="text-[10px] text-slate-500 font-bold block mt-1">
-              Mess Rate per Person/Day
+              Equal split among mess members
             </span>
           </div>
 
           <div className="bg-slate-50 p-3.5 rounded-2xl border border-black/20">
             <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider block">
-              Total Mess Days Logged
+              Mess Members
             </span>
             <div className="text-2xl font-black text-slate-950 mt-1">
-              {totalMessDays} <span className="text-sm font-bold text-slate-700">Days</span>
+              {messMembersCount} <span className="text-sm font-bold text-slate-700">Members</span>
             </div>
             <span className="text-[10px] text-slate-500 font-bold block mt-1">
-              Sum of active member days
+              Active members sharing mess
             </span>
           </div>
         </div>
@@ -321,7 +321,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                   baseClassName="text-2xl font-black text-slate-950"
                 />
                 <span className="text-xs font-semibold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-black">
-                  Rate: ~{dailyMealRate.toFixed(2)} AED/day
+                  ~{messPerMember.toFixed(2)} {group.currency}/member
                 </span>
               </div>
 

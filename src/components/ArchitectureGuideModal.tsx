@@ -361,7 +361,7 @@ class GoogleSheetsApiManager {
                   </h4>
                   <ul className="list-disc list-inside space-y-1 text-xs text-slate-800">
                     <li><strong>Expenses Tab:</strong> ID, Type, Title, Amount, PaidBy, Date, Note.</li>
-                    <li><strong>Members Tab:</strong> ID, Name, Email, DaysPresent.</li>
+                    <li><strong>Members Tab:</strong> ID, Name, Email.</li>
                     <li><strong>Utilities Tab:</strong> ID, BillName, Amount, DueDate, Status.</li>
                   </ul>
                 </div>
@@ -435,14 +435,14 @@ class GoogleSheetsApiManager {
                 Exact Mess Meal Rate & Debt Minimization Math
               </h3>
               <div className="bg-slate-100 border border-black p-4 rounded-2xl space-y-3 text-xs text-slate-900">
-                <p><strong>1. Daily Meal Rate Formula:</strong></p>
+                <p><strong>1. Mess Expense Per Member Formula:</strong></p>
                 <code className="block bg-white border border-black p-2 rounded text-slate-950 font-mono font-bold">
-                  Daily Meal Rate = Total Mess Expenses / Sum of (All Members' Days Present)
+                  Mess Share = Total Mess Expenses / Number of Mess Members
                 </code>
 
                 <p><strong>2. Individual Member Actual Expense:</strong></p>
                 <code className="block bg-white border border-black p-2 rounded text-slate-950 font-mono font-bold">
-                  Member Share = (Member Days Present * Daily Meal Rate) + (General Expenses / 5) + (Utilities / 5) + (Rent / 5)
+                  Member Share = Mess Share + (General Expenses / 5) + (Utilities / 5) + (Rent / 5)
                 </code>
 
                 <p><strong>3. Member Balance:</strong></p>

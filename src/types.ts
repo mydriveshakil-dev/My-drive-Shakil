@@ -8,8 +8,9 @@ export interface Member {
   email?: string;
   phone?: string;
   mobileNumber?: string;
+  password?: string;
   avatar: string;
-  daysPresent: number; // For mess calculation
+  daysPresent?: number; // Optional
   active: boolean;
   includedCategories?: string[]; // Expense types/categories this member is included in
 }
@@ -53,6 +54,7 @@ export interface RentContribution {
   perMemberAmount: number;
   paidMemberIds: string[];
   temporaryMembers?: string[];
+  isLocked?: boolean;
 }
 
 export interface Group {
@@ -71,7 +73,7 @@ export interface Group {
 export interface MemberSummary {
   memberId: string;
   memberName: string;
-  daysPresent: number;
+  daysPresent?: number;
   messExpenseShare: number;
   generalExpenseShare: number;
   utilitiesShare: number;

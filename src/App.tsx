@@ -1041,6 +1041,22 @@ export default function App() {
     setAllGroups(updatedAll);
     localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
 
+    // Save profile to Cloud Firestore for Login authentication
+    const mob = memberData.mobileNumber || memberData.phone || '';
+    if (mob) {
+      saveUserProfileToFirestore({
+        name: memberData.name,
+        email: memberData.email || `${mob}@mess.com`,
+        mobileNumber: mob,
+        password: memberData.password || '',
+        idNumber: '',
+        identity: null,
+        isLoggedIn: true,
+        role: 'user',
+        linkedGroupId: group.id,
+      });
+    }
+
     triggerSheetsSync(true, expenses, utilities, rent, updatedGroup);
   };
 
@@ -1056,6 +1072,22 @@ export default function App() {
     const updatedAll = allGroups.map((g) => (g.id === group.id ? updatedGroup : g));
     setAllGroups(updatedAll);
     localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
+
+    // Save/update profile to Cloud Firestore for Login authentication
+    const mob = updatedMember.mobileNumber || updatedMember.phone || '';
+    if (mob) {
+      saveUserProfileToFirestore({
+        name: updatedMember.name,
+        email: updatedMember.email || `${mob}@mess.com`,
+        mobileNumber: mob,
+        password: updatedMember.password || '',
+        idNumber: '',
+        identity: null,
+        isLoggedIn: true,
+        role: 'user',
+        linkedGroupId: group.id,
+      });
+    }
 
     triggerSheetsSync(true, expenses, utilities, rent, updatedGroup);
   };

@@ -75,7 +75,6 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
   onLoginSuccess,
 }) => {
   // Form State
-  const [fullName, setFullName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
   const [userPassword, setUserPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
@@ -92,7 +91,6 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
         const parsed = JSON.parse(saved);
         if (parsed.mobileNumber) setMobileNumber(parsed.mobileNumber);
         if (parsed.password) setUserPassword(parsed.password);
-        if (parsed.fullName) setFullName(parsed.fullName);
         if (typeof parsed.rememberMe === 'boolean') setRememberMe(parsed.rememberMe);
       }
     } catch {
@@ -149,15 +147,8 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
-    const trimmedName = fullName.trim();
     const trimmedMobile = mobileNumber.trim();
     const trimmedPass = userPassword.trim();
-
-    if (!trimmedName) {
-      triggerHaptic(hapticPatterns.error);
-      setLoginError('Please enter your Full Name.');
-      return;
-    }
 
     if (!trimmedMobile) {
       triggerHaptic(hapticPatterns.error);
@@ -176,7 +167,6 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
       localStorage.setItem(
         SAVED_CREDENTIALS_KEY,
         JSON.stringify({
-          fullName: trimmedName,
           mobileNumber: trimmedMobile,
           password: trimmedPass,
           rememberMe: true,
@@ -205,7 +195,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
 
       // Authenticate as App Administrator
       onLoginSuccess({
-        name: trimmedName || 'KAZI MD SHAKIL (App Admin)',
+        name: 'KAZI MD SHAKIL (App Admin)',
         email: defaultEmail || 'mydriveshakil@gmail.com',
         mobileNumber: trimmedMobile,
         password: trimmedPass,
@@ -229,7 +219,8 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
           const match = g.members.find(
             (m) =>
               isPhoneMatch(m.mobileNumber, trimmedMobile) ||
-              isPhoneMatch(m.phone, trimmedMobile)
+              isPhoneMatch(m.phone, trimmedMobile) ||
+              isPhoneMatch(m.email, trimmedMobile)
           );
           if (match) {
             foundMember = match;
@@ -239,35 +230,30 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
       }
     }
 
-    const registeredName = foundMember?.name || cloudProfile?.name;
-
     // 1. Mobile number registration check
     if (!foundMember && !cloudProfile) {
       triggerHaptic(hapticPatterns.error);
-      setLoginError(`Mobile number (${trimmedMobile}) is not registered in any mess group by Admin. Please contact Admin to add your account.`);
+      setLoginError(`Mobile number (${trimmedMobile}) is not registered in any mess group by Admin. Please contact Admin to create your account.`);
       return;
     }
 
-    // 2. Full Name match check against Admin-created name
-    if (registeredName && !isNameMatch(trimmedName, registeredName)) {
-      triggerHaptic(hapticPatterns.error);
-      setLoginError(`Full Name does not match the name registered by Admin for this mobile number ("${registeredName}"). Please enter the exact name created by Admin.`);
-      return;
-    }
+    // Determine the registered name created by Admin
+    const registeredName = foundMember?.name || cloudProfile?.name || 'Mess Member';
+    const expectedPassword = foundMember?.password || cloudProfile?.password;
 
-    // 3. Password check
-    if (cloudProfile && cloudProfile.password && cloudProfile.password !== trimmedPass) {
+    // 2. Password check against Admin-set password (if password is set)
+    if (expectedPassword && expectedPassword.trim() !== '' && expectedPassword !== trimmedPass) {
       triggerHaptic(hapticPatterns.error);
       setLoginError('Incorrect password for this mobile number.');
       return;
     }
 
-    // General Member Login
+    // General Member Login with Admin-created Name
     setLoginError(null);
     triggerHaptic(hapticPatterns.success);
 
     onLoginSuccess({
-      name: registeredName || trimmedName,
+      name: registeredName,
       email: defaultEmail || cloudProfile?.email || 'user@mess.com',
       mobileNumber: trimmedMobile,
       password: trimmedPass,
@@ -307,7 +293,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                 Member & Admin Portal Access
               </h2>
               <p className="text-[11px] sm:text-xs text-slate-700 font-medium truncate">
-                Log in using Full Name, Mobile Number & Password
+                Log in using Mobile Number & Password
               </p>
             </div>
           </div>
@@ -318,29 +304,11 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
           <div className="bg-slate-100 border border-black p-3 rounded-2xl text-xs text-slate-900 leading-relaxed flex items-start gap-2">
             <Info className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" />
             <div>
-              Enter your <strong className="text-slate-950">Full Name</strong> (must match the name registered by Admin) and <strong className="text-slate-950">Mobile Number</strong> with Password to log in.
+              Enter your <strong className="text-slate-950">Mobile Number</strong> and <strong className="text-slate-950">Password</strong>. Your member profile created by Admin will be automatically loaded.
             </div>
           </div>
 
-          {/* 1. Name Field */}
-          <div>
-            <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-slate-900" />
-              Full Name * <span className="text-[10px] text-slate-600 font-normal lowercase">(must match Admin registered name)</span>
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Mahfuzur Rahman"
-              value={fullName}
-              onChange={(e) => {
-                setFullName(e.target.value);
-                setLoginError(null);
-              }}
-              className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black"
-            />
-          </div>
-
-          {/* 2. Mobile Number */}
+          {/* 1. Mobile Number */}
           <div>
             <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
               <Smartphone className="w-3.5 h-3.5 text-slate-900" />
@@ -358,7 +326,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
             />
           </div>
 
-          {/* 3. Password */}
+          {/* 2. Password */}
           <div>
             <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-1.5 flex items-center justify-between">
               <span className="flex items-center gap-1.5">

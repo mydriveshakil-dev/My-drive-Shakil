@@ -29,7 +29,7 @@ interface GroupManagementViewProps {
   allGroups?: Group[];
   sheetsConfig: GoogleSheetsConfig;
   onAddMember: (member: Omit<Member, 'id'>) => void;
-  onUpdateMemberDays: (id: string, days: number) => void;
+  onUpdateMemberDays?: (id: string, days: number) => void;
   onRemoveMember: (id: string) => void;
   onUpdateMember?: (member: Member) => void;
   onSyncSheetsNow: () => void;
@@ -81,12 +81,14 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberPhone, setNewMemberPhone] = useState('');
+  const [newMemberPassword, setNewMemberPassword] = useState('');
   const [newMemberCategories, setNewMemberCategories] = useState<string[]>(ALL_EXPENSE_OPTIONS.map((o) => o.id));
 
   // Edit Member Scope State
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [editMemberName, setEditMemberName] = useState('');
   const [editMemberPhone, setEditMemberPhone] = useState('');
+  const [editMemberPassword, setEditMemberPassword] = useState('');
   const [editMemberDays, setEditMemberDays] = useState(30);
   const [editMemberCategories, setEditMemberCategories] = useState<string[]>([]);
 
@@ -127,6 +129,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
     setEditingMember(member);
     setEditMemberName(member.name);
     setEditMemberPhone(member.phone || member.mobileNumber || member.email || '');
+    setEditMemberPassword(member.password || '');
     setEditMemberDays(member.daysPresent || 30);
     setEditMemberCategories(member.includedCategories || ALL_EXPENSE_OPTIONS.map((o) => o.id));
   };
@@ -140,12 +143,13 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       phone: editMemberPhone.trim() || editingMember.phone,
       email: editMemberPhone.trim() || editingMember.email,
       mobileNumber: editMemberPhone.trim() || editingMember.mobileNumber,
+      password: editMemberPassword.trim() || editingMember.password || '',
       daysPresent: editMemberDays,
       includedCategories: editMemberCategories,
     };
     if (onUpdateMember) {
       onUpdateMember(updated);
-    } else {
+    } else if (onUpdateMemberDays) {
       onUpdateMemberDays(updated.id, editMemberDays);
     }
     setEditingMember(null);
@@ -178,6 +182,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       email: newMemberPhone.trim(),
       phone: newMemberPhone.trim(),
       mobileNumber: newMemberPhone.trim(),
+      password: newMemberPassword.trim(),
       avatar: initials,
       daysPresent: 30,
       active: true,
@@ -186,6 +191,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
     setNewMemberName('');
     setNewMemberPhone('');
+    setNewMemberPassword('');
     setNewMemberCategories(ALL_EXPENSE_OPTIONS.map((o) => o.id));
     setShowAddMember(false);
   };
@@ -237,7 +243,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
           </div>
           <h2 className="text-2xl font-black text-slate-950">Group & Member Settings</h2>
           <p className="text-xs text-slate-700 font-medium mt-1">
-            Manage room members, mess days present, and administrative controls
+            Manage room members and administrative controls
           </p>
         </div>
 
@@ -877,26 +883,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 pt-2 sm:pt-0 border-black/20">
-                  {/* Days present input vs read-only */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-700 font-semibold">Mess Days Present:</span>
-                    {isAdmin ? (
-                      <input
-                        type="number"
-                        min="1"
-                        max="31"
-                        value={member.daysPresent}
-                        onChange={(e) => onUpdateMemberDays(member.id, parseInt(e.target.value) || 0)}
-                        className="w-16 px-2 py-1 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 text-center focus:ring-1 focus:ring-black focus:outline-none"
-                      />
-                    ) : (
-                      <span className="text-xs font-black text-slate-900 bg-slate-100 px-3 py-1 rounded-xl border border-black">
-                        {member.daysPresent} Days
-                      </span>
-                    )}
-                  </div>
-
+                <div className="flex items-center gap-4 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-black/20">
                   {isAdmin && (
                     <button
                       onClick={() => setDeleteConfirmMember(member)}
@@ -962,8 +949,22 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   onChange={(e) => setNewMemberPhone(e.target.value)}
                   className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
+                  Login Password *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 123456 or uae2024"
+                  value={newMemberPassword}
+                  onChange={(e) => setNewMemberPassword(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
+                />
                 <p className="text-[10px] text-slate-600 mt-1">
-                  This mobile number will serve as their login credential to access their database & group history.
+                  This mobile number and password will be used by this user to log in.
                 </p>
               </div>
 
@@ -1050,7 +1051,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             </div>
 
             <form onSubmit={handleSaveEditMemberSubmit} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
                     Member Name
@@ -1076,20 +1077,19 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
-                  Mess Days Present
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={editMemberDays}
-                  onChange={(e) => setEditMemberDays(parseInt(e.target.value) || 0)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
-                />
+                <div>
+                  <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
+                    Password
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Member Password"
+                    value={editMemberPassword}
+                    onChange={(e) => setEditMemberPassword(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                  />
+                </div>
               </div>
 
               {/* Expense Inclusions Checkboxes */}

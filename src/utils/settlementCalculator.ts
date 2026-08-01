@@ -47,10 +47,12 @@ export function calculateSettlement(
   const totalRent = includeCategories.rent && rent ? rent.totalRent : 0;
   const grandTotalExpenses = totalMessExpenses + totalGeneralExpenses + totalUtilities + totalRent;
 
-  // 3. Mess daily rate calculation (only among members who have 'mess' category enabled)
+  // 3. Mess calculation (split equally among members who have 'mess' category enabled)
   const messMembers = activeMembers.filter((m) => isCategoryIncluded(m, 'mess'));
-  const totalMessDays = messMembers.reduce((sum, m) => sum + (m.daysPresent || 0), 0) || 1;
-  const dailyMealRate = totalMessExpenses / totalMessDays;
+  const messMemberCount = messMembers.length || 1;
+  const messExpensePerMember = totalMessExpenses / messMemberCount;
+  const totalMessDays = 0;
+  const dailyMealRate = messExpensePerMember;
 
   // Rent participating members count
   const rentMembers = activeMembers.filter((m) => isCategoryIncluded(m, 'rent'));
@@ -58,9 +60,9 @@ export function calculateSettlement(
 
   // 4. Per member summaries
   const memberSummaries: MemberSummary[] = activeMembers.map((member) => {
-    // Mess Share based on days present (0 if member is excluded from mess)
+    // Mess Share split equally (0 if member is excluded from mess)
     const isMessIncluded = isCategoryIncluded(member, 'mess');
-    const messExpenseShare = includeCategories.mess && isMessIncluded ? (member.daysPresent || 0) * dailyMealRate : 0;
+    const messExpenseShare = includeCategories.mess && isMessIncluded ? messExpensePerMember : 0;
 
     // General Expense Share
     let generalExpenseShare = 0;
@@ -134,7 +136,6 @@ export function calculateSettlement(
     return {
       memberId: member.id,
       memberName: member.name,
-      daysPresent: member.daysPresent,
       messExpenseShare,
       generalExpenseShare,
       utilitiesShare,

@@ -79,6 +79,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       return;
     }
 
+    let isMounted = true;
     const pregenerate = async () => {
       const element = document.getElementById('pdf-report-document');
       if (!element) return;
@@ -87,21 +88,26 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         const opt = {
           margin: 6,
           filename: fileName,
-          image: { type: 'jpeg' as const, quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+          image: { type: 'jpeg' as const, quality: 0.95 },
+          html2canvas: { scale: 1.5, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
         };
         const worker = html2pdf().set(opt).from(element);
         const blob = await worker.output('blob');
-        const file = new File([blob], fileName, { type: 'application/pdf' });
-        cachedPdfFileRef.current = file;
+        if (isMounted) {
+          const file = new File([blob], fileName, { type: 'application/pdf', lastModified: Date.now() });
+          cachedPdfFileRef.current = file;
+        }
       } catch (err) {
         console.warn('Background PDF pregeneration for share failed:', err);
       }
     };
 
-    const timer = setTimeout(pregenerate, 350);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(pregenerate, 150);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [isPdfPreviewOpen, fromDate, toDate, group.name, settlementResult]);
 
   const toggleCategory = (key: keyof typeof includeCategories) => {
@@ -163,6 +169,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
   const sanitizeDocumentForHtml2Canvas = (clonedDoc: Document) => {
     try {
+      // 1. Sanitize style tags
       const styles = clonedDoc.querySelectorAll('style');
       styles.forEach((s) => {
         if (s.textContent) {
@@ -170,6 +177,28 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         }
       });
 
+      // 2. Inline and sanitize cross-origin / link stylesheets if accessible
+      const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
+      links.forEach((link) => {
+        try {
+          const sheet = (link as HTMLLinkElement).sheet;
+          if (sheet) {
+            let cssText = '';
+            for (let i = 0; i < sheet.cssRules.length; i++) {
+              cssText += sheet.cssRules[i].cssText + '\n';
+            }
+            if (cssText) {
+              const styleEl = clonedDoc.createElement('style');
+              styleEl.textContent = sanitizeCssText(cssText);
+              link.parentNode?.replaceChild(styleEl, link);
+            }
+          }
+        } catch (e) {
+          // Cross-origin rules might throw, ignore
+        }
+      });
+
+      // 3. Sanitize inline style attributes
       const elements = clonedDoc.querySelectorAll('*');
       elements.forEach((el) => {
         const htmlEl = el as HTMLElement;
@@ -195,8 +224,8 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       const opt = {
         margin: 6,
         filename: `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+        image: { type: 'jpeg' as const, quality: 0.95 },
+        html2canvas: { scale: 1.5, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
       };
 
@@ -211,14 +240,6 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
   const handleShareReport = async () => {
     const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
-    const summaryText = `📋 *${group.name} - Settlement Report*\n📅 Period: ${fromDate} to ${toDate}\n\n💰 Grand Total: ${settlementResult.grandTotalExpenses.toFixed(2)} ${group.currency}\n🍲 Daily Meal Rate: ${settlementResult.dailyMealRate.toFixed(2)} ${group.currency}/day\n\n*Settlement Transactions:*\n${
-      settlementResult.settlementFlows.length > 0
-        ? settlementResult.settlementFlows
-            .map((f) => `• ${f.fromMemberName} pays ${f.toMemberName}: ${f.amount.toFixed(2)} ${group.currency}`)
-            .join('\n')
-        : 'All balances cleared!'
-    }`;
-
     let targetFile = cachedPdfFileRef.current;
 
     // If pre-generated file isn't ready yet, generate it on demand
@@ -230,14 +251,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           const opt = {
             margin: 6,
             filename: fileName,
-            image: { type: 'jpeg' as const, quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+            image: { type: 'jpeg' as const, quality: 0.95 },
+            html2canvas: { scale: 1.5, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
           };
 
           const worker = html2pdf().set(opt).from(element);
           const blob = await worker.output('blob');
-          targetFile = new File([blob], fileName, { type: 'application/pdf' });
+          targetFile = new File([blob], fileName, { type: 'application/pdf', lastModified: Date.now() });
           cachedPdfFileRef.current = targetFile;
         } catch (err) {
           console.warn('On-demand PDF generation for share failed:', err);
@@ -247,50 +268,46 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       }
     }
 
-    // 1. Attempt native system share dialog with attached PDF file ONLY (without text caption)
-    if (targetFile) {
-      try {
-        if (navigator.canShare && navigator.canShare({ files: [targetFile] })) {
-          await navigator.share({
-            title: `${group.name} Settlement Report`,
-            files: [targetFile],
-          });
-          return; // Successfully opened native share sheet with PDF file attached!
-        } else if (navigator.share) {
-          await navigator.share({
-            title: `${group.name} Settlement Report`,
-            files: [targetFile],
-          });
-          return;
-        }
-      } catch (shareErr: any) {
-        if (shareErr?.name === 'AbortError') {
-          return; // User canceled the native share dialog intentionally
-        }
-        console.warn('Native PDF file share rejected or unsupported:', shareErr);
-      }
+    if (!targetFile) {
+      alert('Unable to generate PDF report for sharing. Please try clicking Download PDF.');
+      return;
     }
 
-    // 2. Fallback to native text share if file sharing failed or is unsupported
-    if (navigator.share) {
-      try {
+    // 1. Attempt native system share sheet with attached PDF file ONLY (supported on Android Chrome, iOS Safari)
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [targetFile] })) {
         await navigator.share({
           title: `${group.name} Settlement Report`,
-          text: summaryText,
+          files: [targetFile],
+        });
+        return; // Successfully opened native share sheet with PDF file attached!
+      } else if (navigator.share) {
+        await navigator.share({
+          title: `${group.name} Settlement Report`,
+          files: [targetFile],
         });
         return;
-      } catch (e: any) {
-        if (e?.name === 'AbortError') return;
       }
+    } catch (shareErr: any) {
+      if (shareErr?.name === 'AbortError') {
+        return; // User canceled the native share dialog intentionally
+      }
+      console.warn('Native PDF file share rejected or unsupported on this device/browser:', shareErr);
     }
 
-    // 3. Desktop Clipboard Fallback (Copies summary text without auto-downloading files)
+    // 2. Universal Fallback for Desktop & Unsupported Browsers (e.g. Vercel on Desktop / Firefox):
+    // Download the PDF file directly to user's device so they always receive the PDF report!
     try {
-      await navigator.clipboard.writeText(summaryText);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 3000);
+      const url = URL.createObjectURL(targetFile);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch (e) {
-      // ignore
+      console.warn('Fallback PDF download failed:', e);
     }
   };
 

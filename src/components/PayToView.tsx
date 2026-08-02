@@ -223,7 +223,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {/* Paid By */}
             <div className="flex flex-col">
-              <label className="text-xs font-extrabold text-slate-900 uppercase h-9 flex items-end leading-tight mb-1">
+              <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1.5">
                 1. Paid By (Lender) *
               </label>
               {isAdmin ? (
@@ -251,7 +251,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
 
             {/* Paid To */}
             <div className="flex flex-col">
-              <label className="text-xs font-extrabold text-slate-900 uppercase h-9 flex items-end leading-tight mb-1">
+              <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1.5">
                 2. Paid To (Borrower) *
               </label>
               <select
@@ -271,7 +271,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
 
             {/* Purpose */}
             <div className="flex flex-col">
-              <label className="text-xs font-extrabold text-slate-900 uppercase h-9 flex items-end leading-tight mb-1">
+              <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1.5">
                 3. Purpose *
               </label>
               <input
@@ -286,7 +286,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
 
             {/* Amount */}
             <div className="flex flex-col">
-              <label className="text-xs font-extrabold text-slate-900 uppercase h-9 flex items-end leading-tight mb-1">
+              <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1.5">
                 4. Amount ({group.currency || preferredCurrency}) *
               </label>
               <input
@@ -303,7 +303,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
 
             {/* Date */}
             <div className="flex flex-col">
-              <label className="text-xs font-extrabold text-slate-900 uppercase h-9 flex items-end leading-tight mb-1">
+              <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1.5">
                 5. Date & Time
               </label>
               <input

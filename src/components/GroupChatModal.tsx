@@ -200,10 +200,7 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
             .filter((msg) => {
               const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
               const msgTime = getMessageTimestampMs(msg);
-              if (Date.now() - msgTime > THREE_DAYS_MS) return false;
-              if (msg.type === 'expense_added' || msg.type === 'settlement_update') return false;
-              if (msg.text && (msg.text.includes('Logged in') || msg.text.includes('Added new') || msg.text.includes('expense:'))) return false;
-              return true;
+              return Date.now() - msgTime <= THREE_DAYS_MS;
             })
             .map((msg) => {
             const isMe =

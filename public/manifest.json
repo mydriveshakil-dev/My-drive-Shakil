@@ -5,32 +5,32 @@
   "description": "Official UAE Room & Mess Expense Tracker & Settlement Portal",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "type": "image/png",
+      "src": "/uae_mess_logo.jpg",
+      "type": "image/jpeg",
       "sizes": "192x192",
       "purpose": "any"
     },
     {
-      "src": "/icon-192-maskable.png",
-      "type": "image/png",
+      "src": "/uae_mess_logo.jpg",
+      "type": "image/jpeg",
       "sizes": "192x192",
       "purpose": "maskable"
     },
     {
-      "src": "/icon-512.png",
-      "type": "image/png",
+      "src": "/uae_mess_logo.jpg",
+      "type": "image/jpeg",
       "sizes": "512x512",
       "purpose": "any"
     },
     {
-      "src": "/icon-512-maskable.png",
-      "type": "image/png",
+      "src": "/uae_mess_logo.jpg",
+      "type": "image/jpeg",
       "sizes": "512x512",
       "purpose": "maskable"
     },
     {
-      "src": "/apple-touch-icon.png",
-      "type": "image/png",
+      "src": "/uae_mess_logo.jpg",
+      "type": "image/jpeg",
       "sizes": "180x180",
       "purpose": "any"
     }

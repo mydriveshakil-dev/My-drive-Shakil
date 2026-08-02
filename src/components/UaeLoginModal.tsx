@@ -15,7 +15,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
-import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
+import uaeMessLogo from '../assets/images/uae_mess_logo_1785697166790.jpg';
 
 interface UaeLoginModalProps {
   isOpen: boolean;
@@ -309,7 +309,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
             </label>
             <input
               type="tel"
-              placeholder="e.g. +971501234567"
+              placeholder="Type Your Mobile Number"
               value={mobileNumber}
               onChange={(e) => {
                 setMobileNumber(e.target.value);

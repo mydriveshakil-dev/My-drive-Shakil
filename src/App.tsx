@@ -38,7 +38,7 @@ import {
 } from './lib/firebase';
 
 import { HeaderBar } from './components/HeaderBar';
-import uaeMessLogo from './assets/images/uae_mess_logo_1785022712689.jpg';
+import uaeMessLogo from './assets/images/uae_mess_logo_1785697166790.jpg';
 import { DashboardView } from './components/DashboardView';
 import { HomeDashboard } from './components/HomeDashboard';
 import { AddExpenseModal } from './components/AddExpenseModal';
@@ -859,23 +859,6 @@ export default function App() {
     await saveExpenseToFirestore(newExpense, group.id);
     triggerHaptic(hapticPatterns.success);
 
-    // Automatically post room chat notification for new expense
-    const nowMs = Date.now();
-    const chatNotification: ChatMessage = {
-      id: `msg-${nowMs}`,
-      senderId: payer?.id || 'm3',
-      senderName: payer?.name || 'Member',
-      senderAvatar: payer?.avatar || 'MB',
-      text: `🛒 Added new ${newExpData.type} expense: "${newExpData.title}" (${newExpData.amount.toFixed(2)} ${group.currency})`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      createdMs: nowMs,
-      createdAt: new Date(nowMs).toISOString(),
-      type: 'expense_added',
-      amount: newExpData.amount,
-    };
-    setChatMessages((prev) => [...prev, chatNotification]);
-    await saveChatMessageToFirestore(group.id, chatNotification);
-
     triggerSheetsSync(false, updatedExpenses);
   };
 
@@ -920,17 +903,6 @@ export default function App() {
       setGroup(targetGroup);
       setActiveTab('dashboard'); // Open user group's Dashboard view
       setIsLoginModalOpen(false);
-
-      const welcomeMsg: ChatMessage = {
-        id: `msg-${Date.now()}`,
-        senderId: 'm3',
-        senderName: authData.name || 'App Admin',
-        senderAvatar: 'AD',
-        text: `👑 Logged in as App Administrator. Redirected to ${targetGroup.name} Dashboard.`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'text',
-      };
-      setChatMessages((prev) => [...prev, welcomeMsg]);
       return;
     }
 
@@ -962,17 +934,6 @@ export default function App() {
     }
     setActiveTab('dashboard'); // Open that user group's Dashboard view
     setIsLoginModalOpen(false);
-
-    const welcomeMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      senderId: 'm3',
-      senderName: authData.name || 'Member',
-      senderAvatar: 'MB',
-      text: `📱 Logged in successfully. Redirected to ${matchedGroup?.name || 'Group'} Dashboard.`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      type: 'text',
-    };
-    setChatMessages((prev) => [...prev, welcomeMsg]);
   };
 
   // Admin Group Handlers

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import html2pdf from 'html2pdf.js';
-import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
+import uaeMessLogo from '../assets/images/uae_mess_logo_1785697166790.jpg';
 import { Group, Expense, UtilityBill, RentContribution } from '../types';
 import { calculateSettlement } from '../utils/settlementCalculator';
 import { GlassContainer } from './GlassContainer';

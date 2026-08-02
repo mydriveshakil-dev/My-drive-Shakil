@@ -4,11 +4,18 @@ const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/favicon.ico',
+  '/favicon.png',
   '/apple-touch-icon.png',
+  '/apple-touch-icon-precomposed.png',
+  '/icon-180.png',
   '/icon-192.png',
+  '/icon-192-maskable.png',
   '/icon-512.png',
+  '/icon-512-maskable.png',
   '/favicon-32x32.png',
-  '/favicon-16x16.png'
+  '/favicon-16x16.png',
+  '/uae_mess_logo.jpg'
 ];
 
 self.addEventListener('install', (event) => {

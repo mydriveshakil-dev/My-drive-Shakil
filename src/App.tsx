@@ -38,7 +38,7 @@ import {
 } from './lib/firebase';
 
 import { HeaderBar } from './components/HeaderBar';
-import uaeMessLogo from './assets/images/uae_mess_logo_1785697166790.jpg';
+import uaeMessLogo from './assets/images/uae_mess_logo_1785022712689.jpg';
 import { DashboardView } from './components/DashboardView';
 import { HomeDashboard } from './components/HomeDashboard';
 import { AddExpenseModal } from './components/AddExpenseModal';

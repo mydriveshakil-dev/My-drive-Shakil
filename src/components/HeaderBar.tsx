@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Group, GoogleSheetsConfig, BillingCycleType, UserAuthProfile, Expense } from '../types';
 import { ChevronDown, RefreshCw, Layers, Plus, Code, CheckCircle2, Coins, ShieldCheck, LogOut, ExternalLink } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
-import uaeMessLogo from '../assets/images/uae_mess_logo_1785697166790.jpg';
+import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
 import { getPreviousCycleOptions } from '../utils/cycleUtils';
 
 interface HeaderBarProps {

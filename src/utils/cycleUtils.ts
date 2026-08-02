@@ -36,10 +36,22 @@ export function getMonthYearDisplay(cycleId: string): string {
   return startDate.toLocaleString('en-US', { month: 'short', year: 'numeric' });
 }
 
-export function getPreviousCycleOptions(count: number = 12): { cycleId: string; label: string; fullLabel: string }[] {
+export function getPreviousCycleOptions(
+  count: number = 24,
+  groupCreatedAt?: string
+): { cycleId: string; label: string; fullLabel: string }[] {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonthIdx = now.getMonth(); // 0 to 11
+
+  let minCycleId = '';
+  if (groupCreatedAt) {
+    // If ISO date like 2026-06-15 or 2026-06
+    const clean = groupCreatedAt.slice(0, 7);
+    if (/^\d{4}-\d{2}$/.test(clean)) {
+      minCycleId = clean;
+    }
+  }
 
   const options = [];
   for (let i = 1; i <= count; i++) {
@@ -47,6 +59,12 @@ export function getPreviousCycleOptions(count: number = 12): { cycleId: string; 
     const year = d.getFullYear();
     const monthStr = String(d.getMonth() + 1).padStart(2, '0');
     const cycleId = `${year}-${monthStr}`;
+
+    if (minCycleId && cycleId < minCycleId) {
+      // Exclude cycles earlier than group creation month
+      continue;
+    }
+
     const monthShortStr = d.toLocaleString('en-US', { month: 'short' });
     const fullLabel = getBillingCycleLabel(cycleId);
 
@@ -58,3 +76,4 @@ export function getPreviousCycleOptions(count: number = 12): { cycleId: string; 
   }
   return options;
 }
+

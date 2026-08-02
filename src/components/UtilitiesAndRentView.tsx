@@ -498,14 +498,14 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative w-36 sm:w-44">
+                <div className="relative w-28 sm:w-36">
                   <input
                     type="number"
                     value={totalRentInput}
                     onChange={handleRentInputChange}
                     disabled={isRentInputLocked}
                     placeholder="e.g. 3500"
-                    className={`w-full bg-white border border-black rounded-xl px-3.5 py-2 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-black ${
+                    className={`w-full bg-white border border-black rounded-xl px-3 py-2 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-black ${
                       isRentInputLocked ? 'bg-slate-100 text-slate-500 cursor-not-allowed opacity-80' : ''
                     }`}
                   />
@@ -530,9 +530,10 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   <button
                     type="button"
                     onClick={handleLockRent}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-black hover:bg-slate-800 text-white rounded-xl border border-black font-extrabold text-xs shadow-xs transition-all cursor-pointer active:scale-95"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-black hover:bg-slate-800 text-white rounded-xl border border-black font-black text-xs shadow-md transition-all cursor-pointer active:scale-95"
+                    title="Click LOCK to save and lock rent amount"
                   >
-                    <Lock className="w-3.5 h-3.5 text-amber-400" />
+                    <Lock className="w-3.5 h-3.5 text-amber-400 stroke-[2.5]" />
                     <span>LOCK</span>
                   </button>
                 )}

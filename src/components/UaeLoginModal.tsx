@@ -125,7 +125,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
         triggerHaptic(hapticPatterns.success);
         const isAdmin = googleUser.email.toLowerCase() === 'mydriveshakil@gmail.com';
         onLoginSuccess({
-          name: googleUser.displayName || (isAdmin ? 'KAZI MD SHAKIL (App Admin)' : 'Mess Member'),
+          name: googleUser.displayName || (isAdmin ? 'Owner & Admin' : 'Mess Member'),
           email: googleUser.email,
           mobileNumber: mobileNumber.trim() || (isAdmin ? '+971544874028' : '+971500000000'),
           password: userPassword.trim() || 'GoogleAuth',
@@ -195,7 +195,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
 
       // Authenticate as App Administrator
       onLoginSuccess({
-        name: 'KAZI MD SHAKIL (App Admin)',
+        name: 'Owner & Admin',
         email: defaultEmail || 'mydriveshakil@gmail.com',
         mobileNumber: trimmedMobile,
         password: trimmedPass,
@@ -301,13 +301,6 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleLogin} className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-slate-900 max-w-full">
-          <div className="bg-slate-100 border border-black p-3 rounded-2xl text-xs text-slate-900 leading-relaxed flex items-start gap-2">
-            <Info className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" />
-            <div>
-              Enter your <strong className="text-slate-950">Mobile Number</strong> and <strong className="text-slate-950">Password</strong>. Your member profile created by Admin will be automatically loaded.
-            </div>
-          </div>
-
           {/* 1. Mobile Number */}
           <div>
             <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">

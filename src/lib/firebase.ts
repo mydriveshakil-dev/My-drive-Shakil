@@ -20,7 +20,7 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
-import { Group, Expense, UtilityBill, RentContribution, ChatMessage, UserAuthProfile } from '../types';
+import { Group, Expense, UtilityBill, RentContribution, ChatMessage, UserAuthProfile, PayToTransaction } from '../types';
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -359,3 +359,94 @@ export async function saveChatMessageToFirestore(groupId: string, message: ChatM
     console.error('Error saving chat message to Firestore:', err);
   }
 }
+
+// 6. PayTo Personal Ledger Firestore Cloud Sync
+export async function savePayToTransactionToFirestore(groupId: string, tx: PayToTransaction) {
+  try {
+    const docRef = doc(db, `payto_${groupId}`, tx.id);
+    const payload = removeUndefinedFields({ ...tx, updatedAtMs: Date.now() });
+    await setDoc(docRef, payload, { merge: true });
+  } catch (err) {
+    console.error('Error saving payto transaction to Firestore:', err);
+  }
+}
+
+export async function deletePayToTransactionFromFirestore(groupId: string, txId: string) {
+  try {
+    const docRef = doc(db, `payto_${groupId}`, txId);
+    await deleteDoc(docRef);
+  } catch (err) {
+    console.error('Error deleting payto transaction from Firestore:', err);
+  }
+}
+
+export function subscribeToPayToTransactions(groupId: string, onUpdate: (txs: PayToTransaction[]) => void) {
+  if (!groupId) return () => {};
+  const colRef = collection(db, `payto_${groupId}`);
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const items: PayToTransaction[] = [];
+      snapshot.forEach((docSnap) => {
+        items.push({ ...docSnap.data(), id: docSnap.id } as PayToTransaction);
+      });
+      onUpdate(items);
+    },
+    (err) => {
+      console.warn('Firestore payto listener warning:', err);
+    }
+  );
+}
+
+// 7. Real-Time Online Presence Tracking
+export interface UserPresence {
+  groupId: string;
+  memberId: string;
+  memberName: string;
+  lastActiveMs: number;
+}
+
+export async function updateUserPresenceInFirestore(groupId: string, memberId: string, memberName: string) {
+  if (!groupId || !memberId) return;
+  try {
+    const docId = `${groupId}_${memberId.replace(/[^a-zA-Z0-9_\-]/g, '_')}`;
+    const docRef = doc(db, 'room_presence', docId);
+    await setDoc(
+      docRef,
+      {
+        groupId,
+        memberId,
+        memberName,
+        lastActiveMs: Date.now(),
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    console.warn('Error updating presence in Firestore:', err);
+  }
+}
+
+export function subscribeToUserPresences(groupId: string, onUpdate: (activeMemberIds: string[]) => void) {
+  if (!groupId) return () => {};
+  const colRef = collection(db, 'room_presence');
+  const q = query(colRef, where('groupId', '==', groupId));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const now = Date.now();
+      const activeIds: string[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data() as UserPresence;
+        // Active if pinged in last 40 seconds
+        if (data.lastActiveMs && now - data.lastActiveMs < 40000) {
+          activeIds.push(data.memberId);
+        }
+      });
+      onUpdate(activeIds);
+    },
+    (err) => {
+      console.warn('Presence listener warning:', err);
+    }
+  );
+}
+

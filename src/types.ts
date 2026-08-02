@@ -142,3 +142,19 @@ export interface ChatMessage {
   type?: 'text' | 'expense_added' | 'settlement_update' | 'bill_reminder';
   amount?: number;
 }
+
+export interface PayToTransaction {
+  id: string;
+  groupId: string;
+  payById: string;       // Paid By (Lender) member ID
+  payByName: string;     // Paid By (Lender) member Name
+  payToId: string;       // Paid To (Borrower) member ID
+  payToName: string;     // Paid To (Borrower) member Name
+  purpose: string;       // Purpose of transaction
+  amount: number;        // Loaned amount
+  date: string;          // YYYY-MM-DD HH:mm or formatted short date
+  returnDate?: string;   // Optional promised return date (YYYY-MM-DD)
+  status: 'pending' | 'paid'; // 'pending' (Active summary / Red notice) vs 'paid' (Moved to Previous Record)
+  createdAtMs: number;   // Timestamp for sorting (oldest first)
+  updatedAtMs?: number;
+}

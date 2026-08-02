@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Group, Expense, UtilityBill, RentContribution, GoogleSheetsConfig, BillingCycleType, Member, ChatMessage, UserAuthProfile } from './types';
+import { Group, Expense, UtilityBill, RentContribution, GoogleSheetsConfig, BillingCycleType, Member, ChatMessage, UserAuthProfile, PayToTransaction } from './types';
 import { getCurrentCycleId, getBillingCycleLabel, getPreviousCycleOptions } from './utils/cycleUtils';
 import {
   INITIAL_GROUP,
@@ -27,6 +27,11 @@ import {
   saveRentToFirestore,
   subscribeToChatMessages,
   saveChatMessageToFirestore,
+  subscribeToPayToTransactions,
+  savePayToTransactionToFirestore,
+  deletePayToTransactionFromFirestore,
+  subscribeToUserPresences,
+  updateUserPresenceInFirestore,
   getMessageTimestampMs,
   auth,
   onAuthStateChanged,
@@ -40,6 +45,7 @@ import { AddExpenseModal } from './components/AddExpenseModal';
 import { UtilitiesAndRentView } from './components/UtilitiesAndRentView';
 import { ReportAndSettlementView } from './components/ReportAndSettlementView';
 import { GroupManagementView } from './components/GroupManagementView';
+import { PayToView } from './components/PayToView';
 import { ArchitectureGuideModal } from './components/ArchitectureGuideModal';
 import { CurrencySettingsModal } from './components/CurrencySettingsModal';
 import { GroupChatModal } from './components/GroupChatModal';
@@ -155,6 +161,22 @@ export default function App() {
     return INITIAL_CHAT_MESSAGES;
   });
 
+  const [payToTransactions, setPayToTransactions] = useState<PayToTransaction[]>(() => {
+    const key = `room_payto_${group.id}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return [];
+  });
+
+  const [activeMemberIds, setActiveMemberIds] = useState<string[]>([]);
+
   // Keep state refs updated for global async handlers
   const expensesRef = useRef(expenses);
   const utilitiesRef = useRef(utilities);
@@ -230,7 +252,7 @@ export default function App() {
         const emailLower = firebaseUser.email.toLowerCase();
         const isAdmin = emailLower === 'mydriveshakil@gmail.com';
         const userProf: UserAuthProfile = {
-          name: firebaseUser.displayName || (isAdmin ? 'KAZI MD SHAKIL (App Admin)' : 'Mess Member'),
+          name: firebaseUser.displayName || (isAdmin ? 'Owner & Admin' : 'Mess Member'),
           email: firebaseUser.email,
           mobileNumber: isAdmin ? '+971544874028' : '+971500000000',
           password: 'GoogleAuth',
@@ -334,6 +356,19 @@ export default function App() {
       }
     });
 
+    // 6. PayTo subscription - Instant multi-device ledger sync
+    const unsubPayTo = subscribeToPayToTransactions(group.id, (remotePayTo) => {
+      if (Array.isArray(remotePayTo)) {
+        setPayToTransactions(remotePayTo);
+        localStorage.setItem(`room_payto_${group.id}`, JSON.stringify(remotePayTo));
+      }
+    });
+
+    // 7. Presence subscription - Online active green dot tracking
+    const unsubPresence = subscribeToUserPresences(group.id, (activeIds) => {
+      setActiveMemberIds(activeIds);
+    });
+
     return () => {
       unsubAllGroups();
       unsubAuth();
@@ -342,6 +377,8 @@ export default function App() {
       unsubUtil();
       unsubRent();
       unsubChat();
+      unsubPayTo();
+      unsubPresence();
     };
   }, [group.id]);
 
@@ -357,6 +394,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(`room_chat_messages_${group.id}`, JSON.stringify(chatMessages));
   }, [chatMessages, group.id]);
+
+  useEffect(() => {
+    localStorage.setItem(`room_payto_${group.id}`, JSON.stringify(payToTransactions));
+  }, [payToTransactions, group.id]);
 
   // User UAE Residence Visa Auth State
   const [userAuth, setUserAuth] = useState<UserAuthProfile>(() => {
@@ -402,6 +443,83 @@ export default function App() {
     const prevs = getPreviousCycleOptions(1);
     return prevs[0]?.cycleId || '2026-06';
   });
+
+  // Ensure manual refresh or page reload defaults to Current Cycle
+  useEffect(() => {
+    setBillingCycleType('current');
+  }, []);
+
+  // Presence Heartbeat Ping for active green dot
+  useEffect(() => {
+    if (!group.id || !userAuth.isLoggedIn) return;
+    const matchedMem = (group?.members || []).find(
+      (m) =>
+        (userAuth?.email && m.email?.toLowerCase() === userAuth.email.toLowerCase()) ||
+        (userAuth?.mobileNumber && m.phone?.replace(/\D/g, '').includes(userAuth.mobileNumber.replace(/\D/g, '').slice(-7))) ||
+        (userAuth?.name && m.name.toLowerCase().includes(userAuth.name.toLowerCase()))
+    );
+    const memberId = matchedMem?.id || userAuth.mobileNumber || userAuth.email || 'user';
+    const memberName = matchedMem?.name || userAuth.name || 'Room Member';
+
+    updateUserPresenceInFirestore(group.id, memberId, memberName);
+    const interval = setInterval(() => {
+      updateUserPresenceInFirestore(group.id, memberId, memberName);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [group.id, userAuth.isLoggedIn, userAuth.mobileNumber, userAuth.email, userAuth.name]);
+
+  // Handlers for "PAY TO" Personal Ledger
+  const handleSavePayToTransaction = (tx: PayToTransaction) => {
+    setPayToTransactions((prev) => {
+      const next = [tx, ...prev];
+      localStorage.setItem(`room_payto_${group.id}`, JSON.stringify(next));
+      return next;
+    });
+    savePayToTransactionToFirestore(group.id, tx);
+  };
+
+  const handleUpdatePayToAmount = (txId: string, newAmount: number) => {
+    setPayToTransactions((prev) => {
+      const target = prev.find((t) => t.id === txId);
+      if (target) {
+        savePayToTransactionToFirestore(group.id, { ...target, amount: newAmount });
+      }
+      const next = prev.map((tx) => (tx.id === txId ? { ...tx, amount: newAmount } : tx));
+      localStorage.setItem(`room_payto_${group.id}`, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleMarkPayToReceived = (txId: string) => {
+    setPayToTransactions((prev) => {
+      const target = prev.find((t) => t.id === txId);
+      if (target) {
+        savePayToTransactionToFirestore(group.id, { ...target, status: 'paid' as const });
+      }
+      const next = prev.map((tx) => (tx.id === txId ? { ...tx, status: 'paid' as const } : tx));
+      localStorage.setItem(`room_payto_${group.id}`, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleDeletePayToTransaction = (txId: string) => {
+    setPayToTransactions((prev) => {
+      const next = prev.filter((tx) => tx.id !== txId);
+      localStorage.setItem(`room_payto_${group.id}`, JSON.stringify(next));
+      return next;
+    });
+    deletePayToTransactionFromFirestore(group.id, txId);
+  };
+
+  const handleHardDeletePayToPreviousRecord = (txId: string) => {
+    setPayToTransactions((prev) => {
+      const next = prev.filter((tx) => tx.id !== txId);
+      localStorage.setItem(`room_payto_${group.id}`, JSON.stringify(next));
+      return next;
+    });
+    deletePayToTransactionFromFirestore(group.id, txId);
+  };
 
   const currentCycleId = getCurrentCycleId();
   const currentCycleLabel = getBillingCycleLabel(currentCycleId);
@@ -1326,6 +1444,21 @@ export default function App() {
                   onUpdateSpreadsheetConfig={handleUpdateSpreadsheetConfig}
                 />
               )}
+
+              {activeTab === 'payto' && (
+                <PayToView
+                  group={displayedGroup}
+                  currentUser={userAuth}
+                  payToTransactions={payToTransactions}
+                  rentContribution={displayedRent}
+                  onSaveTransaction={handleSavePayToTransaction}
+                  onUpdateAmount={handleUpdatePayToAmount}
+                  onMarkReceived={handleMarkPayToReceived}
+                  onDeleteTransaction={handleDeletePayToTransaction}
+                  onHardDeletePreviousRecord={handleHardDeletePayToPreviousRecord}
+                  preferredCurrency={preferredCurrency}
+                />
+              )}
             </motion.div>
           </AnimatePresence>
         )}
@@ -1362,10 +1495,11 @@ export default function App() {
       <GroupChatModal
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
-        group={group}
+        group={displayedGroup}
         messages={chatMessages}
         onSendMessage={handleSendMessage}
         currentUser={userAuth}
+        activeMemberIds={activeMemberIds}
       />
 
       {/* UAE Residence Visa Login Modal */}

@@ -46,7 +46,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onOpenLoginModal,
   onLogout,
 }) => {
-  const previousCycleOptions = getPreviousCycleOptions(12);
+  const previousCycleOptions = getPreviousCycleOptions(24, group?.createdAt);
   const isAdmin = currentUser?.role === 'admin';
   const [showGroupDropdown, setShowGroupDropdown] = useState(false);
 

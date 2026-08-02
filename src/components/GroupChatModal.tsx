@@ -23,6 +23,7 @@ interface GroupChatModalProps {
   messages: ChatMessage[];
   onSendMessage: (msg: { text: string; senderId: string; senderName?: string }) => void;
   currentUser?: UserAuthProfile | null;
+  activeMemberIds?: string[];
 }
 
 export const GroupChatModal: React.FC<GroupChatModalProps> = ({
@@ -32,6 +33,7 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
   messages,
   onSendMessage,
   currentUser,
+  activeMemberIds = [],
 }) => {
   const loggedInMember = (group?.members || []).find(
     (m) =>
@@ -145,7 +147,14 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
                   (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
                   (currentUser?.name && m.name.toLowerCase().includes(currentUser.name.toLowerCase()));
 
-                const isOnline = isMe || m.active !== false;
+                const isOnline =
+                  isMe ||
+                  activeMemberIds.includes(m.id) ||
+                  activeMemberIds.some(
+                    (aid) =>
+                      m.name.toLowerCase().includes(aid.toLowerCase()) ||
+                      (m.mobileNumber && aid.includes(m.mobileNumber))
+                  );
 
                 return (
                   <div

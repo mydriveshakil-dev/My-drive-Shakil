@@ -1,10 +1,10 @@
 import React from 'react';
-import { LayoutDashboard, Zap, PieChart, Users, Plus } from 'lucide-react';
+import { LayoutDashboard, Zap, PieChart, Users, Plus, HandCoins } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
 import { motion } from 'motion/react';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 
-export type AppTabType = 'dashboard' | 'home' | 'utilities' | 'report' | 'group';
+export type AppTabType = 'dashboard' | 'home' | 'utilities' | 'report' | 'group' | 'payto';
 
 interface BottomNavBarProps {
   activeTab: AppTabType;
@@ -22,6 +22,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
     { id: 'utilities' as const, label: 'Bills/Rent', icon: Zap },
     { id: 'report' as const, label: 'Report', icon: PieChart },
     { id: 'group' as const, label: 'Group', icon: Users },
+    { id: 'payto' as const, label: 'PAY TO', icon: HandCoins },
   ];
 
   const handleTabClick = (tabId: AppTabType) => {

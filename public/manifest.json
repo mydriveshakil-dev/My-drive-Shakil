@@ -3,16 +3,14 @@
   "name": "UAE Mess System",
   "icons": [
     {
-      "src": "/uae_mess_logo.jpg",
+      "src": "/uae_mess_logo.jpeg",
       "type": "image/jpeg",
-      "sizes": "192x192",
-      "purpose": "any maskable"
+      "sizes": "192x192"
     },
     {
-      "src": "/uae_mess_logo.jpg",
+      "src": "/uae_mess_logo.jpeg",
       "type": "image/jpeg",
-      "sizes": "512x512",
-      "purpose": "any maskable"
+      "sizes": "512x512"
     }
   ],
   "start_url": "/",

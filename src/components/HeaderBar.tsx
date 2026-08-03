@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Group, GoogleSheetsConfig, BillingCycleType, UserAuthProfile, Expense } from '../types';
-import { ChevronDown, RefreshCw, Layers, Plus, Code, CheckCircle2, Coins, ShieldCheck, LogOut, ExternalLink } from 'lucide-react';
+import { ChevronDown, RefreshCw, Layers, Plus, Code, CheckCircle2, Coins, ShieldCheck, LogOut, ExternalLink, Smartphone } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
 import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
 import { getPreviousCycleOptions } from '../utils/cycleUtils';
@@ -24,6 +24,7 @@ interface HeaderBarProps {
   currentUser?: UserAuthProfile | null;
   onOpenLoginModal?: () => void;
   onLogout?: () => void;
+  onOpenInstallPwa?: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -45,6 +46,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   currentUser,
   onOpenLoginModal,
   onLogout,
+  onOpenInstallPwa,
 }) => {
   const previousCycleOptions = getPreviousCycleOptions(24, group?.createdAt);
   const isAdmin = currentUser?.role === 'admin';
@@ -116,6 +118,18 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
             {/* Action buttons on top right */}
             <div className="flex items-center gap-2 flex-wrap">
+              {/* PWA Mobile App Setup Button (Available to all) */}
+              {onOpenInstallPwa && (
+                <button
+                  onClick={onOpenInstallPwa}
+                  className="inline-flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black px-3 py-1.5 rounded-2xl transition-all shadow-md active:scale-95 border border-black cursor-pointer"
+                  title="Mobile App Setup & Home Screen Instructions"
+                >
+                  <Smartphone className="w-4 h-4 stroke-[2.5]" />
+                  <span>Install App</span>
+                </button>
+              )}
+
               {/* Admin-only options */}
               {isAdmin && (
                 <>

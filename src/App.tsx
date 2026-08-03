@@ -50,6 +50,7 @@ import { ArchitectureGuideModal } from './components/ArchitectureGuideModal';
 import { CurrencySettingsModal } from './components/CurrencySettingsModal';
 import { GroupChatModal } from './components/GroupChatModal';
 import { UaeLoginModal } from './components/UaeLoginModal';
+import { InstallPwaModal } from './components/InstallPwaModal';
 import { GlassContainer } from './components/GlassContainer';
 import { BottomNavBar, AppTabType } from './components/BottomNavBar';
 import { CheckCircle2, MessageCircle, Plus, AlertCircle } from 'lucide-react';
@@ -595,6 +596,7 @@ export default function App() {
   const [isArchGuideOpen, setIsArchGuideOpen] = useState(false);
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isInstallPwaOpen, setIsInstallPwaOpen] = useState(false);
   const [lastReadTimestamp, setLastReadTimestamp] = useState<number>(() => {
     if (group?.id) {
       const saved = localStorage.getItem(`chat_last_read_time_${group.id}`);
@@ -1238,6 +1240,7 @@ export default function App() {
           currentUser={userAuth}
           onOpenLoginModal={() => setIsLoginModalOpen(true)}
           onLogout={handleLogout}
+          onOpenInstallPwa={() => setIsInstallPwaOpen(true)}
         />
       )}
 
@@ -1469,6 +1472,12 @@ export default function App() {
         defaultEmail={userAuth.email || 'mydriveshakil@gmail.com'}
         allGroups={allGroups}
         onLoginSuccess={handleLoginSuccess}
+      />
+
+      {/* Mobile PWA Install & Home Screen Setup Modal */}
+      <InstallPwaModal
+        isOpen={isInstallPwaOpen}
+        onClose={() => setIsInstallPwaOpen(false)}
       />
 
       {/* Floating Action Button (FAB) for Room Group Chat - Automatically hides when chat modal is open */}

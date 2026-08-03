@@ -1,28 +1,22 @@
 {
-  "name": "UAE MESS",
-  "short_name": "UAE MESS",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "short_name": "UAE Mess",
+  "name": "UAE Mess System",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/uae_mess_logo.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/uae_mess_logo.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
-    },
-    {
-      "src": "/apple-touch-icon.png",
-      "type": "image/png",
-      "sizes": "180x180",
-      "purpose": "any"
     }
-  ]
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#0F172A",
+  "display": "standalone"
 }

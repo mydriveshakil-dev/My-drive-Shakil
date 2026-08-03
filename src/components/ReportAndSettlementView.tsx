@@ -175,7 +175,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   const sanitizeDocumentForHtml2Canvas = (clonedDoc: Document) => {
     try {
       const styles = clonedDoc.querySelectorAll('style');
-        const handleShareReport = async () => {
+              const handleShareReport = async () => {
     const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
     
     setIsSharingPdf(true);
@@ -194,7 +194,8 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
             html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
           };
-          const worker = html2pdf().set(opt).from(element);
+          // @ts-ignore
+          const worker = (html2pdf as any)().set(opt).from(element);
           const blob = await worker.output('blob');
           targetFile = new File([blob], fileName, { type: 'application/pdf' });
           cachedPdfFileRef.current = targetFile;
@@ -210,7 +211,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       if (navigator.canShare && navigator.canShare({ files: [targetFile] })) {
         await navigator.share({
           title: `${group.name} Settlement Report`,
-          files: [targetFile], // 👈 Direct PDF Attachment
+          files: [targetFile], // Direct PDF Attachment
         });
       } else {
         alert("Direct PDF file sharing is not supported on this browser. Please download the PDF.");
@@ -221,92 +222,6 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       }
     } finally {
       setIsSharingPdf(false);
-    }
-  };
-
-    const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
-    const summaryText = `📋 *${group.name} - Settlement Report*\n📅 Period: ${fromDate} to ${toDate}\n\n💰 Grand Total: ${settlementResult.grandTotalExpenses.toFixed(2)} ${group.currency}\n\n*Settlement Transactions:*\n${
-      settlementResult.settlementFlows.length > 0
-        ? settlementResult.settlementFlows
-            .map((f) => `• ${f.fromMemberName} pays ${f.toMemberName}: ${f.amount.toFixed(2)} ${group.currency}`)
-            .join('\n')
-        : 'All balances cleared!'
-    }`;
-
-    let targetFile = cachedPdfFileRef.current;
-
-    // If pre-generated file isn't ready yet, generate it on demand
-    if (!targetFile) {
-      const element = document.getElementById('pdf-report-document');
-      if (element) {
-        try {
-          setIsSharingPdf(true);
-          const opt = {
-            margin: 6,
-            filename: fileName,
-            image: { type: 'jpeg' as const, quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-          };
-
-          const worker = html2pdf().set(opt).from(element);
-          const blob = await worker.output('blob');
-          targetFile = new File([blob], fileName, { type: 'application/pdf' });
-          cachedPdfFileRef.current = targetFile;
-        } catch (err) {
-          console.warn('On-demand PDF generation for share failed:', err);
-        } finally {
-          setIsSharingPdf(false);
-        }
-      }
-    }
-
-    // 1. Attempt native system share dialog with attached PDF file
-    if (targetFile) {
-      try {
-        if (navigator.canShare && navigator.canShare({ files: [targetFile] })) {
-          await navigator.share({
-            title: `${group.name} Settlement Report`,
-            text: summaryText,
-            files: [targetFile],
-          });
-          return; // Successfully opened native share sheet with PDF file attached!
-        } else if (navigator.share) {
-          await navigator.share({
-            title: `${group.name} Settlement Report`,
-            text: summaryText,
-            files: [targetFile],
-          });
-          return;
-        }
-      } catch (shareErr: any) {
-        if (shareErr?.name === 'AbortError') {
-          return; // User canceled the native share dialog intentionally
-        }
-        console.warn('Native PDF file share rejected or unsupported:', shareErr);
-      }
-    }
-
-    // 2. Fallback to native text share if file sharing failed or is unsupported
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${group.name} Settlement Report`,
-          text: summaryText,
-        });
-        return;
-      } catch (e: any) {
-        if (e?.name === 'AbortError') return;
-      }
-    }
-
-    // 3. Desktop Clipboard Fallback (Copies summary text without auto-downloading files)
-    try {
-      await navigator.clipboard.writeText(summaryText);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 3000);
-    } catch (e) {
-      // ignore
     }
   };
 

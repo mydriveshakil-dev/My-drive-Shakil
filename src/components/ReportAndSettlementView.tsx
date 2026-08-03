@@ -435,19 +435,18 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           })}
         </div>
 
-      {/* Desktop View */}
-            {/* Desktop View */}
-      <div className="hidden sm:block overflow-x-auto">
-        <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="bg-slate-100 text-slate-900 uppercase tracking-wider font-bold border-b border-black">
-              <th className="py-3 px-3">Member</th>
-              <th className="py-3 px-2 text-right">Actual Expense Share</th>
-              <th className="py-3 px-2 text-right">Amount Paid</th>
-              <th className="py-3 px-3 text-right">Final Balance</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-black/15 font-medium text-slate-900">
+        {/* Desktop View */}
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-100 text-slate-900 uppercase tracking-wider font-bold border-b border-black">
+                <th className="py-3 px-3">Member</th>
+                <th className="py-3 px-2 text-right">Actual Expense Share</th>
+                <th className="py-3 px-2 text-right">Amount Paid</th>
+                <th className="py-3 px-3 text-right">Final Balance</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black/15 font-medium text-slate-900">
             {settlementResult.memberSummaries.map((ms) => {
               const isOverpaid = ms.balance >= 0;
               return (
@@ -479,8 +478,3 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
             })}
           </tbody>
         </table>
-      </div>
-        
-      </GlassContainer>
-
-      {/* D

@@ -7,27 +7,19 @@ import { Group, Expense, UtilityBill, RentContribution } from '../types';
 import { calculateSettlement } from '../utils/settlementCalculator';
 import { GlassContainer } from './GlassContainer';
 import {
-  PieChart as ChartIcon,
   FileText,
-  Printer,
-  Share2,
   CheckCircle,
   ArrowRight,
   User,
   Calendar,
-  DollarSign,
-  Info,
   CheckSquare,
   Square,
   Sparkles,
   X,
   Check,
-  ShieldCheck,
-  Building2,
-  Receipt,
+  Share2,
   Download,
   Loader2,
-  MessageSquare,
 } from 'lucide-react';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 
@@ -443,37 +435,52 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           })}
         </div>
 
-        {/* Desktop View */}
-        <div className="hidden sm:block overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-100 text-slate-900 uppercase tracking-wider font-bold border-b border-black">
-                <th className="py-3 px-3">Member</th>
-                <th className="py-3 px-2 text-right">Actual Expense Share</th>
-                <th className="py-3 px-2 text-right">Amount Paid</th>
-                <th className="py-3 px-3 text-right">Final Balance</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-black/15 font-medium text-slate-900">
-              {settlementResult.memberSummaries.map((ms) => {
-                const isOverpaid = ms.balance >= 0;
-                return (
-                  <tr key={ms.memberId} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-3 font-bold text-slate-900">
-                      <span>{ms.memberName}</span>
-                    </td>
-                    <td className="py-3 px-2 text-right font-semibold text-slate-800">
-                      {ms.totalActualExpense.toFixed(2)} AED
-                    </td>
-                    <td className="py-3 px-2 text-right font-bold text-slate-950">
-                      {ms.totalAmountSpent.toFixed(2)} AED
-                    </td>
-                    <td className="py-3 px-3 text-right font-extrabold">
-                      <span className={`inline-block px-2.5 py-1 rounded-xl text-xs ${
-                        isOverpaid ? 'bg-slate-100 text-slate-900 border border-black' : 'bg-rose-50 text-rose-950 border border-black'
-                      }`}>
-                        {isOverpaid ? `+${ms.balance.toFixed(2)} AED (Gets Back)` : `${ms.balance.toFixed(2)} AED (DUE)`}
-                      </span>
-                    </td>
-                  </tr>
-              
+      {/* Desktop View */}
+            {/* Desktop View */}
+      <div className="hidden sm:block overflow-x-auto">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr className="bg-slate-100 text-slate-900 uppercase tracking-wider font-bold border-b border-black">
+              <th className="py-3 px-3">Member</th>
+              <th className="py-3 px-2 text-right">Actual Expense Share</th>
+              <th className="py-3 px-2 text-right">Amount Paid</th>
+              <th className="py-3 px-3 text-right">Final Balance</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-black/15 font-medium text-slate-900">
+            {settlementResult.memberSummaries.map((ms) => {
+              const isOverpaid = ms.balance >= 0;
+              return (
+                <tr key={ms.memberId} className="hover:bg-slate-50 transition-colors">
+                  <td className="py-3 px-3 font-bold text-slate-900">
+                    <span>{ms.memberName}</span>
+                  </td>
+                  <td className="py-3 px-2 text-right font-semibold text-slate-800">
+                    {ms.totalActualExpense.toFixed(2)} AED
+                  </td>
+                  <td className="py-3 px-2 text-right font-bold text-slate-950">
+                    {ms.totalAmountSpent.toFixed(2)} AED
+                  </td>
+                  <td className="py-3 px-3 text-right font-extrabold">
+                    <span
+                      className={`inline-block px-2.5 py-1 rounded-xl text-xs ${
+                        isOverpaid
+                          ? 'bg-slate-100 text-slate-900 border border-black'
+                          : 'bg-rose-50 text-rose-950 border border-black'
+                      }`}
+                    >
+                      {isOverpaid
+                        ? `+${ms.balance.toFixed(2)} AED (Gets Back)`
+                        : `${ms.balance.toFixed(2)} AED (DUE)`}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+        
+      </GlassContainer>
+
+      {/* D

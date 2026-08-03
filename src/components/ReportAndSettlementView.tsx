@@ -175,52 +175,55 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   const sanitizeDocumentForHtml2Canvas = (clonedDoc: Document) => {
     try {
       const styles = clonedDoc.querySelectorAll('style');
-      styles.forEach((s) => {
-        if (s.textContent) {
-          s.textContent = sanitizeCssText(s.textContent);
-        }
-      });
-
-      const elements = clonedDoc.querySelectorAll('*');
-      elements.forEach((el) => {
-        const htmlEl = el as HTMLElement;
-        const styleAttr = htmlEl.getAttribute('style');
-        if (styleAttr) {
-          htmlEl.setAttribute('style', sanitizeCssText(styleAttr));
-        }
-      });
-    } catch (e) {
-      console.warn('Sanitize document for html2canvas failed:', e);
-    }
-  };
-
-  const handlePrintPdf = async () => {
-    const element = document.getElementById('pdf-report-document');
-    if (!element) {
-      window.print();
-      return;
-    }
+        const handleShareReport = async () => {
+    const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
+    
+    setIsSharingPdf(true);
 
     try {
-      setIsGeneratingPdf(true);
-      const opt = {
-        margin: 6,
-        filename: `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-      };
+      // 1. Get or Generate the PDF File directly
+      let targetFile = cachedPdfFileRef.current;
 
-      await html2pdf().set(opt).from(element).save();
-    } catch (err) {
-      console.error('PDF export error, using fallback print():', err);
-      window.print();
+      if (!targetFile) {
+        const element = document.getElementById('pdf-report-document');
+        if (element) {
+          const opt = {
+            margin: 6,
+            filename: fileName,
+            image: { type: 'jpeg' as const, quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+          };
+          const worker = html2pdf().set(opt).from(element);
+          const blob = await worker.output('blob');
+          targetFile = new File([blob], fileName, { type: 'application/pdf' });
+          cachedPdfFileRef.current = targetFile;
+        }
+      }
+
+      if (!targetFile) {
+        alert("Could not generate PDF for sharing. Please try downloading.");
+        return;
+      }
+
+      // 2. Trigger System Native Share Sheet strictly with File
+      if (navigator.canShare && navigator.canShare({ files: [targetFile] })) {
+        await navigator.share({
+          title: `${group.name} Settlement Report`,
+          files: [targetFile], // 👈 Direct PDF Attachment
+        });
+      } else {
+        alert("Direct PDF file sharing is not supported on this browser. Please download the PDF.");
+      }
+    } catch (shareErr: any) {
+      if (shareErr?.name !== 'AbortError') {
+        console.error("Native PDF share error:", shareErr);
+      }
     } finally {
-      setIsGeneratingPdf(false);
+      setIsSharingPdf(false);
     }
   };
 
-  const handleShareReport = async () => {
     const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
     const summaryText = `📋 *${group.name} - Settlement Report*\n📅 Period: ${fromDate} to ${toDate}\n\n💰 Grand Total: ${settlementResult.grandTotalExpenses.toFixed(2)} ${group.currency}\n\n*Settlement Transactions:*\n${
       settlementResult.settlementFlows.length > 0

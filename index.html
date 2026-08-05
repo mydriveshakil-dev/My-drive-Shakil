@@ -2,23 +2,30 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#0B4A3F" />
-    <meta name="application-name" content="UAE MESS SYSTEM" />
-
-    <!-- Apple iOS Support -->
+    <meta name="application-name" content="UAE MESS" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="UAE MESS" />
-    <link rel="apple-touch-icon" href="/uae_mess_logo.jpeg" />
 
-    <!-- Favicons & App Icons -->
-    <link rel="icon" type="image/jpeg" href="/uae_mess_logo.jpeg" />
-    <link rel="shortcut icon" href="/uae_mess_logo.jpeg" />
+    <!-- Apple iOS Touch Icons -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon-precomposed.png" />
+
+    <!-- Android Chrome Favicons & App Icons -->
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" href="/icon-192.png" />
+    <link rel="shortcut icon" href="/apple-touch-icon.png" />
 
     <!-- Web App Manifest -->
     <link rel="manifest" href="/manifest.json" />
-
     <title>UAE MESS SYSTEM</title>
   </head>
   <body>
@@ -27,9 +34,10 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
         });
       }
     </script>
   </body>
 </html>
+

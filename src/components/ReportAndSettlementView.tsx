@@ -203,15 +203,28 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
     try {
       setIsGeneratingPdf(true);
+      const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
       const opt = {
         margin: 6,
-        filename: `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`,
+        filename: fileName,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
       };
 
-      await html2pdf().set(opt).from(element).save();
+      const worker = html2pdf().set(opt).from(element);
+      const blob = await worker.output('blob');
+
+      // Trigger automatic PDF download via anchor tag with download attribute
+      const blobUrl = URL.createObjectURL(blob);
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.href = blobUrl;
+      downloadAnchor.download = fileName;
+      downloadAnchor.style.display = 'none';
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      document.body.removeChild(downloadAnchor);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
     } catch (err) {
       console.error('PDF export error, using fallback print():', err);
       window.print();
@@ -258,7 +271,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       }
     }
 
-    // 1. Attempt native system share dialog with attached PDF file if supported
+    // 1. Invoke navigator.share API with PDF file data
     if (targetFile && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [targetFile] })) {
       try {
         await navigator.share({
@@ -266,32 +279,32 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           text: summaryText,
           files: [targetFile],
         });
-        return; // Native share with PDF file succeeded!
+        return; // Native share with PDF file succeeded
       } catch (shareErr: any) {
         if (shareErr?.name === 'AbortError') {
-          return; // User canceled the share sheet intentionally
+          return; // User canceled share sheet
         }
         console.warn('Native PDF file share rejected or failed:', shareErr);
       }
     }
 
-    // 2. Fallback to native text share if file sharing is unsupported or failed
+    // 2. Fallback to native text share if file sharing is unsupported
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
           title: `${group.name} Settlement Report`,
           text: summaryText,
         });
-        return; // Native text share succeeded!
+        return;
       } catch (e: any) {
         if (e?.name === 'AbortError') {
-          return; // User canceled text share sheet intentionally
+          return;
         }
-        console.warn('Native text share rejected or failed:', e);
+        console.warn('Native text share failed:', e);
       }
     }
 
-    // 3. Desktop / Sandbox Fallback (Copies summary text & initiates PDF file download)
+    // 3. Fallback: Automatic download using anchor tag with download attribute + clipboard summary copy
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(summaryText);
@@ -304,13 +317,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         const a = document.createElement('a');
         a.href = url;
         a.download = fileName;
+        a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       }
     } catch (e) {
-      console.warn('Fallback clipboard write / download error:', e);
+      console.warn('Fallback download/clipboard error:', e);
     }
   };
 
@@ -743,34 +757,34 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                   className="bg-white text-slate-900 rounded-2xl shadow-2xl p-4 sm:p-8 md:p-10 w-full mx-auto space-y-4 sm:space-y-6 text-xs font-sans border-2 border-slate-900 box-border relative"
                 >
                   {/* Header Stamp & Title */}
-                  <div className="border-b-2 border-slate-900 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="border-b-2 border-slate-900 pb-4 flex flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
                       <img
                         src={uaeMessLogo}
                         alt="UAE MESS SYSTEM Logo"
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl object-cover border-2 border-amber-500/80 shadow-md shrink-0"
+                        className="w-12 h-12 rounded-xl object-cover border-2 border-amber-500/80 shadow-md shrink-0"
                       />
                       <div>
-                        <h1 className="text-base sm:text-xl font-black text-slate-900 uppercase tracking-tight leading-tight">
+                        <h1 className="text-lg font-black text-slate-900 uppercase tracking-tight leading-tight">
                           UAE MESS SYSTEM
                         </h1>
-                        <p className="text-[10px] sm:text-xs text-emerald-800 font-extrabold uppercase">
+                        <p className="text-xs text-emerald-800 font-extrabold uppercase">
                           {group.name} • SETTLEMENT STATEMENT
                         </p>
-                        <p className="text-[9px] sm:text-[10px] text-slate-500 font-semibold">
+                        <p className="text-[10px] text-slate-500 font-semibold">
                           UNITED ARAB EMIRATES • MESS EXPENSE MANAGEMENT SYSTEM
                         </p>
                       </div>
                     </div>
 
-                    <div className="text-left sm:text-right text-[10px] sm:text-[11px] font-medium text-slate-600 bg-slate-50 sm:bg-transparent p-2 sm:p-0 rounded-lg border sm:border-0 border-slate-200">
+                    <div className="text-right text-[11px] font-medium text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                       <p className="font-bold text-slate-900 text-xs">Group: {group.name}</p>
-                      <p>
+                      <p className="leading-normal">
                         Settlement Period:{' '}
                         <strong className="text-emerald-700">{fromDate}</strong> to{' '}
                         <strong className="text-emerald-700">{toDate}</strong>
                       </p>
-                      <p>
+                      <p className="leading-normal">
                         Generated:{' '}
                         {new Date().toLocaleDateString('en-US', {
                           year: 'numeric',
@@ -782,51 +796,51 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                   </div>
 
                   {/* Key Summary Totals Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                    <div className="bg-slate-50 p-2.5 sm:p-3 rounded-xl border border-slate-200">
-                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase">
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
                         Total Mess Expense
                       </span>
-                      <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5">
+                      <div className="text-base font-black text-slate-900 my-1 leading-snug">
                         {settlementResult.totalMessExpenses.toFixed(2)} {group.currency}
                       </div>
-                      <span className="text-[9px] sm:text-[10px] text-slate-500 block truncate">
+                      <span className="text-[10px] text-slate-500 font-medium leading-normal">
                         Shared equally
                       </span>
                     </div>
 
-                    <div className="bg-slate-50 p-2.5 sm:p-3 rounded-xl border border-slate-200">
-                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase">
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
                         General Expense
                       </span>
-                      <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5">
+                      <div className="text-base font-black text-slate-900 my-1 leading-snug">
                         {settlementResult.totalGeneralExpenses.toFixed(2)} {group.currency}
                       </div>
-                      <span className="text-[9px] sm:text-[10px] text-slate-500 block truncate">
+                      <span className="text-[10px] text-slate-500 font-medium leading-normal">
                         Shared equally
                       </span>
                     </div>
 
-                    <div className="bg-slate-50 p-2.5 sm:p-3 rounded-xl border border-slate-200">
-                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase">
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
                         Utilities (DEWA & WiFi)
                       </span>
-                      <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5">
+                      <div className="text-base font-black text-slate-900 my-1 leading-snug">
                         {settlementResult.totalUtilities.toFixed(2)} {group.currency}
                       </div>
-                      <span className="text-[9px] sm:text-[10px] text-slate-500 block truncate">
+                      <span className="text-[10px] text-slate-500 font-medium leading-normal">
                         DEWA, WiFi Bills
                       </span>
                     </div>
 
-                    <div className="bg-emerald-50 p-2.5 sm:p-3 rounded-xl border border-emerald-300">
-                      <span className="text-[9px] sm:text-[10px] font-bold text-emerald-800 uppercase">
+                    <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-300 flex flex-col justify-between">
+                      <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
                         Grand Total
                       </span>
-                      <div className="text-sm sm:text-base font-black text-emerald-950 mt-0.5">
+                      <div className="text-base font-black text-emerald-950 my-1 leading-snug">
                         {settlementResult.grandTotalExpenses.toFixed(2)} {group.currency}
                       </div>
-                      <span className="text-[9px] sm:text-[10px] text-emerald-700 font-semibold block truncate">
+                      <span className="text-[10px] text-emerald-700 font-semibold leading-normal">
                         {group.members.length} Members
                       </span>
                     </div>
@@ -834,38 +848,38 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
                   {/* Member-wise Calculation Table */}
                   <div className="space-y-2">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 pb-1 border-b border-slate-200 flex flex-wrap items-center justify-between gap-1">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 pb-1.5 border-b border-slate-200 flex items-center justify-between">
                       <span>1. Member-wise Calculation Breakdown</span>
-                      <span className="text-slate-500 font-normal text-[10px] sm:text-xs">
+                      <span className="text-slate-500 font-normal text-xs">
                         Split Mode: Equal Split
                       </span>
                     </h3>
 
-                    <div className="w-full overflow-x-auto rounded-xl border border-slate-200 shadow-sm scrollbar-thin">
-                      <table className="w-full text-left border-collapse min-w-[400px]">
+                    <div className="w-full rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                      <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-slate-100 text-slate-700 uppercase font-bold text-[9px] sm:text-[10px]">
-                            <th className="p-2 border-b border-r border-slate-200">Member</th>
-                            <th className="p-2 border-b border-r border-slate-200 text-right">Actual Share</th>
-                            <th className="p-2 border-b border-r border-slate-200 text-right">Amount Paid</th>
-                            <th className="p-2 border-b border-slate-200 text-right">Final Balance</th>
+                          <tr className="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] tracking-wider">
+                            <th className="p-2.5 border-b border-r border-slate-200">Member</th>
+                            <th className="p-2.5 border-b border-r border-slate-200 text-right">Actual Share</th>
+                            <th className="p-2.5 border-b border-r border-slate-200 text-right">Amount Paid</th>
+                            <th className="p-2.5 border-b border-slate-200 text-right">Final Balance</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-200 font-medium text-[10px] sm:text-xs">
+                        <tbody className="divide-y divide-slate-200 font-medium text-xs">
                           {settlementResult.memberSummaries.map((ms) => {
                             const isOverpaid = ms.balance >= 0;
                             return (
-                              <tr key={ms.memberId} className="even:bg-slate-50/70 hover:bg-slate-100/50">
-                                <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
+                              <tr key={ms.memberId} className="even:bg-slate-50/70">
+                                <td className="p-2.5 border-r border-slate-200 font-bold text-slate-900 leading-normal">
                                   {ms.memberName}
                                 </td>
-                                <td className="p-2 border-r border-slate-200 text-right text-slate-700">
+                                <td className="p-2.5 border-r border-slate-200 text-right text-slate-700 leading-normal">
                                   {ms.totalActualExpense.toFixed(2)} {group.currency}
                                 </td>
-                                <td className="p-2 border-r border-slate-200 text-right font-bold text-amber-700">
+                                <td className="p-2.5 border-r border-slate-200 text-right font-bold text-amber-700 leading-normal">
                                   {ms.totalAmountSpent.toFixed(2)} {group.currency}
                                 </td>
-                                <td className="p-2 text-right font-black">
+                                <td className="p-2.5 text-right font-black leading-normal">
                                   <span className={isOverpaid ? 'text-emerald-700' : 'text-rose-700'}>
                                     {isOverpaid
                                       ? `+${ms.balance.toFixed(2)} ${group.currency} (Gets Back)`
@@ -882,60 +896,68 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
                   {/* Simplified Debt Settlement Flow Table */}
                   <div className="space-y-2">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 pb-1 border-b border-slate-200">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 pb-1.5 border-b border-slate-200">
                       2. Simplified Debt Settlement Transactions
                     </h3>
 
                     {settlementResult.settlementFlows.length > 0 ? (
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         {settlementResult.settlementFlows.map((flow) => (
                           <div
                             key={flow.id}
-                            className="p-2 sm:p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap sm:flex-nowrap items-center justify-between gap-1.5 text-[11px] sm:text-xs shadow-xs"
+                            className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 text-xs shadow-xs"
                           >
-                            <span className="font-bold text-rose-700 truncate max-w-[130px] sm:max-w-none">
-                              {flow.fromMemberName} (Payer)
-                            </span>
-                            <div className="flex items-center gap-1.5 text-slate-600 font-bold shrink-0 my-0.5">
-                              <span className="text-[10px] sm:text-xs">pays</span>
-                              <ArrowRight className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                              <span className="text-slate-900 font-black px-2 py-0.5 bg-amber-100 rounded border border-amber-300 text-[11px] sm:text-xs">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+                              <span className="font-bold text-rose-700 text-xs leading-normal">
+                                {flow.fromMemberName} <span className="text-slate-500 font-medium text-[11px]">(Payer)</span>
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 text-slate-600 font-bold shrink-0">
+                              <span className="text-xs text-slate-500 font-semibold">pays</span>
+                              <ArrowRight className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span className="text-slate-950 font-black px-3 py-1 bg-amber-100 rounded-lg border border-amber-300 text-xs shadow-2xs leading-normal inline-block">
                                 {flow.amount.toFixed(2)} {group.currency}
                               </span>
                             </div>
-                            <span className="font-bold text-emerald-700 truncate max-w-[130px] sm:max-w-none">
-                              {flow.toMemberName} (Receiver)
-                            </span>
+
+                            <div className="flex items-center gap-2 min-w-0 justify-end">
+                              <span className="font-bold text-emerald-700 text-xs leading-normal text-right">
+                                {flow.toMemberName} <span className="text-slate-500 font-medium text-[11px]">(Receiver)</span>
+                              </span>
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                            </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-emerald-700 font-bold p-2.5 bg-emerald-50 rounded-xl border border-emerald-200">
+                      <p className="text-xs text-emerald-700 font-bold p-3 bg-emerald-50 rounded-xl border border-emerald-200">
                         ✓ All member balances are fully settled in this cycle.
                       </p>
                     )}
                   </div>
 
                   {/* Document Signatures & Stamp */}
-                  <div className="pt-4 sm:pt-6 border-t border-slate-200 flex flex-wrap sm:flex-nowrap items-end justify-between gap-3 text-[10px] sm:text-[11px] text-slate-500">
+                  <div className="pt-5 border-t border-slate-200 flex items-end justify-between gap-4 text-xs text-slate-600">
                     <div>
                       <p className="font-bold text-slate-800">Verified & Approved By:</p>
-                      <p className="mt-4 sm:mt-6 border-t border-slate-300 pt-1 font-semibold">
+                      <p className="mt-6 border-t border-slate-400 pt-1 font-semibold text-slate-700">
                         Room Manager Signature
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className="inline-block px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-md font-black text-[9px] sm:text-[10px] uppercase">
+                      <div className="inline-block px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-md font-black text-xs uppercase tracking-wider">
                         OFFICIAL MESS AUDIT STAMP
                       </div>
-                      <p className="mt-1 text-[9px] sm:text-[10px] text-slate-400">
+                      <p className="mt-1 text-[10px] text-slate-400 font-medium">
                         Generated by Room Suite Portal
                       </p>
                     </div>
                   </div>
 
                   {/* Developer / Application Creator Footer */}
-                  <div className="pt-3 border-t border-slate-200 text-center text-slate-700 text-[11px] sm:text-xs font-bold leading-tight space-y-0.5">
+                  <div className="pt-3 border-t border-slate-200 text-center text-slate-700 text-xs font-bold leading-normal space-y-0.5">
                     <p>This application created by AL AMIN</p>
                     <p>Mobile No. +971 54 487 4028</p>
                   </div>

@@ -318,7 +318,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             </div>
           )}
 
-          {/* Amount Field with Mobile Soft Keyboard Disabled */}
+          {/* Amount Field */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -326,7 +326,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               </label>
               <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
                 <Calculator className="w-3.5 h-3.5 text-[#07193F]" />
-                Calculator Mode
+                Auto-calc (e.g. 10+20+30)
               </span>
             </div>
             <div className="relative">
@@ -336,38 +336,84 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               <input
                 ref={amountInputRef}
                 type="text"
-                inputMode="none"
+                inputMode="decimal"
                 autoComplete="off"
                 required
-                placeholder="0.00"
+                placeholder="0.00 (e.g. 10+20+30)"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 onKeyDown={handleAmountKeyDown}
                 onBlur={handleAmountBlur}
-                className="w-full pl-16 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-2xl font-black text-slate-900 placeholder-slate-400 focus:border-[#07193F] focus:ring-2 focus:ring-[#07193F]/20 focus:outline-none cursor-pointer"
+                className="w-full pl-16 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-2xl font-black text-slate-900 placeholder-slate-400 focus:border-[#07193F] focus:ring-2 focus:ring-[#07193F]/20 focus:outline-none"
               />
             </div>
 
-            {/* Custom On-Screen Keypad / Short Symbols */}
+            {/* Quick Math Symbols Keyboard Strip */}
             <div className="flex items-center gap-1.5 mt-2 w-full max-w-full overflow-x-auto pb-1 scrollbar-none touch-pan-x">
-              {['7','8','9','+','-','4','5','6','*','/','1','2','3','0','.'].map((sym) => (
-                <button
-                  key={sym}
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onTouchStart={(e) => e.preventDefault()}
-                  onClick={() => handleAppendSymbol(sym)}
-                  className="px-2.5 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-sm rounded-xl border border-slate-200 transition-all cursor-pointer shrink-0 min-w-[32px] text-center"
-                >
-                  {sym === '*' ? '×' : sym === '/' ? '÷' : sym}
-                </button>
-              ))}
+              <span className="text-slate-500 shrink-0 mr-0.5 flex items-center">
+                <Calculator className="w-3.5 h-3.5 text-[#07193F]" />
+              </span>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
+                onClick={() => handleAppendSymbol('+')}
+                className="px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-base rounded-xl border border-slate-200 transition-all cursor-pointer min-w-[36px]"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
+                onClick={() => handleAppendSymbol('-')}
+                className="px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-base rounded-xl border border-slate-200 transition-all cursor-pointer min-w-[36px]"
+              >
+                -
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
+                onClick={() => handleAppendSymbol('*')}
+                className="px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-base rounded-xl border border-slate-200 transition-all cursor-pointer min-w-[36px]"
+              >
+                ×
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
+                onClick={() => handleAppendSymbol('/')}
+                className="px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-base rounded-xl border border-slate-200 transition-all cursor-pointer min-w-[36px]"
+              >
+                ÷
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
+                onClick={() => handleAppendSymbol('(')}
+                className="px-2.5 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-sm rounded-xl border border-slate-200 transition-all cursor-pointer min-w-[32px]"
+              >
+                (
+              </button>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
+                onClick={() => handleAppendSymbol(')')}
+                className="px-2.5 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-sm rounded-xl border border-slate-200 transition-all cursor-pointer min-w-[32px]"
+              >
+                )
+              </button>
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onTouchStart={(e) => e.preventDefault()}
                 onClick={handleApplyCalculation}
-                className="px-3 py-1.5 bg-[#07193F] hover:bg-[#0B2556] active:scale-95 text-white font-black text-sm rounded-xl shadow-md transition-all cursor-pointer shrink-0 border border-blue-900/40"
+                className="px-3 py-1.5 bg-[#07193F] hover:bg-[#0B2556] active:scale-95 text-white font-black text-base rounded-xl shadow-md transition-all cursor-pointer ml-auto shrink-0 border border-blue-900/40"
+                title="Calculate expression"
               >
                 =
               </button>
@@ -376,7 +422,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 onMouseDown={(e) => e.preventDefault()}
                 onTouchStart={(e) => e.preventDefault()}
                 onClick={handleClearAmount}
-                className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-all cursor-pointer shrink-0"
+                className="px-2.5 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-600 font-bold text-xs rounded-xl border border-slate-200 transition-all cursor-pointer shrink-0"
               >
                 Clear
               </button>

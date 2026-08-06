@@ -272,15 +272,15 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         </button>
       </GlassContainer>
 
-      {/* Summary Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <GlassContainer variant="card" className="p-5 border border-slate-200/80 bg-white text-slate-900 shadow-md rounded-3xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
+      {/* Summary Stat Cards - Compact Side-by-Side Boxes */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="p-3 border border-slate-200/90 bg-white text-slate-900 shadow-2xs rounded-2xl">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider truncate">
               Total Utility Bills
             </span>
-            <span className="w-10 h-10 rounded-2xl bg-[#07193F] text-white flex items-center justify-center font-bold border border-blue-900/40 shadow-xs">
-              <Zap className="w-5 h-5 text-blue-300" />
+            <span className="w-7 h-7 rounded-xl bg-[#07193F] text-white flex items-center justify-center font-bold border border-blue-900/40 shrink-0">
+              <Zap className="w-3.5 h-3.5 text-blue-300" />
             </span>
           </div>
           <div>
@@ -290,11 +290,11 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               preferredCurrency={preferredCurrency}
               customRates={customRates}
               layout="pill"
-              baseClassName="text-3xl font-black text-slate-950"
+              baseClassName="text-lg sm:text-xl font-black text-slate-950"
             />
           </div>
-          <p className="text-xs text-slate-700 font-bold mt-2 flex items-baseline gap-1">
-            <span>Share per member:</span>
+          <p className="text-[10px] text-slate-600 font-bold mt-1 flex items-baseline gap-1 truncate">
+            <span>Per member:</span>
             <DualCurrencyDisplay
               amount={perMemberUtil}
               baseCurrency={group.currency}
@@ -304,15 +304,15 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               baseClassName="font-black text-slate-950"
             />
           </p>
-        </GlassContainer>
+        </div>
 
-        <GlassContainer variant="card" className="p-5 border border-slate-200/80 bg-white text-slate-900 shadow-md rounded-3xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
-              Room Landlord Rent
+        <div className="p-3 border border-slate-200/90 bg-white text-slate-900 shadow-2xs rounded-2xl">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider truncate">
+              Landlord Rent
             </span>
-            <span className="w-10 h-10 rounded-2xl bg-[#07193F] text-white flex items-center justify-center font-bold border border-blue-900/40 shadow-xs">
-              <HomeIcon className="w-5 h-5 text-blue-300" />
+            <span className="w-7 h-7 rounded-xl bg-[#07193F] text-white flex items-center justify-center font-bold border border-blue-900/40 shrink-0">
+              <HomeIcon className="w-3.5 h-3.5 text-blue-300" />
             </span>
           </div>
           <div>
@@ -322,21 +322,21 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               preferredCurrency={preferredCurrency}
               customRates={customRates}
               layout="pill"
-              baseClassName="text-3xl font-black text-slate-950"
+              baseClassName="text-lg sm:text-xl font-black text-slate-950"
             />
           </div>
-          <p className="text-xs text-slate-700 font-bold mt-2 flex items-baseline gap-1">
-            <span>Share per member:</span>
+          <p className="text-[10px] text-slate-600 font-bold mt-1 flex items-baseline gap-1 truncate">
+            <span>Per member:</span>
             <DualCurrencyDisplay
               amount={perMemberRent}
               baseCurrency={group.currency}
               preferredCurrency={preferredCurrency}
               customRates={customRates}
               layout="inline"
-              baseClassName="font-bold text-slate-950"
+              baseClassName="font-black text-slate-950"
             />
           </p>
-        </GlassContainer>
+        </div>
       </div>
 
       {/* SECTION 1: Utility Bills List */}
@@ -467,10 +467,10 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
           <button
             onClick={() => onUpdateRentStatus(rent.status === 'paid' ? 'pending' : 'paid')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer shadow-2xs ${
               rent.status === 'paid'
-                ? 'bg-black text-white border-black'
-                : 'bg-white text-slate-900 border-black hover:bg-slate-100'
+                ? 'bg-emerald-100 text-emerald-950 border-emerald-400 hover:bg-emerald-200'
+                : 'bg-rose-100 text-rose-950 border-rose-400 hover:bg-rose-200'
             }`}
           >
             {rent.status === 'paid' ? 'Rent Paid to Landlord' : 'Rent Pending'}
@@ -672,8 +672,8 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   key={member.id}
                   className={`p-3 rounded-2xl border flex items-center justify-between text-xs font-semibold transition-all ${
                     isPaid
-                      ? 'bg-black text-white border-black shadow-sm'
-                      : 'bg-white text-slate-900 border-black'
+                      ? 'bg-emerald-100 text-emerald-950 border-emerald-400 shadow-2xs'
+                      : 'bg-white text-slate-900 border-slate-300'
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -682,7 +682,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                       checked={isPaid}
                       disabled={isUntickDisabled}
                       onChange={() => toggleMemberRentPaid(member.id)}
-                      className={`w-4 h-4 rounded text-black focus:ring-black accent-black ${
+                      className={`w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 ${
                         isUntickDisabled ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
                       }`}
                       title={
@@ -693,7 +693,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                     />
                     <span
                       className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
-                        isPaid ? 'bg-white text-black' : 'bg-black text-white'
+                        isPaid ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-white'
                       }`}
                     >
                       {member.avatar}

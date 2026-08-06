@@ -850,48 +850,45 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
         </div>
 
         {/* Member cards */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {group.members.map((member) => {
             const activeCount = (member.includedCategories || ALL_EXPENSE_OPTIONS.map((o) => o.id)).length;
             return (
               <div
                 key={member.id}
-                className="bg-white border border-black rounded-3xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-slate-900 shadow-xs"
+                className="bg-white border border-slate-200/90 rounded-2xl p-3 flex items-center justify-between gap-2 text-slate-900 shadow-2xs hover:border-blue-200 transition-all"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-black text-white font-black flex items-center justify-center text-sm shadow-md shrink-0">
-                    {member.avatar}
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900">{member.name}</h4>
-                    <p className="text-xs text-slate-600 font-mono">{member.phone || member.email}</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-1">
-                      <span className="text-[10px] text-slate-900 font-bold bg-slate-100 px-2 py-0.5 rounded-md border border-black">
-                        Scope: {activeCount}/{ALL_EXPENSE_OPTIONS.length} Expenses
-                      </span>
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => openEditMemberModal(member)}
-                          className="text-[10px] text-slate-900 bg-white hover:bg-slate-100 px-2 py-0.5 rounded-md border border-black font-bold cursor-pointer transition-all flex items-center gap-1"
-                        >
-                          <Edit className="w-3 h-3 text-slate-900" />
-                          <span>Edit Scope</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                {/* 1 Single Line for Name, Mobile Number, and Scope */}
+                <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+                  <h4 className="text-xs sm:text-sm font-black text-[#07193F] shrink-0">{member.name}</h4>
+                  <span className="text-[11px] text-slate-500 font-medium font-mono shrink-0">
+                    ({member.phone || member.mobileNumber || member.email || 'No Mobile'})
+                  </span>
+                  <span className="text-[10px] text-slate-700 font-extrabold bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 shrink-0">
+                    Scope: {activeCount}/{ALL_EXPENSE_OPTIONS.length}
+                  </span>
+
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => openEditMemberModal(member)}
+                      className="text-[10px] text-[#0052FF] bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md border border-blue-200 font-bold cursor-pointer transition-all flex items-center gap-1 shrink-0"
+                    >
+                      <Edit className="w-3 h-3 text-[#0052FF]" />
+                      <span>Edit Scope</span>
+                    </button>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-4 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-black/20">
+                <div className="flex items-center gap-2 shrink-0">
                   {isAdmin && (
                     <button
                       onClick={() => setDeleteConfirmMember(member)}
-                      className="p-1.5 px-2.5 text-slate-900 bg-white hover:bg-slate-100 rounded-xl transition-all border border-black cursor-pointer flex items-center gap-1 text-xs font-bold shadow-xs"
+                      className="p-1 px-2 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-all border border-rose-200 cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
                       title="Delete member"
                     >
-                      <Trash2 className="w-4 h-4 text-slate-900" />
-                      <span>Delete</span>
+                      <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                      <span className="hidden sm:inline">Delete</span>
                     </button>
                   )}
                 </div>

@@ -318,7 +318,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             </div>
           )}
 
-          {/* Amount Field */}
+          {/* Amount Field with Mobile Soft Keyboard Disabled */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -326,7 +326,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               </label>
               <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
                 <Calculator className="w-3.5 h-3.5 text-[#07193F]" />
-                Auto-calc (e.g. 10+20+30)
+                Calculator Mode
               </span>
             </div>
             <div className="relative">
@@ -336,84 +336,38 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               <input
                 ref={amountInputRef}
                 type="text"
-                inputMode="decimal"
+                inputMode="none"
                 autoComplete="off"
                 required
-                placeholder="0.00 (e.g. 10+20+30)"
+                placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 onKeyDown={handleAmountKeyDown}
                 onBlur={handleAmountBlur}
-                className="w-full pl-16 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-2xl font-black text-slate-900 placeholder-slate-400 focus:border-[#07193F] focus:ring-2 focus:ring-[#07193F]/20 focus:outline-none"
+                className="w-full pl-16 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-2xl font-black text-slate-900 placeholder-slate-400 focus:border-[#07193F] focus:ring-2 focus:ring-[#07193F]/20 focus:outline-none cursor-pointer"
               />
             </div>
 
-            {/* Quick Math Symbols Keyboard Strip */}
+            {/* Custom On-Screen Keypad / Short Symbols */}
             <div className="flex items-center gap-1.5 mt-2 w-full max-w-full overflow-x-auto pb-1 scrollbar-none touch-pan-x">
-              <span className="text-slate-500 shrink-0 mr-0.5 flex items-center">
-                <Calculator className="w-3.5 h-3.5 text-[#07193F]" />
-              </span>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onTouchStart={(e) => e.preventDefault()}
-                onClick={() => handleAppendSymbol('+')}
-                className="px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-base rounded-xl border border-slate-200 transition-all cursor-pointer min-w-[36px]"
-              >
-                +
-              </button>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onTouchStart={(e) => e.preventDefault()}
-                onClick={() => handleAppendSymbol('-')}
-                className="px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-base rounded-xl border border-slate-200 transition-all cursor-pointer min-w-[36px]"
-              >
-                -
-              </button>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onTouchStart={(e) => e.preventDefault()}
-                onClick={() => handleAppendSymbol('*')}
-                className="px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-base rounded-xl border border-slate-200 transition-all cursor-pointer min-w-[36px]"
-              >
-                ×
-              </button>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onTouchStart={(e) => e.preventDefault()}
-                onClick={() => handleAppendSymbol('/')}
-                className="px-3 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-base rounded-xl border border-slate-200 transition-all cursor-pointer min-w-[36px]"
-              >
-                ÷
-              </button>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onTouchStart={(e) => e.preventDefault()}
-                onClick={() => handleAppendSymbol('(')}
-                className="px-2.5 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-sm rounded-xl border border-slate-200 transition-all cursor-pointer min-w-[32px]"
-              >
-                (
-              </button>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onTouchStart={(e) => e.preventDefault()}
-                onClick={() => handleAppendSymbol(')')}
-                className="px-2.5 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-sm rounded-xl border border-slate-200 transition-all cursor-pointer min-w-[32px]"
-              >
-                )
-              </button>
+              {['7','8','9','+','-','4','5','6','*','/','1','2','3','0','.'].map((sym) => (
+                <button
+                  key={sym}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onTouchStart={(e) => e.preventDefault()}
+                  onClick={() => handleAppendSymbol(sym)}
+                  className="px-2.5 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 font-black text-sm rounded-xl border border-slate-200 transition-all cursor-pointer shrink-0 min-w-[32px] text-center"
+                >
+                  {sym === '*' ? '×' : sym === '/' ? '÷' : sym}
+                </button>
+              ))}
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onTouchStart={(e) => e.preventDefault()}
                 onClick={handleApplyCalculation}
-                className="px-3 py-1.5 bg-[#07193F] hover:bg-[#0B2556] active:scale-95 text-white font-black text-base rounded-xl shadow-md transition-all cursor-pointer ml-auto shrink-0 border border-blue-900/40"
-                title="Calculate expression"
+                className="px-3 py-1.5 bg-[#07193F] hover:bg-[#0B2556] active:scale-95 text-white font-black text-sm rounded-xl shadow-md transition-all cursor-pointer shrink-0 border border-blue-900/40"
               >
                 =
               </button>
@@ -422,7 +376,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 onMouseDown={(e) => e.preventDefault()}
                 onTouchStart={(e) => e.preventDefault()}
                 onClick={handleClearAmount}
-                className="px-2.5 py-1.5 bg-white hover:bg-slate-50 active:scale-95 text-slate-600 font-bold text-xs rounded-xl border border-slate-200 transition-all cursor-pointer shrink-0"
+                className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-all cursor-pointer shrink-0"
               >
                 Clear
               </button>
@@ -445,12 +399,12 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                       onClick={handleApplyCalculation}
                       className="bg-[#07193F] hover:bg-[#0B2556] text-white font-black px-2.5 py-0.5 rounded-lg text-[11px] shadow transition-all active:scale-95 cursor-pointer border border-blue-900/40"
                     >
-                      Press Enter or Tap
+                      Apply
                     </button>
                   </div>
                 ) : (
                   <div className="text-[11px] text-rose-800 font-semibold bg-rose-50 border border-rose-200 px-3 py-1 rounded-xl">
-                    Incomplete expression (e.g. 10+20+30)
+                    Incomplete expression
                   </div>
                 )}
               </div>
@@ -468,36 +422,24 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               placeholder={category === 'mess' ? 'e.g., Weekly Groceries & Meat' : 'e.g., Dish Soap & Water Refill'}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:border-[#07193F] focus:ring-2 focus:ring-[#07193F]/20 focus:outline-none"
+              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 focus:border-[#07193F] focus:ring-2 focus:ring-[#07193F]/20 focus:outline-none"
             />
           </div>
 
-          {/* Paid By Box - Restricted ONLY to Logged In User */}
+          {/* Paid By Box - Logged In User Name Aligned Cleanly */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-              <span>Paid By (Who paid out of pocket?) *</span>
-              <span className="text-[10px] text-white font-semibold bg-[#07193F] px-2 py-0.5 rounded-full border border-blue-900/40">
-                Logged In User
-              </span>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              Paid By *
             </label>
-            <div className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 flex items-center justify-between shadow-2xs">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-[#07193F] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
-                  {loggedInMember?.avatar || (currentUser?.name || 'US').slice(0, 2).toUpperCase()}
-                </div>
-                <span className="text-[#07193F] text-sm font-black">
-                  {currentUser?.name || loggedInMember?.name || 'Logged In User'}
-                </span>
-              </div>
-              <span className="text-[10px] bg-slate-100 text-[#07193F] px-2.5 py-1 rounded-full font-bold border border-slate-300 uppercase tracking-wider shrink-0">
-                Logged In User
-              </span>
+            <div className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-black text-[#07193F] flex items-center justify-between shadow-2xs">
+              <span>{currentUser?.name || loggedInMember?.name || 'Logged In User'}</span>
+              <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
             </div>
           </div>
 
           {/* Shared With Members Checkboxes */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                 Shared With ({selectedMembers.length}/{eligibleMembers.length} members)
               </label>
@@ -510,7 +452,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
               {eligibleMembers.map((member) => {
                 const isSelected = selectedMembers.includes(member.id);
                 return (
@@ -518,18 +460,18 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                     type="button"
                     key={member.id}
                     onClick={() => handleMemberToggle(member.id)}
-                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all text-left cursor-pointer ${
+                    className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-bold transition-all text-left cursor-pointer ${
                       isSelected
-                        ? 'bg-[#07193F] text-white border-[#07193F] shadow-xs'
+                        ? 'bg-[#07193F] text-white border-[#07193F] shadow-2xs'
                         : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                     }`}
                   >
                     <div
-                      className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] border ${
+                      className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] border shrink-0 ${
                         isSelected ? 'bg-white text-[#07193F] font-black border-white' : 'bg-slate-100 text-slate-700 border-slate-200'
                       }`}
                     >
-                      {isSelected ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : member.avatar}
+                      {isSelected ? <Check className="w-3 h-3 stroke-[3]" /> : null}
                     </div>
                     <span className="truncate">{member.name}</span>
                   </button>
@@ -538,78 +480,58 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             </div>
           </div>
 
-          {/* Date Picker */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-              <span>Expense Date *</span>
-              {currentUser?.role === 'admin' && (
-                <span className="text-[10px] font-black bg-[#07193F] text-white px-2 py-0.5 rounded-full border border-blue-900/40">
-                  Admin (No Date Limit)
-                </span>
-              )}
-            </label>
-            <div className="relative">
+          {/* Expense Date & Attach Receipt Photo Side-by-Side in 1 Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+            {/* Expense Date Field */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Expense Date *
+              </label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className={`w-full px-4 py-3 bg-white border rounded-xl text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-[#07193F]/20 focus:outline-none ${
+                className={`w-full px-3 py-2 bg-white border rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-[#07193F]/20 focus:outline-none ${
                   !dateValidation.isAllowed ? 'border-rose-500 bg-rose-50/50' : 'border-slate-200 focus:border-[#07193F]'
                 }`}
               />
             </div>
 
-            {!dateValidation.isAllowed && (
-              <div className="mt-2 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 text-xs font-bold space-y-1 animate-in fade-in">
-                <div className="flex items-center gap-1.5 font-black text-rose-950">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                  <span>Previous Cycle Expense Entry Locked</span>
-                </div>
-                <p>{dateValidation.errorMessage}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Note / Memo */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Note / Vendor details (Optional)
-            </label>
-            <textarea
-              rows={2}
-              placeholder="e.g. Bought from Lulu Hypermarket or Nesto"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:border-[#07193F] focus:ring-2 focus:ring-[#07193F]/20 focus:outline-none resize-none"
-            ></textarea>
-          </div>
-
-          {/* Receipt Upload (Optional Image) */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Attach Receipt Photo (Optional)
-            </label>
-
-            {receiptImage ? (
-              <div className="relative rounded-2xl overflow-hidden border border-slate-200 h-32 bg-slate-100">
-                <img src={receiptImage} alt="Receipt Preview" className="w-full h-full object-contain" />
-                <button
-                  type="button"
-                  onClick={() => setReceiptImage(null)}
-                  className="absolute top-2 right-2 bg-[#07193F] text-white p-1 rounded-full shadow cursor-pointer border border-blue-900/40"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <label className="border-2 border-dashed border-slate-300 hover:border-[#07193F] hover:bg-slate-50 bg-white rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors">
-                <Upload className="w-6 h-6 text-[#07193F] mb-1" />
-                <span className="text-xs font-bold text-slate-800">Click to upload receipt photo</span>
-                <span className="text-[10px] text-slate-500">PNG, JPG up to 5MB</span>
-                <input type="file" accept="image/*" onChange={handleReceiptUpload} className="hidden" />
+            {/* Attach Receipt Photo */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Receipt Photo (Optional)
               </label>
-            )}
+              {receiptImage ? (
+                <div className="relative rounded-xl overflow-hidden border border-slate-200 h-9 bg-slate-100 flex items-center px-2 justify-between">
+                  <span className="text-[11px] font-bold text-emerald-700 truncate">Photo Attached</span>
+                  <button
+                    type="button"
+                    onClick={() => setReceiptImage(null)}
+                    className="text-rose-600 font-black text-xs p-1 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <label className="border border-dashed border-slate-300 hover:border-[#07193F] bg-white rounded-xl py-2 px-3 flex items-center justify-center gap-1.5 cursor-pointer transition-colors h-9">
+                  <Upload className="w-3.5 h-3.5 text-[#07193F]" />
+                  <span className="text-[11px] font-bold text-slate-700">Attach Receipt</span>
+                  <input type="file" accept="image/*" onChange={handleReceiptUpload} className="hidden" />
+                </label>
+              )}
+            </div>
           </div>
+
+          {!dateValidation.isAllowed && (
+            <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 text-xs font-bold space-y-1 animate-in fade-in">
+              <div className="flex items-center gap-1.5 font-black text-rose-950">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>Previous Cycle Expense Entry Locked</span>
+              </div>
+              <p className="text-[11px]">{dateValidation.errorMessage}</p>
+            </div>
+          )}
 
           {/* Save Button */}
           <div className="pt-3">

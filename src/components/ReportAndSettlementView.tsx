@@ -76,12 +76,16 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   // Safe html2pdf engine resolver to handle Vercel Vite CJS/ESM bundling & dynamic imports
   const getHtml2PdfEngine = async () => {
     try {
-      if (typeof html2pdf === 'function') return html2pdf;
-      if (typeof (html2pdf as any)?.default === 'function') return (html2pdf as any).default;
+      let engine: any = html2pdf;
+      if (typeof engine === 'function') return engine;
+      if (typeof engine?.default === 'function') return engine.default;
+      if (typeof engine?.default?.default === 'function') return engine.default.default;
       if (typeof (window as any)?.html2pdf === 'function') return (window as any).html2pdf;
-      const imported = await import('html2pdf.js');
+
+      const imported: any = await import('html2pdf.js');
       if (typeof imported === 'function') return imported;
       if (typeof imported?.default === 'function') return imported.default;
+      if (typeof imported?.default?.default === 'function') return imported.default.default;
     } catch (err) {
       console.warn('html2pdf engine import error:', err);
     }
@@ -110,7 +114,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
         const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
         const opt = {
-          margin: 6,
+          margin: [5, 5, 5, 5],
           filename: fileName,
           image: { type: 'jpeg' as const, quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
@@ -207,6 +211,11 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           htmlEl.setAttribute('style', sanitizeCssText(styleAttr));
         }
       });
+
+      const imgs = clonedDoc.querySelectorAll('img');
+      imgs.forEach((img) => {
+        img.setAttribute('crossorigin', 'anonymous');
+      });
     } catch (e) {
       console.warn('Sanitize document for html2canvas failed:', e);
     }
@@ -214,20 +223,6 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
   const handlePrintPdf = async () => {
     const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
-
-    // 1. If pre-generated PDF file is already cached, trigger instant download
-    if (cachedPdfFileRef.current) {
-      const blobUrl = URL.createObjectURL(cachedPdfFileRef.current);
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.href = blobUrl;
-      downloadAnchor.download = fileName;
-      downloadAnchor.style.display = 'none';
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      document.body.removeChild(downloadAnchor);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-      return;
-    }
 
     const element = document.getElementById('pdf-report-document');
     if (!element) {
@@ -244,34 +239,40 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       }
 
       const opt = {
-        margin: 6,
+        margin: [5, 5, 5, 5],
         filename: fileName,
         image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          onclone: sanitizeDocumentForHtml2Canvas,
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
       };
 
-      const worker = engine().set(opt).from(element);
-      const blob = await worker.output('blob');
-      const generatedFile = new File([blob], fileName, { type: 'application/pdf' });
-      cachedPdfFileRef.current = generatedFile;
-
-      // Trigger automatic PDF download via anchor tag with download attribute
-      const blobUrl = URL.createObjectURL(blob);
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.href = blobUrl;
-      downloadAnchor.download = fileName;
-      downloadAnchor.style.display = 'none';
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      document.body.removeChild(downloadAnchor);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      // Native html2pdf save triggers direct browser download reliably on Vercel
+      await engine().set(opt).from(element).save(fileName);
     } catch (err) {
       console.error('PDF export error, using fallback print():', err);
       window.print();
     } finally {
       setIsGeneratingPdf(false);
     }
+  };
+
+  const handleShareWhatsApp = () => {
+    const summaryText = `📋 *${group.name} - Settlement Report*\n📅 Period: ${fromDate} to ${toDate}\n\n💰 Grand Total: ${settlementResult.grandTotalExpenses.toFixed(2)} ${group.currency}\n\n*Settlement Transactions:*\n${
+      settlementResult.settlementFlows.length > 0
+        ? settlementResult.settlementFlows
+            .map((f) => `• ${f.fromMemberName} pays ${f.toMemberName}: ${f.amount.toFixed(2)} ${group.currency}`)
+            .join('\n')
+        : 'All balances cleared!'
+    }`;
+
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(summaryText)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const handleShareReport = async () => {
@@ -284,18 +285,18 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         : 'All balances cleared!'
     }`;
 
-    let targetFile = cachedPdfFileRef.current;
+    setIsSharingPdf(true);
 
-    // If pre-generated file isn't ready yet, attempt to generate it on demand
-    if (!targetFile) {
-      const element = document.getElementById('pdf-report-document');
-      if (element) {
-        try {
-          setIsSharingPdf(true);
+    try {
+      let targetFile = cachedPdfFileRef.current;
+
+      if (!targetFile) {
+        const element = document.getElementById('pdf-report-document');
+        if (element) {
           const engine = await getHtml2PdfEngine();
           if (engine) {
             const opt = {
-              margin: 6,
+              margin: [5, 5, 5, 5],
               filename: fileName,
               image: { type: 'jpeg' as const, quality: 0.98 },
               html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
@@ -307,68 +308,49 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
             targetFile = new File([blob], fileName, { type: 'application/pdf' });
             cachedPdfFileRef.current = targetFile;
           }
-        } catch (err) {
-          console.warn('On-demand PDF generation for share failed:', err);
-        } finally {
-          setIsSharingPdf(false);
         }
       }
-    }
 
-    // 1. Invoke navigator.share API with PDF file data if supported
-    if (targetFile && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [targetFile] })) {
-      try {
-        await navigator.share({
-          title: `${group.name} Settlement Report`,
-          text: summaryText,
-          files: [targetFile],
-        });
-        return; // Native share with PDF file succeeded
-      } catch (shareErr: any) {
-        if (shareErr?.name === 'AbortError') {
-          return; // User canceled share sheet intentionally
-        }
-        console.warn('Native PDF file share rejected or failed:', shareErr);
-      }
-    }
-
-    // 2. Fallback to native text share if file sharing is unsupported
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({
-          title: `${group.name} Settlement Report`,
-          text: summaryText,
-        });
-        return;
-      } catch (e: any) {
-        if (e?.name === 'AbortError') {
+      // 1. Try sharing PDF file via Web Share API
+      if (targetFile && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [targetFile] })) {
+        try {
+          await navigator.share({
+            title: `${group.name} Settlement Report`,
+            text: summaryText,
+            files: [targetFile],
+          });
           return;
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') return;
+          console.warn('Native PDF file share rejected or failed:', shareErr);
         }
-        console.warn('Native text share failed:', e);
       }
-    }
 
-    // 3. Fallback: Automatic download using anchor tag with download attribute + clipboard summary copy
-    try {
+      // 2. Fallback to native text share sheet
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        try {
+          await navigator.share({
+            title: `${group.name} Settlement Report`,
+            text: summaryText,
+          });
+          return;
+        } catch (e: any) {
+          if (e?.name === 'AbortError') return;
+        }
+      }
+
+      // 3. Fallback to copying summary text and opening WhatsApp
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(summaryText);
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 3000);
       }
 
-      if (targetFile) {
-        const url = URL.createObjectURL(targetFile);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }
+      handleShareWhatsApp();
     } catch (e) {
-      console.warn('Fallback download/clipboard error:', e);
+      console.warn('Fallback share error:', e);
+    } finally {
+      setIsSharingPdf(false);
     }
   };
 
@@ -409,228 +391,118 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         </div>
       </GlassContainer>
 
-      {/* Date Picker & Category Checkbox Filters */}
-      <GlassContainer variant="card" className="p-5 border border-slate-200/80 bg-white text-slate-900 shadow-md space-y-4 rounded-3xl">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-black/20 pb-4">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-            <Calendar className="w-4 h-4 text-slate-900" />
+      {/* Date Picker & Compact Include Categories in 1 Line */}
+      <div className="p-4 border border-slate-200 bg-white text-slate-900 shadow-xs space-y-3 rounded-2xl">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-2.5">
+          <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900">
+            <Calendar className="w-3.5 h-3.5 text-[#0052FF]" />
             <span>Settlement Period Range:</span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-1.5 text-xs">
             <input
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className="px-3 py-1.5 bg-white border border-black rounded-xl font-semibold text-slate-900 focus:outline-none"
+              className="px-2.5 py-1 bg-white border border-slate-300 rounded-lg font-semibold text-slate-900 focus:outline-none"
             />
-            <span className="text-slate-600">to</span>
+            <span className="text-slate-500 font-bold">to</span>
             <input
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className="px-3 py-1.5 bg-white border border-black rounded-xl font-semibold text-slate-900 focus:outline-none"
+              className="px-2.5 py-1 bg-white border border-slate-300 rounded-lg font-semibold text-slate-900 focus:outline-none"
             />
           </div>
         </div>
 
-        {/* Category Checkboxes */}
-        <div>
-          <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block mb-2">
-            Include Categories in Calculation:
+        {/* Category Checkboxes in 1 compact line */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider shrink-0">
+            Include Categories:
           </span>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-1.5">
             {[
-              { key: 'mess', label: 'Mess Expenses' },
-              { key: 'general', label: 'General Expenses' },
-              { key: 'utilities', label: 'Utilities (DEWA & WiFi)' },
+              { key: 'mess', label: 'Mess' },
+              { key: 'general', label: 'General' },
+              { key: 'utilities', label: 'Utilities' },
             ].map(({ key, label }) => {
               const isChecked = includeCategories[key as keyof typeof includeCategories];
               return (
                 <button
                   key={key}
                   onClick={() => toggleCategory(key as keyof typeof includeCategories)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all cursor-pointer ${
                     isChecked
-                      ? 'bg-black text-white border-black'
-                      : 'bg-white text-slate-700 border-black hover:bg-slate-100'
+                      ? 'bg-[#0052FF] text-white border-blue-600 shadow-2xs'
+                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
                   }`}
                 >
-                  {isChecked ? <CheckSquare className="w-4 h-4 text-white" /> : <Square className="w-4 h-4 text-slate-600" />}
+                  {isChecked ? <CheckSquare className="w-3.5 h-3.5 text-white" /> : <Square className="w-3.5 h-3.5 text-slate-400" />}
                   <span>{label}</span>
                 </button>
               );
             })}
           </div>
         </div>
-      </GlassContainer>
-
-      {/* Key Metric Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <GlassContainer variant="card" className="p-4 border border-black bg-white text-slate-900 shadow-md">
-          <span className="text-[10px] font-bold text-slate-900 uppercase">Total Mess Bill</span>
-          <div className="text-xl font-black mt-1">
-            <DualCurrencyDisplay
-              amount={settlementResult.totalMessExpenses}
-              baseCurrency={group.currency}
-              preferredCurrency={preferredCurrency}
-              customRates={customRates}
-              layout="stacked"
-              baseClassName="text-xl font-black text-slate-950"
-            />
-          </div>
-          <span className="text-[10px] text-slate-600 block mt-1">Equal split</span>
-        </GlassContainer>
-
-        <GlassContainer variant="card" className="p-4 border border-black bg-white text-slate-900 shadow-md">
-          <span className="text-[10px] font-bold text-slate-900 uppercase">General Expenses</span>
-          <div className="text-xl font-black mt-1">
-            <DualCurrencyDisplay
-              amount={settlementResult.totalGeneralExpenses}
-              baseCurrency={group.currency}
-              preferredCurrency={preferredCurrency}
-              customRates={customRates}
-              layout="stacked"
-              baseClassName="text-xl font-black text-slate-950"
-            />
-          </div>
-          <span className="text-[10px] text-slate-600 block mt-1">Equal split</span>
-        </GlassContainer>
-
-        <GlassContainer variant="card" className="p-4 border border-black bg-white text-slate-900 shadow-md">
-          <span className="text-[10px] font-bold text-slate-900 uppercase">Utilities (DEWA & WiFi)</span>
-          <div className="text-xl font-black mt-1">
-            <DualCurrencyDisplay
-              amount={settlementResult.totalUtilities}
-              baseCurrency={group.currency}
-              preferredCurrency={preferredCurrency}
-              customRates={customRates}
-              layout="stacked"
-              baseClassName="text-xl font-black text-slate-950"
-            />
-          </div>
-          <span className="text-[10px] text-slate-600 block mt-1">DEWA & WiFi Bills</span>
-        </GlassContainer>
-
-        <GlassContainer variant="card" className="p-4 border-2 border-black bg-white text-slate-900 shadow-md">
-          <span className="text-[10px] font-bold text-slate-900 uppercase">Grand Total</span>
-          <div className="text-xl font-black mt-1">
-            <DualCurrencyDisplay
-              amount={settlementResult.grandTotalExpenses}
-              baseCurrency={group.currency}
-              preferredCurrency={preferredCurrency}
-              customRates={customRates}
-              layout="stacked"
-              baseClassName="text-xl font-black text-slate-950"
-            />
-          </div>
-          <span className="text-[10px] text-slate-600 block mt-1">{group.members.length} Members</span>
-        </GlassContainer>
       </div>
 
-      {/* SECTION 1: Member-wise Calculation Table */}
-      <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-4">
-        <div className="flex items-center justify-between border-b border-black/20 pb-3">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <User className="w-4 h-4 text-slate-900" />
+      {/* SECTION 1: Member-wise Calculation Breakdown */}
+      <div className="p-4 border border-slate-200 bg-white text-slate-900 shadow-xs space-y-3 rounded-2xl">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+            <User className="w-4 h-4 text-[#0052FF]" />
             Member-wise Calculation Breakdown
           </h3>
-          <span className="text-xs text-slate-700 font-medium">
-            Split Mode: <strong className="text-slate-950">Equal Split</strong>
+          <span className="text-[11px] text-slate-500 font-semibold">
+            Equal Split Mode
           </span>
         </div>
 
-        {/* Mobile Responsive Member Calculation Cards (100% width, no horizontal scroll) */}
-        <div className="block sm:hidden space-y-3">
+        {/* Member Calculation Cards with 3 Side-by-Side Boxes (Actual Share, Amount Paid, Final Status) */}
+        <div className="space-y-2">
           {settlementResult.memberSummaries.map((ms) => {
             const isOverpaid = ms.balance >= 0;
             return (
               <div
                 key={ms.memberId}
-                className="bg-white p-3.5 rounded-2xl border border-black space-y-2.5 text-xs text-slate-900 shadow-xs"
+                className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200 space-y-2 text-xs text-slate-900"
               >
-                <div className="flex items-center justify-between border-b border-black/20 pb-2">
-                  <span className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-slate-900" />
-                    {ms.memberName}
-                  </span>
+                <div className="font-extrabold text-xs sm:text-sm text-[#07193F] flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-[#0052FF]" />
+                  <span>{ms.memberName}</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-[11px]">
-                  <div className="bg-slate-50 p-2 rounded-xl border border-black">
-                    <span className="text-slate-600 block text-[10px] font-medium">Actual Share</span>
-                    <span className="font-extrabold text-slate-950">{ms.totalActualExpense.toFixed(2)} AED</span>
+                {/* 3 Small Boxes Side-by-Side in 1 Alignment */}
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
+                  <div className="bg-white p-2 rounded-xl border border-slate-200 text-center shadow-2xs">
+                    <span className="text-slate-500 block text-[9px] sm:text-[10px] font-extrabold uppercase">Actual Share</span>
+                    <span className="font-black text-slate-900 block mt-0.5">{ms.totalActualExpense.toFixed(2)} {group.currency}</span>
                   </div>
-                  <div className="bg-slate-50 p-2 rounded-xl border border-black">
-                    <span className="text-slate-600 block text-[10px] font-medium">Amount Paid</span>
-                    <span className="font-extrabold text-slate-950">{ms.totalAmountSpent.toFixed(2)} AED</span>
-                  </div>
-                </div>
 
-                <div className="pt-1 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-700 font-semibold">Final Status:</span>
-                  <span
-                    className={`inline-block px-3 py-1 rounded-xl text-xs font-black ${
+                  <div className="bg-white p-2 rounded-xl border border-slate-200 text-center shadow-2xs">
+                    <span className="text-slate-500 block text-[9px] sm:text-[10px] font-extrabold uppercase">Amount Paid</span>
+                    <span className="font-black text-slate-900 block mt-0.5">{ms.totalAmountSpent.toFixed(2)} {group.currency}</span>
+                  </div>
+
+                  <div
+                    className={`p-2 rounded-xl border text-center shadow-2xs ${
                       isOverpaid
-                        ? 'bg-slate-100 text-slate-900 border border-black'
-                        : 'bg-rose-50 text-rose-950 border border-black'
+                        ? 'bg-emerald-50 text-emerald-950 border-emerald-300'
+                        : 'bg-rose-50 text-rose-950 border-rose-300'
                     }`}
                   >
-                    {isOverpaid ? `+${ms.balance.toFixed(2)} AED (Gets Back)` : `${ms.balance.toFixed(2)} AED (DUE)`}
-                  </span>
+                    <span className="block text-[9px] sm:text-[10px] font-extrabold uppercase opacity-80">Final Status</span>
+                    <span className="font-black block mt-0.5 truncate">
+                      {isOverpaid ? `+${ms.balance.toFixed(2)} (Gets)` : `${ms.balance.toFixed(2)} (Due)`}
+                    </span>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
-
-        {/* Desktop / Tablet Table View */}
-        <div className="hidden sm:block overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-100 text-slate-900 uppercase tracking-wider font-bold border-b border-black">
-                <th className="py-3 px-3">Member</th>
-                <th className="py-3 px-2 text-right">Actual Expense Share</th>
-                <th className="py-3 px-2 text-right">Amount Paid</th>
-                <th className="py-3 px-3 text-right">Final Balance</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-black/15 font-medium text-slate-900">
-              {settlementResult.memberSummaries.map((ms) => {
-                const isOverpaid = ms.balance >= 0;
-
-                return (
-                  <tr key={ms.memberId} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-3 font-bold text-slate-900">
-                      <span>{ms.memberName}</span>
-                    </td>
-
-                    <td className="py-3 px-2 text-right font-semibold text-slate-800">
-                      {ms.totalActualExpense.toFixed(2)} AED
-                    </td>
-
-                    <td className="py-3 px-2 text-right font-bold text-slate-950">
-                      {ms.totalAmountSpent.toFixed(2)} AED
-                    </td>
-
-                    <td className="py-3 px-3 text-right font-extrabold">
-                      <span
-                        className={`inline-block px-2.5 py-1 rounded-xl text-xs ${
-                          isOverpaid
-                            ? 'bg-slate-100 text-slate-900 border border-black'
-                            : 'bg-rose-50 text-rose-950 border border-black'
-                        }`}
-                      >
-                        {isOverpaid ? `+${ms.balance.toFixed(2)} AED (Gets Back)` : `${ms.balance.toFixed(2)} AED (DUE)`}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </GlassContainer>
+      </div>
 
       {/* PDF REPORT PREVIEW MODAL / PAGE (Rendered via Portal to top of body) */}
       {isPdfPreviewOpen &&
@@ -676,6 +548,17 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                       <span className="sm:hidden text-[11px]">PDF</span>
                     </>
                   )}
+                </button>
+
+                {/* WhatsApp Share Button */}
+                <button
+                  type="button"
+                  onClick={handleShareWhatsApp}
+                  className="bg-[#25D366] hover:bg-[#20bd5a] text-white font-extrabold px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-xl text-xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-md"
+                  title="Share via WhatsApp"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                  <span className="hidden sm:inline">WhatsApp</span>
                 </button>
 
                 {/* Share Button */}

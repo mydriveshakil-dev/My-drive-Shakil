@@ -152,14 +152,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Card Content */}
         <div className="p-5 sm:p-6 space-y-4">
           {/* Cycle & Members Pill Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div className="bg-white border border-slate-200/90 rounded-2xl px-4 py-2.5 text-xs text-slate-700 font-semibold flex items-center gap-2 justify-center shadow-2xs">
-              <Calendar className="w-4 h-4 text-[#07193F]" />
-              <span>Cycle: {group.billingCycle}</span>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-white border border-slate-200/90 rounded-2xl px-3 py-2 text-xs text-slate-700 font-semibold flex items-center gap-1.5 justify-center shadow-2xs">
+              <Calendar className="w-3.5 h-3.5 text-[#07193F] shrink-0" />
+              <span className="truncate">Cycle: {group.billingCycle}</span>
             </div>
-            <div className="bg-white border border-slate-200/90 rounded-2xl px-4 py-2.5 text-xs text-slate-700 font-semibold flex items-center gap-2 justify-center shadow-2xs">
-              <Users className="w-4 h-4 text-[#07193F]" />
-              <span>{group.members.length} Members</span>
+            <div className="bg-white border border-slate-200/90 rounded-2xl px-3 py-2 text-xs text-slate-700 font-semibold flex items-center gap-1.5 justify-center shadow-2xs">
+              <Users className="w-3.5 h-3.5 text-[#07193F] shrink-0" />
+              <span className="truncate">{group.members.length} Members</span>
             </div>
           </div>
 
@@ -341,15 +341,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 })()}
               </div>
             </div>
-
-            {/* Footer Note */}
-            <div className="flex items-center gap-2 text-xs text-slate-400 font-medium pt-1">
-              <Info className="w-4 h-4 shrink-0 text-slate-400" />
-              <span>Percentages may not add up to 100% due to rounding.</span>
-            </div>
           </div>
         ) : (
-          <div className="text-center py-6 text-xs font-bold text-slate-500 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+          <div className="text-center py-4 text-xs font-bold text-slate-500 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
             No contributor data recorded yet in this cycle.
           </div>
         )}
@@ -358,11 +352,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* OVERVIEW (MY CONTRIBUTION & AVG PER PERSON) */}
       <div className="space-y-2">
         <h3 className="text-sm font-black text-[#071E55] tracking-wide px-1">Overview</h3>
-        <GlassContainer variant="card" className="p-5 md:p-6 border border-slate-200/80 shadow-lg shadow-blue-950/[0.03] bg-white text-slate-900 rounded-3xl">
+        <div className="p-4 md:p-5 border border-slate-200/80 shadow-md bg-white text-slate-900 rounded-2xl">
           <div className="grid grid-cols-2 divide-x divide-slate-100">
             {/* Left Column: My Contribution */}
-            <div className="flex flex-col items-center justify-center pr-2 sm:pr-6 text-center space-y-3">
-              <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center pr-2 sm:pr-4 text-center space-y-2">
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                   {/* Background Ring */}
                   <path
@@ -384,156 +378,160 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-[#0F3DFF] mb-0.5" />
-                  <span className="text-xs sm:text-sm font-black text-[#071E55]">{myPercentage.toFixed(1)}%</span>
+                  <Wallet className="w-4 h-4 text-[#0F3DFF] mb-0.5" />
+                  <span className="text-xs font-black text-[#071E55]">{myPercentage.toFixed(1)}%</span>
                 </div>
               </div>
 
               <div>
-                <div className="text-base sm:text-xl font-black text-[#071E55]">
+                <div className="text-sm sm:text-lg font-black text-[#071E55]">
                   {mySpent.toFixed(2)} {group.currency}
                 </div>
-                <div className="text-xs text-slate-500 font-semibold mt-0.5">My Contribution</div>
+                <div className="text-[11px] text-slate-500 font-semibold">My Contribution</div>
               </div>
             </div>
 
             {/* Right Column: Avg. per Person */}
-            <div className="flex flex-col items-center justify-center pl-2 sm:pl-6 text-center space-y-3">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-blue-50/70 border border-blue-100 flex flex-col items-center justify-center text-center">
-                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-[#0F3DFF] mb-0.5" />
-                <span className="text-xs sm:text-sm font-black text-[#071E55]">÷ {activeMembersCount}</span>
-                <span className="text-[10px] text-slate-500 font-semibold">members</span>
+            <div className="flex flex-col items-center justify-center pl-2 sm:pl-4 text-center space-y-2">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-blue-50/70 border border-blue-100 flex flex-col items-center justify-center text-center">
+                <Users className="w-4 h-4 text-[#0F3DFF] mb-0.5" />
+                <span className="text-xs font-black text-[#071E55]">÷ {activeMembersCount}</span>
+                <span className="text-[9px] text-slate-500 font-semibold">members</span>
               </div>
 
               <div>
-                <div className="text-base sm:text-xl font-black text-[#071E55]">
+                <div className="text-sm sm:text-lg font-black text-[#071E55]">
                   {avgPerPerson.toFixed(2)} {group.currency}
                 </div>
-                <div className="text-xs text-slate-500 font-semibold mt-0.5">Avg. per Person</div>
+                <div className="text-[11px] text-slate-500 font-semibold">Avg. per Person</div>
               </div>
             </div>
           </div>
-        </GlassContainer>
+        </div>
       </div>
 
-      {/* 4 Primary Category KPI Glass Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+      {/* 4 Primary Category KPI Glass Cards (Aligned in 1 line: 4 boxes) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {/* Mess Expense Card */}
-        <GlassContainer
-          variant="card"
-          className="p-4 md:p-5 border border-slate-200/80 text-slate-900 bg-white shadow-md hover:shadow-xl hover:border-[#0F3DFF]/40 transition-all cursor-pointer rounded-3xl"
+        <div
+          className="p-3 border border-slate-200/80 text-slate-900 bg-white shadow-xs hover:shadow-md hover:border-[#0F3DFF]/40 transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
           onClick={() => onNavigateTab('expenses')}
         >
-          <div className="flex items-center justify-between text-[#0F3DFF] mb-2">
-            <Utensils className="w-5 h-5" />
-            <span className="text-[10px] font-bold uppercase bg-blue-50 text-[#0F3DFF] px-2.5 py-0.5 rounded-full border border-blue-100">
-              Mess
-            </span>
+          <div>
+            <div className="flex items-center justify-between text-[#0F3DFF] mb-1">
+              <Utensils className="w-4 h-4 shrink-0" />
+              <span className="text-[9px] font-bold uppercase bg-blue-50 text-[#0F3DFF] px-2 py-0.5 rounded-full border border-blue-100">
+                Mess
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-600 font-semibold block truncate">Mess Food Expenses</span>
+            <div className="mt-1">
+              <DualCurrencyDisplay
+                amount={messTotal}
+                baseCurrency={group.currency}
+                preferredCurrency={preferredCurrency}
+                customRates={customRates}
+                layout="stacked"
+                baseClassName="text-base font-black text-[#071E55]"
+              />
+            </div>
           </div>
-          <span className="text-xs text-slate-600 font-semibold block">Mess Food Expenses</span>
-          <div className="mt-1">
-            <DualCurrencyDisplay
-              amount={messTotal}
-              baseCurrency={group.currency}
-              preferredCurrency={preferredCurrency}
-              customRates={customRates}
-              layout="stacked"
-              baseClassName="text-xl font-black text-[#071E55]"
-            />
-          </div>
-          <span className="text-[10px] text-slate-500 mt-2 block font-medium">
+          <span className="text-[9px] text-slate-500 mt-1 block font-medium">
             {expenses.filter((e) => e.type === 'mess').length} Transactions
           </span>
-        </GlassContainer>
+        </div>
 
         {/* General Expenses Card */}
-        <GlassContainer
-          variant="card"
-          className="p-4 md:p-5 border border-slate-200/80 text-slate-900 bg-white shadow-md hover:shadow-xl hover:border-[#0F3DFF]/40 transition-all cursor-pointer rounded-3xl"
+        <div
+          className="p-3 border border-slate-200/80 text-slate-900 bg-white shadow-xs hover:shadow-md hover:border-[#0F3DFF]/40 transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
           onClick={() => onNavigateTab('expenses')}
         >
-          <div className="flex items-center justify-between text-[#0F3DFF] mb-2">
-            <ShoppingBag className="w-5 h-5" />
-            <span className="text-[10px] font-bold uppercase bg-blue-50 text-[#0F3DFF] px-2.5 py-0.5 rounded-full border border-blue-100">
-              General
-            </span>
+          <div>
+            <div className="flex items-center justify-between text-[#0F3DFF] mb-1">
+              <ShoppingBag className="w-4 h-4 shrink-0" />
+              <span className="text-[9px] font-bold uppercase bg-blue-50 text-[#0F3DFF] px-2 py-0.5 rounded-full border border-blue-100">
+                General
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-600 font-semibold block truncate">General Room Items</span>
+            <div className="mt-1">
+              <DualCurrencyDisplay
+                amount={generalTotal}
+                baseCurrency={group.currency}
+                preferredCurrency={preferredCurrency}
+                customRates={customRates}
+                layout="stacked"
+                baseClassName="text-base font-black text-[#071E55]"
+              />
+            </div>
           </div>
-          <span className="text-xs text-slate-600 font-semibold block">General Room Items</span>
-          <div className="mt-1">
-            <DualCurrencyDisplay
-              amount={generalTotal}
-              baseCurrency={group.currency}
-              preferredCurrency={preferredCurrency}
-              customRates={customRates}
-              layout="stacked"
-              baseClassName="text-xl font-black text-[#071E55]"
-            />
-          </div>
-          <span className="text-[10px] text-slate-500 mt-2 block font-medium">
+          <span className="text-[9px] text-slate-500 mt-1 block font-medium">
             {expenses.filter((e) => e.type === 'general').length} Items
           </span>
-        </GlassContainer>
+        </div>
 
         {/* Utilities Card */}
-        <GlassContainer
-          variant="card"
-          className="p-4 md:p-5 border border-slate-200/80 text-slate-900 bg-white shadow-md hover:shadow-xl hover:border-[#0F3DFF]/40 transition-all cursor-pointer rounded-3xl"
+        <div
+          className="p-3 border border-slate-200/80 text-slate-900 bg-white shadow-xs hover:shadow-md hover:border-[#0F3DFF]/40 transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
           onClick={() => onNavigateTab('utilities')}
         >
-          <div className="flex items-center justify-between text-[#0F3DFF] mb-2">
-            <Zap className="w-5 h-5" />
-            <span className="text-[10px] font-bold uppercase bg-blue-50 text-[#0F3DFF] px-2.5 py-0.5 rounded-full border border-blue-100">
-              Utilities
-            </span>
+          <div>
+            <div className="flex items-center justify-between text-[#0F3DFF] mb-1">
+              <Zap className="w-4 h-4 shrink-0" />
+              <span className="text-[9px] font-bold uppercase bg-blue-50 text-[#0F3DFF] px-2 py-0.5 rounded-full border border-blue-100">
+                Utilities
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-600 font-semibold block truncate">DEWA & WiFi Bills</span>
+            <div className="mt-1">
+              <DualCurrencyDisplay
+                amount={utilitiesTotal}
+                baseCurrency={group.currency}
+                preferredCurrency={preferredCurrency}
+                customRates={customRates}
+                layout="stacked"
+                baseClassName="text-base font-black text-[#071E55]"
+              />
+            </div>
           </div>
-          <span className="text-xs text-slate-600 font-semibold block">DEWA & WiFi Bills</span>
-          <div className="mt-1">
-            <DualCurrencyDisplay
-              amount={utilitiesTotal}
-              baseCurrency={group.currency}
-              preferredCurrency={preferredCurrency}
-              customRates={customRates}
-              layout="stacked"
-              baseClassName="text-xl font-black text-[#071E55]"
-            />
-          </div>
-          <span className="text-[10px] text-slate-500 mt-2 block font-medium">
+          <span className="text-[9px] text-slate-500 mt-1 block font-medium">
             {utilities.length} Utility Bills
           </span>
-        </GlassContainer>
+        </div>
 
         {/* Landlord Rent Card */}
-        <GlassContainer
-          variant="card"
-          className="p-4 md:p-5 border border-slate-200/80 text-slate-900 bg-white shadow-md hover:shadow-xl hover:border-[#0F3DFF]/40 transition-all cursor-pointer rounded-3xl"
+        <div
+          className="p-3 border border-slate-200/80 text-slate-900 bg-white shadow-xs hover:shadow-md hover:border-[#0F3DFF]/40 transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
           onClick={() => onNavigateTab('utilities')}
         >
-          <div className="flex items-center justify-between text-[#0F3DFF] mb-2">
-            <HomeIcon className="w-5 h-5" />
-            <span className="text-[10px] font-bold uppercase bg-blue-50 text-[#0F3DFF] px-2.5 py-0.5 rounded-full border border-blue-100">
-              Rent
-            </span>
+          <div>
+            <div className="flex items-center justify-between text-[#0F3DFF] mb-1">
+              <HomeIcon className="w-4 h-4 shrink-0" />
+              <span className="text-[9px] font-bold uppercase bg-blue-50 text-[#0F3DFF] px-2 py-0.5 rounded-full border border-blue-100">
+                Rent
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-600 font-semibold block truncate">Landlord Monthly Rent</span>
+            <div className="mt-1">
+              <DualCurrencyDisplay
+                amount={rentTotal}
+                baseCurrency={group.currency}
+                preferredCurrency={preferredCurrency}
+                customRates={customRates}
+                layout="stacked"
+                baseClassName="text-base font-black text-[#071E55]"
+              />
+            </div>
           </div>
-          <span className="text-xs text-slate-600 font-semibold block">Landlord Monthly Rent</span>
-          <div className="mt-1">
-            <DualCurrencyDisplay
-              amount={rentTotal}
-              baseCurrency={group.currency}
-              preferredCurrency={preferredCurrency}
-              customRates={customRates}
-              layout="stacked"
-              baseClassName="text-xl font-black text-[#071E55]"
-            />
-          </div>
-          <span className="text-[10px] text-slate-500 mt-2 block font-medium">
+          <span className="text-[9px] text-slate-500 mt-1 block font-medium">
             Status: {rent?.status === 'paid' ? 'Paid' : 'Pending'}
           </span>
-        </GlassContainer>
+        </div>
       </div>
 
       {/* Central Google Sheets Integration & Admin Panel Info (Admin Only) */}
       {currentUser?.role === 'admin' && (
-        <GlassContainer variant="card" className="p-5 md:p-6 border border-slate-200/80 text-slate-900 bg-white shadow-lg space-y-4 rounded-3xl">
+        <div className="p-5 md:p-6 border border-slate-200/80 text-slate-900 bg-white shadow-lg space-y-4 rounded-3xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0052FF]">
@@ -564,11 +562,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </a>
             </div>
           </div>
-        </GlassContainer>
+        </div>
       )}
 
       {/* RECENT EXPENSES Section */}
-      <GlassContainer variant="card" className="p-5 border border-slate-200/80 shadow-xl shadow-blue-950/[0.04] bg-white text-slate-900 rounded-3xl space-y-4">
+      <div className="p-5 border border-slate-200/80 shadow-xl shadow-blue-950/[0.04] bg-white text-slate-900 rounded-3xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div>
             <div className="flex items-center gap-2">
@@ -644,7 +642,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           const visibleItems = showAllExpenses ? displayedList : displayedList.slice(0, 8);
 
           return (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {visibleItems.map((exp) => {
                 const payer = group.members.find((m) => m.id === exp.paidById);
                 const isMess = exp.type === 'mess';
@@ -652,77 +650,68 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 return (
                   <div
                     key={exp.id}
-                    className="bg-white border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-blue-200 hover:shadow-md transition-all text-slate-900"
+                    className="bg-white border border-slate-200/80 rounded-2xl p-2.5 sm:p-3 shadow-2xs flex items-center justify-between gap-2 hover:border-blue-200 transition-all text-slate-900"
                   >
-                    <div className="flex items-start sm:items-center gap-3">
-                      {/* User Full Name Badge in solid blue */}
-                      <div className="bg-[#0052FF] text-white font-extrabold text-xs sm:text-sm px-3.5 py-1.5 rounded-xl shrink-0 shadow-2xs">
+                    {/* Left: User Badge, Title, Date */}
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="bg-[#0052FF] text-white font-extrabold text-[11px] sm:text-xs px-2.5 py-1 rounded-lg shrink-0 shadow-2xs">
                         {payer?.name || exp.paidById}
-                      </div>
+                      </span>
 
-                      <div className="space-y-0.5 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-black text-[#07193F] line-clamp-1">{cleanExpenseTitle(exp.title)}</h4>
-                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-slate-200 bg-slate-100 text-slate-600">
-                            {isMess ? 'Mess Food' : 'General'}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <h4 className="text-xs sm:text-sm font-black text-[#07193F] truncate">{cleanExpenseTitle(exp.title)}</h4>
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md border border-slate-200 bg-slate-50 text-slate-600 shrink-0">
+                            {isMess ? 'Mess' : 'Gen'}
                           </span>
                         </div>
-
-                        <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
-                          <span className="flex items-center gap-1 font-semibold text-slate-500">
-                            <Calendar className="w-3.5 h-3.5 text-[#0052FF]" />
-                            Date: {exp.date}
-                          </span>
-                        </div>
+                        <span className="text-[10px] text-slate-500 font-medium block truncate">
+                          {exp.date}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Amount & Delete */}
-                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t sm:border-0 pt-2.5 sm:pt-0 border-slate-100">
-                      <div className="text-left sm:text-right">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase block">Amount</span>
-                        <DualCurrencyDisplay
-                          amount={exp.amount}
-                          baseCurrency={group.currency}
-                          preferredCurrency={preferredCurrency}
-                          customRates={customRates}
-                          layout="stacked"
-                          baseClassName="text-base sm:text-lg font-black text-[#07193F] block"
-                        />
-                      </div>
+                    {/* Right: Amount & Delete */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <DualCurrencyDisplay
+                        amount={exp.amount}
+                        baseCurrency={group.currency}
+                        preferredCurrency={preferredCurrency}
+                        customRates={customRates}
+                        layout="inline"
+                        baseClassName="text-xs sm:text-sm font-black text-[#07193F]"
+                      />
 
                       {onDeleteExpense && currentUser?.role === 'admin' && (
                         <div>
                           {deleteConfirmId === exp.id ? (
-                            <div className="flex items-center gap-1.5 bg-rose-50 p-1.5 rounded-2xl border border-rose-200 shadow-md">
-                              <span className="text-[11px] text-rose-800 font-bold px-1">Delete?</span>
+                            <div className="flex items-center gap-1 bg-rose-50 p-1 rounded-xl border border-rose-200">
                               <button
                                 type="button"
                                 onClick={() => {
                                   onDeleteExpense(exp.id);
                                   setDeleteConfirmId(null);
                                 }}
-                                className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition-all border border-rose-500/20 cursor-pointer"
+                                className="px-2 py-0.5 bg-rose-600 text-white font-bold text-[10px] rounded-lg cursor-pointer"
                               >
-                                Delete
+                                Del
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setDeleteConfirmId(null)}
-                                className="px-2 py-1 bg-white text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition-all cursor-pointer"
+                                className="px-1.5 py-0.5 bg-white text-slate-700 font-bold text-[10px] rounded-lg border border-slate-200 cursor-pointer"
                               >
-                                Cancel
+                                X
                               </button>
                             </div>
                           ) : (
                             <button
                               type="button"
                               onClick={() => setDeleteConfirmId(exp.id)}
-                              className="px-2.5 py-1.5 text-rose-600 hover:bg-rose-50 bg-white rounded-xl transition-all border border-slate-200 cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                              className="p-1 text-rose-600 hover:bg-rose-50 rounded-lg transition-all border border-slate-200 cursor-pointer"
                               title="Delete expense"
                             >
-                              <Trash2 className="w-4 h-4 text-rose-600" />
-                              <span className="text-xs font-bold text-rose-600">Delete</span>
+                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
                             </button>
                           )}
                         </div>
@@ -746,7 +735,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           );
         })()}
-      </GlassContainer>
+      </div>
     </div>
   );
 };

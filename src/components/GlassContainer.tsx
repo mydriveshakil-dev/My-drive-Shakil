@@ -42,21 +42,21 @@ export const GlassContainer: React.FC<GlassContainerProps> = ({
 
   const variantStyles: Record<GlassVariant, string> = {
     default:
-      'bg-white text-slate-900 border border-black shadow-md rounded-3xl',
+      'bg-[#0B2556] text-white border border-blue-400/25 shadow-xl shadow-blue-950/20 rounded-3xl',
     card:
-      'bg-white text-slate-900 border border-black shadow-md rounded-3xl',
+      'bg-[#0B2556] text-white border border-blue-400/25 shadow-xl shadow-blue-950/20 rounded-3xl',
     emerald:
-      'bg-white text-slate-900 border border-black shadow-md rounded-3xl',
+      'bg-[#0B2556] text-white border border-emerald-400/30 shadow-xl shadow-blue-950/20 rounded-3xl',
     amber:
-      'bg-white text-slate-900 border border-black shadow-md rounded-3xl',
+      'bg-[#0B2556] text-white border border-amber-400/30 shadow-xl shadow-blue-950/20 rounded-3xl',
     pill:
-      'bg-white text-slate-900 border border-black shadow-sm rounded-full',
+      'bg-[#0B2556] text-white border border-blue-400/25 shadow-sm rounded-full',
     subtle:
-      'bg-white text-slate-900 border border-black shadow-xs rounded-2xl',
+      'bg-[#0B2556]/90 text-white border border-blue-400/20 shadow-xs rounded-2xl',
     modal:
-      'bg-white text-slate-900 border-2 border-black shadow-2xl rounded-3xl',
+      'bg-[#07193F] text-white border border-blue-400/30 shadow-2xl shadow-blue-950/40 rounded-3xl',
     dark:
-      'bg-black text-white border border-black shadow-2xl rounded-3xl',
+      'bg-gradient-to-br from-[#071E55] to-[#0A297A] text-white border border-[#0F3DFF]/30 shadow-2xl shadow-blue-950/20 rounded-3xl',
   };
 
   const hoverClass = hoverEffect

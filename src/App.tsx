@@ -1204,48 +1204,47 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col font-sans text-slate-900 selection:bg-emerald-500 selection:text-white antialiased max-w-full overflow-x-hidden bg-white">
-      {/* Global Background White Theme */}
-      <div className="ios26-wallpaper-bg bg-white" />
+    <div className="min-h-screen relative flex flex-col font-sans text-slate-900 selection:bg-[#0F3DFF] selection:text-white antialiased max-w-full overflow-x-hidden bg-[#07193F]">
+      {/* Global Background Theme */}
+      <div className="ios26-wallpaper-bg bg-[#07193F]" />
 
       {/* Toast Sync Notification */}
       {syncNotification && (
-        <div className="fixed top-4 right-4 z-50 bg-emerald-950/90 text-emerald-200 border border-emerald-400/40 backdrop-blur-2xl px-4 py-2.5 rounded-2xl shadow-2xl text-xs font-extrabold flex items-center gap-2 animate-in slide-in-from-top-3">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="fixed top-4 right-4 z-50 bg-[#071E55]/95 text-blue-100 border border-[#0F3DFF]/40 backdrop-blur-2xl px-4 py-2.5 rounded-2xl shadow-2xl text-xs font-extrabold flex items-center gap-2 animate-in slide-in-from-top-3">
+          <CheckCircle2 className="w-4 h-4 text-blue-400" />
           <span>{syncNotification}</span>
         </div>
       )}
 
-      {/* Header Bar (Visible ONLY when logged in on Dashboard View) */}
-      {activeTab === 'dashboard' && !isLoginModalOpen && userAuth.isLoggedIn && (
-        <HeaderBar
-          group={displayedGroup}
-          allGroups={allGroups}
-          onSelectGroup={(g) => {
-            setGroup(g);
-            triggerHaptic(hapticPatterns.click);
-          }}
-          billingCycleType={billingCycleType}
-          onToggleCycle={setBillingCycleType}
-          selectedPreviousCycle={selectedPreviousCycle}
-          onSelectPreviousCycle={setSelectedPreviousCycle}
-          expenses={expenses}
-          sheetsConfig={sheetsConfig}
-          onSyncNow={() => fetchFromSheet(false)}
-          onOpenAddGroup={() => setActiveTab('group')}
-          onOpenArchGuide={() => setIsArchGuideOpen(true)}
-          isSyncing={isSyncing}
-          preferredCurrency={preferredCurrency}
-          onOpenCurrencySettings={() => setIsCurrencyModalOpen(true)}
-          currentUser={userAuth}
-          onOpenLoginModal={() => setIsLoginModalOpen(true)}
-          onLogout={handleLogout}
-          onOpenInstallPwa={() => setIsInstallPwaOpen(true)}
-        />
-      )}
-
       {/* Main Container with Screen Transitions */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 pt-4 pb-12">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 md:px-8 pt-4 pb-12">
+        {/* Header Bar (Visible ONLY when logged in on Dashboard View) */}
+        {activeTab === 'dashboard' && !isLoginModalOpen && userAuth.isLoggedIn && (
+          <HeaderBar
+            group={displayedGroup}
+            allGroups={allGroups}
+            onSelectGroup={(g) => {
+              setGroup(g);
+              triggerHaptic(hapticPatterns.click);
+            }}
+            billingCycleType={billingCycleType}
+            onToggleCycle={setBillingCycleType}
+            selectedPreviousCycle={selectedPreviousCycle}
+            onSelectPreviousCycle={setSelectedPreviousCycle}
+            expenses={expenses}
+            sheetsConfig={sheetsConfig}
+            onSyncNow={() => fetchFromSheet(false)}
+            onOpenAddGroup={() => setActiveTab('group')}
+            onOpenArchGuide={() => setIsArchGuideOpen(true)}
+            isSyncing={isSyncing}
+            preferredCurrency={preferredCurrency}
+            onOpenCurrencySettings={() => setIsCurrencyModalOpen(true)}
+            currentUser={userAuth}
+            onOpenLoginModal={() => setIsLoginModalOpen(true)}
+            onLogout={handleLogout}
+            onOpenInstallPwa={() => setIsInstallPwaOpen(true)}
+          />
+        )}
         {userAuth.isLoggedIn && userAuth.role === 'user' && !userAuth.linkedGroupId ? (
           <div className="flex flex-col items-center justify-center min-h-[65vh] py-12 px-4 sm:px-6 text-center animate-in fade-in duration-300">
             <GlassContainer
@@ -1466,13 +1465,20 @@ export default function App() {
         activeMemberIds={activeMemberIds}
       />
 
-      {/* UAE Residence Visa Login Modal */}
-      <UaeLoginModal
-        isOpen={isLoginModalOpen}
-        defaultEmail={userAuth.email || 'mydriveshakil@gmail.com'}
-        allGroups={allGroups}
-        onLoginSuccess={handleLoginSuccess}
-      />
+      {/* UAE Residence Visa Login Full Screen Page */}
+      {(!userAuth.isLoggedIn || isLoginModalOpen) && (
+        <div className="fixed inset-0 z-[100] bg-slate-100 overflow-y-auto flex flex-col justify-center items-center">
+          <UaeLoginModal
+            isOpen={true}
+            defaultEmail={userAuth.email || 'mydriveshakil@gmail.com'}
+            allGroups={allGroups}
+            onLoginSuccess={handleLoginSuccess}
+            onOpenInstallPwa={() => setIsInstallPwaOpen(true)}
+            isLoggedIn={userAuth.isLoggedIn}
+            onClose={() => setIsLoginModalOpen(false)}
+          />
+        </div>
+      )}
 
       {/* Mobile PWA Install & Home Screen Setup Modal */}
       <InstallPwaModal
@@ -1480,24 +1486,24 @@ export default function App() {
         onClose={() => setIsInstallPwaOpen(false)}
       />
 
-      {/* Floating Action Button (FAB) for Room Group Chat - Automatically hides when chat modal is open */}
-      {!isChatOpen && !isLoginModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && (
+      {/* Floating Action Button (FAB) for Room Group Chat */}
+      {!isChatOpen && !isLoginModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && activeTab === 'dashboard' && (
         <motion.button
-          whileHover={{ scale: 1.12 }}
+          whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.92 }}
           onClick={() => setIsChatOpen(true)}
-          className="fixed bottom-[96px] sm:bottom-[102px] right-4 sm:right-8 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-black hover:bg-slate-800 text-white rounded-full shadow-xl border-2 border-black flex items-center justify-center cursor-pointer transition-all ring-4 ring-slate-100"
+          className="fixed bottom-[88px] sm:bottom-[94px] right-4 sm:right-6 z-50 w-12 h-12 sm:w-13 sm:h-13 bg-[#07193F] hover:bg-[#0B2556] text-white rounded-full shadow-xl border border-slate-700/80 flex items-center justify-center cursor-pointer transition-all ring-2 ring-white/50"
           title="Open Room Group Chat"
         >
           <div className="relative flex items-center justify-center">
-            <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.5] text-white" />
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-black animate-ping" />
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-black" />
+            <MessageCircle className="w-6 h-6 stroke-[2.2] text-white" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400" />
           </div>
 
-          {/* Unread Message Notification Badge (Only shown when new unread messages exist) */}
+          {/* Unread Message Notification Badge */}
           {unreadCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-black min-w-5 h-5 px-1.5 rounded-full border-2 border-black flex items-center justify-center shadow-md animate-pulse">
+            <span className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-black min-w-5 h-5 px-1.5 rounded-full border-2 border-slate-900 flex items-center justify-center shadow-md animate-pulse">
               {unreadCount}
             </span>
           )}

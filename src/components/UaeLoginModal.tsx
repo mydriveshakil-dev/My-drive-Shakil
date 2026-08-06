@@ -13,6 +13,7 @@ import {
   CheckSquare,
   Square,
   Globe,
+  X,
 } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
 import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
@@ -22,6 +23,9 @@ interface UaeLoginModalProps {
   defaultEmail: string;
   allGroups?: Group[];
   onLoginSuccess: (authData: UserAuthProfile) => void;
+  onOpenInstallPwa?: () => void;
+  onClose?: () => void;
+  isLoggedIn?: boolean;
 }
 
 const SAVED_CREDENTIALS_KEY = 'uae_saved_login_credentials';
@@ -73,6 +77,9 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
   defaultEmail,
   allGroups,
   onLoginSuccess,
+  onOpenInstallPwa,
+  onClose,
+  isLoggedIn,
 }) => {
   // Form State
   const [mobileNumber, setMobileNumber] = useState('');
@@ -266,36 +273,60 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300 max-w-full overflow-x-hidden overflow-y-auto">
+    <div className="w-full min-h-[85vh] sm:min-h-screen py-4 sm:py-8 px-3 sm:px-6 md:px-8 flex items-center justify-center bg-slate-100/90 max-w-full selection:bg-blue-500/20 my-auto">
       <GlassContainer
         variant="card"
         blur="3xl"
-        className="w-full max-w-lg max-h-[92vh] rounded-3xl border-2 border-black shadow-2xl flex flex-col overflow-hidden relative my-auto box-border text-slate-900 bg-white"
+        className="w-full max-w-lg rounded-3xl border border-slate-200/80 shadow-2xl flex flex-col overflow-hidden relative my-auto box-border text-slate-900 bg-white"
       >
-        {/* Header Banner */}
-        <div className="p-4 sm:p-5 border-b-2 border-black bg-white flex items-center justify-between shrink-0 gap-3 overflow-hidden text-slate-900">
+        {/* Header Banner - Dark Navy Theme */}
+        <div className="p-4 sm:p-5 border-b border-blue-900/40 bg-gradient-to-r from-[#07193F] to-[#041029] text-white flex items-center justify-between shrink-0 gap-3 overflow-hidden">
           <div className="flex items-center gap-3 min-w-0">
             <img
               src={uaeMessLogo}
               alt="UAE MESS SYSTEM Logo"
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover border-2 border-black shadow-md shrink-0"
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover border border-blue-400/30 shadow-md shrink-0"
             />
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs sm:text-sm font-black tracking-wider text-slate-950 uppercase">
+                <span className="text-xs sm:text-sm font-black tracking-wider text-white uppercase">
                   UAE MESS SYSTEM
                 </span>
-                <span className="bg-black text-white border border-black text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase whitespace-nowrap">
+                <span className="bg-[#0052FF] text-white border border-blue-400/30 text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase whitespace-nowrap shadow-xs">
                   Portal Login
                 </span>
               </div>
-              <h2 className="text-sm sm:text-base font-black text-slate-950 truncate mt-0.5">
+              <h2 className="text-sm sm:text-base font-black text-white truncate mt-0.5">
                 Member & Admin Portal Access
               </h2>
-              <p className="text-[11px] sm:text-xs text-slate-700 font-medium truncate">
+              <p className="text-[11px] sm:text-xs text-blue-200/80 font-medium truncate">
                 Log in using Mobile Number & Password
               </p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {onOpenInstallPwa && (
+              <button
+                type="button"
+                onClick={onOpenInstallPwa}
+                className="inline-flex items-center gap-1.5 bg-[#0052FF] hover:bg-[#0047E0] active:scale-95 text-white text-xs font-bold px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-2xl transition-all shadow-md shadow-blue-600/30 border border-blue-400/30 cursor-pointer shrink-0"
+                title="Install Mobile App / Add to Home Screen"
+              >
+                <Smartphone className="w-4 h-4 stroke-[2.5]" />
+                <span>Install App</span>
+              </button>
+            )}
+            {isLoggedIn && onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-9 h-9 rounded-2xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all border border-white/20 cursor-pointer shrink-0"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -303,8 +334,8 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
         <form onSubmit={handleLogin} className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-slate-900 max-w-full">
           {/* 1. Mobile Number */}
           <div>
-            <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <Smartphone className="w-3.5 h-3.5 text-slate-900" />
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <Smartphone className="w-3.5 h-3.5 text-[#0052FF]" />
               Mobile Number *
             </label>
             <input
@@ -315,15 +346,15 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                 setMobileNumber(e.target.value);
                 setLoginError(null);
               }}
-              className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20"
             />
           </div>
 
           {/* 2. Password */}
           <div>
-            <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-slate-900" />
+                <Lock className="w-3.5 h-3.5 text-[#0052FF]" />
                 Password *
               </span>
             </label>
@@ -336,12 +367,12 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                   setUserPassword(e.target.value);
                   setLoginError(null);
                 }}
-                className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black pr-16"
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20 pr-16"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-900 hover:text-black cursor-pointer"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#0052FF] hover:text-blue-700 cursor-pointer"
               >
                 {showPassword ? 'Hide' : 'Show'}
               </button>
@@ -356,10 +387,10 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                 setRememberMe(!rememberMe);
                 triggerHaptic(hapticPatterns.click);
               }}
-              className="flex items-center gap-2 text-xs font-bold text-slate-900 hover:text-black cursor-pointer select-none"
+              className="flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-slate-900 cursor-pointer select-none"
             >
               {rememberMe ? (
-                <CheckSquare className="w-4 h-4 text-black" />
+                <CheckSquare className="w-4 h-4 text-[#0052FF]" />
               ) : (
                 <Square className="w-4 h-4 text-slate-400" />
               )}
@@ -369,8 +400,8 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
 
           {/* Error Alert */}
           {loginError && (
-            <div className="bg-slate-900 text-white border border-black p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
-              <AlertTriangle className="w-4.5 h-4.5 text-white shrink-0" />
+            <div className="bg-rose-50 text-rose-900 border border-rose-200 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
+              <AlertTriangle className="w-4.5 h-4.5 text-rose-600 shrink-0" />
               <span>{loginError}</span>
             </div>
           )}
@@ -380,12 +411,12 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
         </form>
 
         {/* Footer Login Button */}
-        <div className="p-4 sm:p-5 bg-white border-t-2 border-black shrink-0">
+        <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200/80 shrink-0">
           <button
             type="button"
             onClick={() => handleLogin()}
             disabled={isSearchingCloud}
-            className="w-full bg-black hover:bg-slate-800 text-white font-black py-4 rounded-2xl shadow-xl transition-all text-sm flex items-center justify-center gap-2 border border-black active:scale-98 cursor-pointer disabled:opacity-50"
+            className="w-full bg-[#0052FF] hover:bg-[#0047E0] text-white font-black py-3.5 rounded-2xl shadow-lg shadow-blue-600/25 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer disabled:opacity-50 border border-blue-400/20"
           >
             <ShieldCheck className="w-5 h-5 stroke-[2.5] text-white" />
             <span>{isSearchingCloud ? 'Connecting Cloud...' : 'Login to Mess Portal'}</span>

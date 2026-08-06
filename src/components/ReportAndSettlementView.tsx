@@ -73,6 +73,21 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     includeCategories
   );
 
+  // Safe html2pdf engine resolver to handle Vercel Vite CJS/ESM bundling & dynamic imports
+  const getHtml2PdfEngine = async () => {
+    try {
+      if (typeof html2pdf === 'function') return html2pdf;
+      if (typeof (html2pdf as any)?.default === 'function') return (html2pdf as any).default;
+      if (typeof (window as any)?.html2pdf === 'function') return (window as any).html2pdf;
+      const imported = await import('html2pdf.js');
+      if (typeof imported === 'function') return imported;
+      if (typeof imported?.default === 'function') return imported.default;
+    } catch (err) {
+      console.warn('html2pdf engine import error:', err);
+    }
+    return null;
+  };
+
   // Pre-generate PDF file as soon as PDF preview modal opens
   useEffect(() => {
     if (!isPdfPreviewOpen) {
@@ -90,15 +105,18 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       const element = document.getElementById('pdf-report-document');
       if (!element) return;
       try {
+        const engine = await getHtml2PdfEngine();
+        if (!engine) return;
+
         const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
         const opt = {
           margin: 6,
           filename: fileName,
           image: { type: 'jpeg' as const, quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+          html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
         };
-        const worker = html2pdf().set(opt).from(element);
+        const worker = engine().set(opt).from(element);
         const blob = await worker.output('blob');
         const file = new File([blob], fileName, { type: 'application/pdf' });
         cachedPdfFileRef.current = file;
@@ -107,7 +125,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       }
     };
 
-    const timer = setTimeout(pregenerate, 100);
+    const timer = setTimeout(pregenerate, 150);
     return () => {
       clearTimeout(timer);
       document.body.style.overflow = originalBodyOverflow;
@@ -195,6 +213,22 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   };
 
   const handlePrintPdf = async () => {
+    const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
+
+    // 1. If pre-generated PDF file is already cached, trigger instant download
+    if (cachedPdfFileRef.current) {
+      const blobUrl = URL.createObjectURL(cachedPdfFileRef.current);
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.href = blobUrl;
+      downloadAnchor.download = fileName;
+      downloadAnchor.style.display = 'none';
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      document.body.removeChild(downloadAnchor);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      return;
+    }
+
     const element = document.getElementById('pdf-report-document');
     if (!element) {
       window.print();
@@ -203,17 +237,24 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
     try {
       setIsGeneratingPdf(true);
-      const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
+      const engine = await getHtml2PdfEngine();
+      if (!engine) {
+        window.print();
+        return;
+      }
+
       const opt = {
         margin: 6,
         filename: fileName,
         image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+        html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
       };
 
-      const worker = html2pdf().set(opt).from(element);
+      const worker = engine().set(opt).from(element);
       const blob = await worker.output('blob');
+      const generatedFile = new File([blob], fileName, { type: 'application/pdf' });
+      cachedPdfFileRef.current = generatedFile;
 
       // Trigger automatic PDF download via anchor tag with download attribute
       const blobUrl = URL.createObjectURL(blob);
@@ -245,24 +286,27 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
     let targetFile = cachedPdfFileRef.current;
 
-    // If pre-generated file isn't ready yet, generate it on demand
+    // If pre-generated file isn't ready yet, attempt to generate it on demand
     if (!targetFile) {
       const element = document.getElementById('pdf-report-document');
       if (element) {
         try {
           setIsSharingPdf(true);
-          const opt = {
-            margin: 6,
-            filename: fileName,
-            image: { type: 'jpeg' as const, quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-          };
+          const engine = await getHtml2PdfEngine();
+          if (engine) {
+            const opt = {
+              margin: 6,
+              filename: fileName,
+              image: { type: 'jpeg' as const, quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+            };
 
-          const worker = html2pdf().set(opt).from(element);
-          const blob = await worker.output('blob');
-          targetFile = new File([blob], fileName, { type: 'application/pdf' });
-          cachedPdfFileRef.current = targetFile;
+            const worker = engine().set(opt).from(element);
+            const blob = await worker.output('blob');
+            targetFile = new File([blob], fileName, { type: 'application/pdf' });
+            cachedPdfFileRef.current = targetFile;
+          }
         } catch (err) {
           console.warn('On-demand PDF generation for share failed:', err);
         } finally {
@@ -271,7 +315,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       }
     }
 
-    // 1. Invoke navigator.share API with PDF file data
+    // 1. Invoke navigator.share API with PDF file data if supported
     if (targetFile && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [targetFile] })) {
       try {
         await navigator.share({
@@ -282,7 +326,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         return; // Native share with PDF file succeeded
       } catch (shareErr: any) {
         if (shareErr?.name === 'AbortError') {
-          return; // User canceled share sheet
+          return; // User canceled share sheet intentionally
         }
         console.warn('Native PDF file share rejected or failed:', shareErr);
       }
@@ -330,34 +374,34 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
   return (
     <div className="space-y-6 pb-28">
-      {/* Top Banner */}
+      {/* Top Banner - Navy Theme */}
       <GlassContainer
         variant="card"
         blur="3xl"
-        className="p-6 md:p-8 rounded-3xl border-2 border-black shadow-xl bg-white text-slate-900 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+        className="p-6 md:p-8 rounded-3xl border border-blue-900/40 shadow-xl bg-gradient-to-r from-[#07193F] to-[#041029] text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
       >
         <div>
-          <span className="text-xs font-black text-white uppercase tracking-wider bg-black px-3.5 py-1 rounded-full border border-black">
+          <span className="text-xs font-black text-blue-200 uppercase tracking-wider bg-blue-500/20 px-3.5 py-1 rounded-full border border-blue-400/30">
             Settlement Engine & Dynamic Balance
           </span>
-          <h2 className="text-2xl font-black mt-2 text-slate-950">Report & Member Settlement</h2>
-          <p className="text-xs text-slate-700 font-medium mt-1">
-            Exact meal rates, individual spending balances, and simplified debt transfers
+          <h2 className="text-2xl font-black mt-2 text-white">Report & Member Settlement</h2>
+          <p className="text-xs text-blue-100/80 font-medium mt-1">
+            Exact meal rates and individual spending balance calculations
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsPdfPreviewOpen(true)}
-            className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 border border-black transition-all active:scale-95 cursor-pointer shadow-md"
+            className="bg-white/10 hover:bg-white/20 text-white font-extrabold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 border border-white/20 transition-all active:scale-95 cursor-pointer shadow-md"
           >
-            <FileText className="w-4 h-4 text-slate-900" />
+            <FileText className="w-4 h-4 text-blue-300" />
             <span>Export to PDF</span>
           </button>
 
           <button
             onClick={onSaveSettlement}
-            className="bg-black hover:bg-slate-800 text-white font-black px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 border border-black cursor-pointer"
+            className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/30 active:scale-95 border border-blue-400/30 cursor-pointer"
           >
             <CheckCircle className="w-4 h-4 stroke-[3]" />
             <span>Finalize Settlement</span>
@@ -366,7 +410,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       </GlassContainer>
 
       {/* Date Picker & Category Checkbox Filters */}
-      <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-4">
+      <GlassContainer variant="card" className="p-5 border border-slate-200/80 bg-white text-slate-900 shadow-md space-y-4 rounded-3xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-black/20 pb-4">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
             <Calendar className="w-4 h-4 text-slate-900" />
@@ -378,21 +422,21 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className="px-3 py-1.5 bg-white border border-black rounded-xl font-semibold text-slate-900 focus:outline-none"
+              className="px-3 py-1.5 bg-[#0B2556] border border-blue-400/30 rounded-xl font-semibold text-white focus:outline-none"
             />
-            <span className="text-slate-600">to</span>
+            <span className="text-blue-200">to</span>
             <input
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className="px-3 py-1.5 bg-white border border-black rounded-xl font-semibold text-slate-900 focus:outline-none"
+              className="px-3 py-1.5 bg-[#0B2556] border border-blue-400/30 rounded-xl font-semibold text-white focus:outline-none"
             />
           </div>
         </div>
 
         {/* Category Checkboxes */}
         <div>
-          <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block mb-2">
+          <span className="text-xs font-bold text-white uppercase tracking-wider block mb-2">
             Include Categories in Calculation:
           </span>
           <div className="flex flex-wrap items-center gap-3">
@@ -406,13 +450,13 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                 <button
                   key={key}
                   onClick={() => toggleCategory(key as keyof typeof includeCategories)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                     isChecked
-                      ? 'bg-black text-white border-black'
-                      : 'bg-white text-slate-700 border-black hover:bg-slate-100'
+                      ? 'bg-[#0052FF] text-white border-blue-400/40 shadow-md shadow-blue-600/30'
+                      : 'bg-[#0B2556] text-blue-200 border-blue-400/25 hover:bg-[#07193F]'
                   }`}
                 >
-                  {isChecked ? <CheckSquare className="w-4 h-4 text-white" /> : <Square className="w-4 h-4 text-slate-600" />}
+                  {isChecked ? <CheckSquare className="w-4 h-4 text-white" /> : <Square className="w-4 h-4 text-blue-300" />}
                   <span>{label}</span>
                 </button>
               );
@@ -423,8 +467,8 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
       {/* Key Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <GlassContainer variant="card" className="p-4 border border-black bg-white text-slate-900 shadow-md">
-          <span className="text-[10px] font-bold text-slate-900 uppercase">Total Mess Bill</span>
+        <GlassContainer variant="card" className="p-4 border border-blue-400/25 bg-[#0B2556] text-white shadow-md">
+          <span className="text-[10px] font-bold text-blue-200 uppercase">Total Mess Bill</span>
           <div className="text-xl font-black mt-1">
             <DualCurrencyDisplay
               amount={settlementResult.totalMessExpenses}
@@ -432,14 +476,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               preferredCurrency={preferredCurrency}
               customRates={customRates}
               layout="stacked"
-              baseClassName="text-xl font-black text-slate-950"
+              baseClassName="text-xl font-black text-white"
             />
           </div>
-          <span className="text-[10px] text-slate-600 block mt-1">Equal split</span>
+          <span className="text-[10px] text-blue-200/80 block mt-1">Equal split</span>
         </GlassContainer>
 
-        <GlassContainer variant="card" className="p-4 border border-black bg-white text-slate-900 shadow-md">
-          <span className="text-[10px] font-bold text-slate-900 uppercase">General Expenses</span>
+        <GlassContainer variant="card" className="p-4 border border-blue-400/25 bg-[#0B2556] text-white shadow-md">
+          <span className="text-[10px] font-bold text-blue-200 uppercase">General Expenses</span>
           <div className="text-xl font-black mt-1">
             <DualCurrencyDisplay
               amount={settlementResult.totalGeneralExpenses}
@@ -447,14 +491,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               preferredCurrency={preferredCurrency}
               customRates={customRates}
               layout="stacked"
-              baseClassName="text-xl font-black text-slate-950"
+              baseClassName="text-xl font-black text-white"
             />
           </div>
-          <span className="text-[10px] text-slate-600 block mt-1">Equal split</span>
+          <span className="text-[10px] text-blue-200/80 block mt-1">Equal split</span>
         </GlassContainer>
 
-        <GlassContainer variant="card" className="p-4 border border-black bg-white text-slate-900 shadow-md">
-          <span className="text-[10px] font-bold text-slate-900 uppercase">Utilities (DEWA & WiFi)</span>
+        <GlassContainer variant="card" className="p-4 border border-blue-400/25 bg-[#0B2556] text-white shadow-md">
+          <span className="text-[10px] font-bold text-blue-200 uppercase">Utilities (DEWA & WiFi)</span>
           <div className="text-xl font-black mt-1">
             <DualCurrencyDisplay
               amount={settlementResult.totalUtilities}
@@ -462,14 +506,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               preferredCurrency={preferredCurrency}
               customRates={customRates}
               layout="stacked"
-              baseClassName="text-xl font-black text-slate-950"
+              baseClassName="text-xl font-black text-white"
             />
           </div>
-          <span className="text-[10px] text-slate-600 block mt-1">DEWA & WiFi Bills</span>
+          <span className="text-[10px] text-blue-200/80 block mt-1">DEWA & WiFi Bills</span>
         </GlassContainer>
 
-        <GlassContainer variant="card" className="p-4 border-2 border-black bg-white text-slate-900 shadow-md">
-          <span className="text-[10px] font-bold text-slate-900 uppercase">Grand Total</span>
+        <GlassContainer variant="card" className="p-4 border border-blue-400/30 bg-[#0B2556] text-white shadow-md">
+          <span className="text-[10px] font-bold text-blue-200 uppercase">Grand Total</span>
           <div className="text-xl font-black mt-1">
             <DualCurrencyDisplay
               amount={settlementResult.grandTotalExpenses}
@@ -477,22 +521,22 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               preferredCurrency={preferredCurrency}
               customRates={customRates}
               layout="stacked"
-              baseClassName="text-xl font-black text-slate-950"
+              baseClassName="text-xl font-black text-white"
             />
           </div>
-          <span className="text-[10px] text-slate-600 block mt-1">{group.members.length} Members</span>
+          <span className="text-[10px] text-blue-200/80 block mt-1">{group.members.length} Members</span>
         </GlassContainer>
       </div>
 
       {/* SECTION 1: Member-wise Calculation Table */}
-      <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-4">
-        <div className="flex items-center justify-between border-b border-black/20 pb-3">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <User className="w-4 h-4 text-slate-900" />
+      <GlassContainer variant="card" className="p-5 border border-blue-400/25 bg-[#0B2556] text-white shadow-md space-y-4">
+        <div className="flex items-center justify-between border-b border-blue-400/20 pb-3">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <User className="w-4 h-4 text-blue-300" />
             Member-wise Calculation Breakdown
           </h3>
-          <span className="text-xs text-slate-700 font-medium">
-            Split Mode: <strong className="text-slate-950">Equal Split</strong>
+          <span className="text-xs text-blue-200 font-medium">
+            Split Mode: <strong className="text-white">Equal Split</strong>
           </span>
         </div>
 
@@ -503,33 +547,33 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
             return (
               <div
                 key={ms.memberId}
-                className="bg-white p-3.5 rounded-2xl border border-black space-y-2.5 text-xs text-slate-900 shadow-xs"
+                className="bg-[#07193F] p-3.5 rounded-2xl border border-blue-400/20 space-y-2.5 text-xs text-white shadow-xs"
               >
-                <div className="flex items-center justify-between border-b border-black/20 pb-2">
-                  <span className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-slate-900" />
+                <div className="flex items-center justify-between border-b border-blue-400/20 pb-2">
+                  <span className="font-extrabold text-sm text-white flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-blue-300" />
                     {ms.memberName}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-[11px]">
-                  <div className="bg-slate-50 p-2 rounded-xl border border-black">
-                    <span className="text-slate-600 block text-[10px] font-medium">Actual Share</span>
-                    <span className="font-extrabold text-slate-950">{ms.totalActualExpense.toFixed(2)} AED</span>
+                  <div className="bg-[#0B2556] p-2 rounded-xl border border-blue-400/20">
+                    <span className="text-blue-200/80 block text-[10px] font-medium">Actual Share</span>
+                    <span className="font-extrabold text-white">{ms.totalActualExpense.toFixed(2)} AED</span>
                   </div>
-                  <div className="bg-slate-50 p-2 rounded-xl border border-black">
-                    <span className="text-slate-600 block text-[10px] font-medium">Amount Paid</span>
-                    <span className="font-extrabold text-slate-950">{ms.totalAmountSpent.toFixed(2)} AED</span>
+                  <div className="bg-[#0B2556] p-2 rounded-xl border border-blue-400/20">
+                    <span className="text-blue-200/80 block text-[10px] font-medium">Amount Paid</span>
+                    <span className="font-extrabold text-white">{ms.totalAmountSpent.toFixed(2)} AED</span>
                   </div>
                 </div>
 
                 <div className="pt-1 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-700 font-semibold">Final Status:</span>
+                  <span className="text-[11px] text-blue-200 font-semibold">Final Status:</span>
                   <span
                     className={`inline-block px-3 py-1 rounded-xl text-xs font-black ${
                       isOverpaid
-                        ? 'bg-slate-100 text-slate-900 border border-black'
-                        : 'bg-rose-50 text-rose-950 border border-black'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                        : 'bg-rose-500/20 text-rose-300 border border-rose-400/30'
                     }`}
                   >
                     {isOverpaid ? `+${ms.balance.toFixed(2)} AED (Gets Back)` : `${ms.balance.toFixed(2)} AED (DUE)`}
@@ -544,28 +588,28 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-100 text-slate-900 uppercase tracking-wider font-bold border-b border-black">
+              <tr className="bg-[#07193F] text-blue-200 uppercase tracking-wider font-bold border-b border-blue-400/20">
                 <th className="py-3 px-3">Member</th>
                 <th className="py-3 px-2 text-right">Actual Expense Share</th>
                 <th className="py-3 px-2 text-right">Amount Paid</th>
                 <th className="py-3 px-3 text-right">Final Balance</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-black/15 font-medium text-slate-900">
+            <tbody className="divide-y divide-blue-400/15 font-medium text-white">
               {settlementResult.memberSummaries.map((ms) => {
                 const isOverpaid = ms.balance >= 0;
 
                 return (
-                  <tr key={ms.memberId} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-3 font-bold text-slate-900">
+                  <tr key={ms.memberId} className="hover:bg-[#07193F]/50 transition-colors">
+                    <td className="py-3 px-3 font-bold text-white">
                       <span>{ms.memberName}</span>
                     </td>
 
-                    <td className="py-3 px-2 text-right font-semibold text-slate-800">
+                    <td className="py-3 px-2 text-right font-semibold text-blue-100">
                       {ms.totalActualExpense.toFixed(2)} AED
                     </td>
 
-                    <td className="py-3 px-2 text-right font-bold text-slate-950">
+                    <td className="py-3 px-2 text-right font-bold text-white">
                       {ms.totalAmountSpent.toFixed(2)} AED
                     </td>
 
@@ -573,8 +617,8 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                       <span
                         className={`inline-block px-2.5 py-1 rounded-xl text-xs ${
                           isOverpaid
-                            ? 'bg-slate-100 text-slate-900 border border-black'
-                            : 'bg-rose-50 text-rose-950 border border-black'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                            : 'bg-rose-500/20 text-rose-300 border border-rose-400/30'
                         }`}
                       >
                         {isOverpaid ? `+${ms.balance.toFixed(2)} AED (Gets Back)` : `${ms.balance.toFixed(2)} AED (DUE)`}
@@ -586,82 +630,6 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
             </tbody>
           </table>
         </div>
-      </GlassContainer>
-
-      {/* SECTION 2: Settlement Flow ("Who needs to pay whom") */}
-      <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-4">
-        <div className="flex items-center justify-between border-b border-black/20 pb-3">
-          <div>
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-slate-900" />
-              Simplified Debt Settlement Flow
-            </h3>
-            <p className="text-xs text-slate-600 mt-0.5">
-              Minimum number of transactions needed to clear all room debts
-            </p>
-          </div>
-
-          <span className="bg-black text-white text-xs font-bold px-3 py-1 rounded-full border border-black">
-            {settlementResult.settlementFlows.length} Direct Payments
-          </span>
-        </div>
-
-        {settlementResult.settlementFlows.length > 0 ? (
-          <div className="space-y-3">
-            {settlementResult.settlementFlows.map((flow) => (
-              <div
-                key={flow.id}
-                className="bg-white border border-black rounded-3xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 hover:border-black transition-all text-slate-900 shadow-xs"
-              >
-                {/* Payer (Debtor) */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-black text-white border border-black font-bold flex items-center justify-center shrink-0">
-                    {flow.fromMemberName.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block">
-                      Payer (DUE)
-                    </span>
-                    <h4 className="text-sm font-bold text-slate-900">{flow.fromMemberName}</h4>
-                  </div>
-                </div>
-
-                {/* Arrow & Amount */}
-                <div className="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-2xl border border-black">
-                  <span className="text-xs text-slate-800 font-medium">pays</span>
-                  <ArrowRight className="w-4 h-4 text-slate-900" />
-                  <DualCurrencyDisplay
-                    amount={flow.amount}
-                    baseCurrency={group.currency}
-                    preferredCurrency={preferredCurrency}
-                    customRates={customRates}
-                    layout="pill"
-                    baseClassName="text-base font-black text-slate-950"
-                  />
-                </div>
-
-                {/* Receiver (Creditor) */}
-                <div className="flex items-center gap-3">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block text-right sm:text-left">
-                      Receiver (Gets Back)
-                    </span>
-                    <h4 className="text-sm font-bold text-slate-900">{flow.toMemberName}</h4>
-                  </div>
-                  <div className="w-10 h-10 rounded-2xl bg-black text-white border border-black font-bold flex items-center justify-center shrink-0">
-                    {flow.toMemberName.substring(0, 2).toUpperCase()}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 bg-slate-50 rounded-3xl border border-black p-4">
-            <CheckCircle className="w-8 h-8 text-black mx-auto mb-2" />
-            <h4 className="text-sm font-bold text-slate-900">All Expenses Settled Perfectly!</h4>
-            <p className="text-xs text-slate-600 mt-1">No member has DUE money to another member in this cycle.</p>
-          </div>
-        )}
       </GlassContainer>
 
       {/* PDF REPORT PREVIEW MODAL / PAGE (Rendered via Portal to top of body) */}

@@ -101,26 +101,26 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
         onClick={(e) => e.stopPropagation()}
         variant="modal"
         blur="3xl"
-        className="w-full max-w-2xl h-[90vh] sm:h-[82vh] rounded-3xl border-2 border-black shadow-2xl flex flex-col overflow-hidden relative cursor-default bg-white text-slate-900"
+        className="w-full max-w-2xl h-[90vh] sm:h-[82vh] rounded-3xl border border-blue-900/40 shadow-2xl flex flex-col overflow-hidden relative cursor-default bg-white text-slate-900"
       >
-        {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b-2 border-black bg-white flex items-center justify-between shrink-0">
+        {/* Modal Header - Navy Theme */}
+        <div className="p-4 sm:p-5 border-b border-blue-900/40 bg-gradient-to-r from-[#07193F] to-[#041029] text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-black text-white font-black flex items-center justify-center shadow-md border border-black text-lg">
+            <div className="w-11 h-11 rounded-2xl bg-[#0052FF] text-white font-black flex items-center justify-center shadow-md border border-blue-400/30 text-lg">
               <MessageCircle className="w-6 h-6 stroke-[2.5]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black text-slate-950">
+                <h2 className="text-base sm:text-lg font-black text-white">
                   {group.name} Chat
                 </h2>
-                <span className="bg-black text-white text-[10px] font-bold px-2 py-0.5 rounded-full border border-black flex items-center gap-1">
+                <span className="bg-blue-500/20 text-blue-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-400/30 flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   {group.members.length} Members
                 </span>
               </div>
-              <p className="text-xs text-slate-700 font-medium flex items-center gap-1 mt-0.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-slate-900" />
+              <p className="text-xs text-blue-100/80 font-medium flex items-center gap-1 mt-0.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-blue-300" />
                 Live Room Expenses & General Discussions
               </p>
             </div>
@@ -128,7 +128,7 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
 
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-900 flex items-center justify-center transition-colors border border-black cursor-pointer"
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors border border-white/20 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -293,7 +293,7 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
             <button
               type="submit"
               disabled={!inputText.trim()}
-              className="bg-black hover:bg-slate-800 text-white font-black px-4 py-3 rounded-2xl shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 border border-black active:scale-95 shrink-0 text-xs sm:text-sm cursor-pointer"
+              className="bg-[#07193F] hover:bg-[#0B2556] text-white font-black px-4 py-3 rounded-2xl shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 border border-blue-900/40 active:scale-95 shrink-0 text-xs sm:text-sm cursor-pointer"
             >
               <span>Send</span>
               <Send className="w-4 h-4 stroke-[2.5]" />

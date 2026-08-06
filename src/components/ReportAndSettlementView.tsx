@@ -86,6 +86,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       if (typeof imported === 'function') return imported;
       if (typeof imported?.default === 'function') return imported.default;
       if (typeof imported?.default?.default === 'function') return imported.default.default;
+      if (typeof (window as any)?.html2pdf === 'function') return (window as any).html2pdf;
     } catch (err) {
       console.warn('html2pdf engine import error:', err);
     }
@@ -117,7 +118,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           margin: [5, 5, 5, 5],
           filename: fileName,
           image: { type: 'jpeg' as const, quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            onclone: sanitizeDocumentForHtml2Canvas,
+          },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
         };
         const worker = engine().set(opt).from(element);
@@ -196,6 +204,11 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
   const sanitizeDocumentForHtml2Canvas = (clonedDoc: Document) => {
     try {
+      // 1. Remove external link stylesheets so html2canvas doesn't fail parsing Tailwind v4 CSS functions (oklch, oklab) on Vercel production bundles
+      const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
+      links.forEach((link) => link.remove());
+
+      // 2. Sanitize existing style tags
       const styles = clonedDoc.querySelectorAll('style');
       styles.forEach((s) => {
         if (s.textContent) {
@@ -203,6 +216,35 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         }
       });
 
+      // 3. Inject explicit self-contained light theme styles for html2canvas
+      const styleTag = clonedDoc.createElement('style');
+      styleTag.textContent = `
+        * { color-scheme: light !important; box-sizing: border-box !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        #pdf-report-document { background-color: #ffffff !important; color: #0f172a !important; font-family: system-ui, -apple-system, sans-serif !important; margin: 0 auto !important; width: 100% !important; }
+        .bg-white { background-color: #ffffff !important; }
+        .bg-slate-50 { background-color: #f8fafc !important; }
+        .bg-slate-100 { background-color: #f1f5f9 !important; }
+        .bg-emerald-50 { background-color: #ecfdf5 !important; }
+        .bg-emerald-100 { background-color: #d1fae5 !important; }
+        .bg-amber-100 { background-color: #fef3c7 !important; }
+        .bg-slate-900 { background-color: #0f172a !important; }
+        .text-slate-900, .text-slate-950 { color: #0f172a !important; }
+        .text-slate-800 { color: #1e293b !important; }
+        .text-slate-700 { color: #334155 !important; }
+        .text-slate-600 { color: #475569 !important; }
+        .text-slate-500, .text-slate-400 { color: #64748b !important; }
+        .text-emerald-700, .text-emerald-800, .text-emerald-900, .text-emerald-950 { color: #047857 !important; }
+        .text-rose-700, .text-rose-500 { color: #be123c !important; }
+        .text-amber-700 { color: #b45309 !important; }
+        .border-slate-200 { border-color: #e2e8f0 !important; }
+        .border-slate-400 { border-color: #94a3b8 !important; }
+        .border-slate-900 { border-color: #0f172a !important; }
+        .border-emerald-200, .border-emerald-300 { border-color: #a7f3d0 !important; }
+        .border-amber-300 { border-color: #fcd34d !important; }
+      `;
+      clonedDoc.head.appendChild(styleTag);
+
+      // 4. Clean up element inline style attributes
       const elements = clonedDoc.querySelectorAll('*');
       elements.forEach((el) => {
         const htmlEl = el as HTMLElement;
@@ -210,11 +252,6 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         if (styleAttr) {
           htmlEl.setAttribute('style', sanitizeCssText(styleAttr));
         }
-      });
-
-      const imgs = clonedDoc.querySelectorAll('img');
-      imgs.forEach((img) => {
-        img.setAttribute('crossorigin', 'anonymous');
       });
     } catch (e) {
       console.warn('Sanitize document for html2canvas failed:', e);
@@ -247,15 +284,30 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           useCORS: true,
           allowTaint: true,
           logging: false,
+          backgroundColor: '#ffffff',
           onclone: sanitizeDocumentForHtml2Canvas,
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
       };
 
-      // Native html2pdf save triggers direct browser download reliably on Vercel
-      await engine().set(opt).from(element).save(fileName);
+      try {
+        await engine().set(opt).from(element).save(fileName);
+      } catch (saveErr) {
+        console.warn('Direct html2pdf save failed, falling back to blob download:', saveErr);
+        const worker = engine().set(opt).from(element);
+        const blob = await worker.output('blob');
+        const blobUrl = URL.createObjectURL(blob);
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.href = blobUrl;
+        downloadAnchor.download = fileName;
+        downloadAnchor.style.display = 'none';
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        document.body.removeChild(downloadAnchor);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
+      }
     } catch (err) {
-      console.error('PDF export error, using fallback print():', err);
+      console.error('PDF export error, falling back to window.print():', err);
       window.print();
     } finally {
       setIsGeneratingPdf(false);
@@ -299,7 +351,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               margin: [5, 5, 5, 5],
               filename: fileName,
               image: { type: 'jpeg' as const, quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, onclone: sanitizeDocumentForHtml2Canvas },
+              html2canvas: {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                logging: false,
+                backgroundColor: '#ffffff',
+                onclone: sanitizeDocumentForHtml2Canvas,
+              },
               jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
             };
 
@@ -311,8 +370,13 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         }
       }
 
-      // 1. Try sharing PDF file via Web Share API
-      if (targetFile && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [targetFile] })) {
+      // 1. Web Share API with PDF file (Supported mobile browsers)
+      if (
+        targetFile &&
+        typeof navigator !== 'undefined' &&
+        navigator.canShare &&
+        navigator.canShare({ files: [targetFile] })
+      ) {
         try {
           await navigator.share({
             title: `${group.name} Settlement Report`,
@@ -322,11 +386,10 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           return;
         } catch (shareErr: any) {
           if (shareErr?.name === 'AbortError') return;
-          console.warn('Native PDF file share rejected or failed:', shareErr);
         }
       }
 
-      // 2. Fallback to native text share sheet
+      // 2. Web Share API with text summary (Mobile browsers text share sheet)
       if (typeof navigator !== 'undefined' && navigator.share) {
         try {
           await navigator.share({
@@ -339,16 +402,21 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         }
       }
 
-      // 3. Fallback to copying summary text and opening WhatsApp
+      // 3. Desktop / Clipboard fallback: Copy text to clipboard and open WhatsApp
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        await navigator.clipboard.writeText(summaryText);
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 3000);
+        try {
+          await navigator.clipboard.writeText(summaryText);
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 3000);
+        } catch (clipErr) {
+          console.warn('Clipboard write failed:', clipErr);
+        }
       }
 
       handleShareWhatsApp();
     } catch (e) {
       console.warn('Fallback share error:', e);
+      handleShareWhatsApp();
     } finally {
       setIsSharingPdf(false);
     }

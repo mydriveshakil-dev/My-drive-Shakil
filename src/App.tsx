@@ -1204,9 +1204,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col font-sans text-slate-900 selection:bg-[#0F3DFF] selection:text-white antialiased max-w-full overflow-x-hidden bg-[#07193F]">
+    <div className="min-h-screen relative flex flex-col font-sans text-slate-900 selection:bg-[#0F3DFF] selection:text-white antialiased max-w-full overflow-x-hidden bg-[#F6F8FC]">
       {/* Global Background Theme */}
-      <div className="ios26-wallpaper-bg bg-[#07193F]" />
+      <div className="ios26-wallpaper-bg bg-[#F6F8FC]" />
 
       {/* Toast Sync Notification */}
       {syncNotification && (

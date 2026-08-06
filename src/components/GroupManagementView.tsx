@@ -260,20 +260,20 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* ADMIN PERMISSION CONTROL SECTION (Visible ONLY to App Admin) */}
       {isAdmin && (
-        <GlassContainer variant="card" className="p-5 border border-blue-400/25 bg-[#0B2556] text-white shadow-md space-y-4 relative overflow-hidden">
-          <div className="flex items-center justify-between border-b border-blue-400/20 pb-3">
+        <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-4 relative overflow-hidden">
+          <div className="flex items-center justify-between border-b border-black/20 pb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#0052FF] text-white flex items-center justify-center font-bold border border-blue-400/30 shadow-md">
+              <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold border border-black">
                 <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-black text-white">App Admin Management Controls</h3>
-                  <span className="bg-[#0052FF] text-white text-[10px] font-black px-2.5 py-0.5 rounded-full border border-blue-400/30">
+                  <h3 className="text-base font-black text-slate-900">App Admin Management Controls</h3>
+                  <span className="bg-black text-white text-[10px] font-black px-2.5 py-0.5 rounded-full border border-black">
                     FULL ACCESS
                   </span>
                 </div>
-                <p className="text-xs text-blue-200">
+                <p className="text-xs text-slate-700">
                   Create new room groups, hold/pause groups, delete groups & modify base currency.
                 </p>
               </div>
@@ -282,15 +282,15 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
           {/* Group Held Status Warning Banner */}
           {group.isHeld && (
-            <div className="bg-[#07193F] text-white p-3.5 rounded-2xl flex items-center justify-between text-xs border border-blue-400/30">
+            <div className="bg-black text-white p-3.5 rounded-2xl flex items-center justify-between text-xs border border-black">
               <div className="flex items-center gap-2">
-                <PauseCircle className="w-5 h-5 text-amber-400 shrink-0" />
+                <PauseCircle className="w-5 h-5 text-white shrink-0" />
                 <span>This room group is currently on <strong>HOLD / PAUSED</strong> by the App Admin.</span>
               </div>
               {onToggleHoldGroup && (
                 <button
                   onClick={() => onToggleHoldGroup(group.id)}
-                  className="bg-[#0052FF] text-white font-black px-3 py-1 rounded-xl text-xs hover:bg-blue-600 transition-all cursor-pointer border border-blue-400/30"
+                  className="bg-white text-black font-black px-3 py-1 rounded-xl text-xs hover:bg-slate-100 transition-all cursor-pointer border border-black"
                 >
                   Resume Group
                 </button>
@@ -301,14 +301,14 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
           {/* Admin Action Buttons Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
             {/* Action 1: Create New Group */}
-            <div className="bg-[#07193F] p-3.5 rounded-2xl border border-blue-400/20 flex flex-col justify-between space-y-2">
+            <div className="bg-white p-3.5 rounded-2xl border border-black flex flex-col justify-between space-y-2">
               <div>
-                <span className="text-blue-300 font-extrabold uppercase text-[10px]">Group Creation</span>
-                <div className="text-white font-bold text-xs mt-0.5">Create New Room Group</div>
+                <span className="text-slate-900 font-extrabold uppercase text-[10px]">Group Creation</span>
+                <div className="text-slate-900 font-bold text-xs mt-0.5">Create New Room Group</div>
               </div>
               <button
                 onClick={() => setShowCreateGroup(true)}
-                className="w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer bg-[#0052FF] hover:bg-blue-600 text-white shadow-md border border-blue-400/30"
+                className="w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer bg-black hover:bg-slate-800 text-white shadow-md border border-black"
               >
                 <FolderPlus className="w-4 h-4" />
                 <span>+ Create Group</span>
@@ -316,10 +316,10 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             </div>
 
             {/* Action 2: Hold / Pause Group */}
-            <div className="bg-[#07193F] p-3.5 rounded-2xl border border-blue-400/20 flex flex-col justify-between space-y-2">
+            <div className="bg-white p-3.5 rounded-2xl border border-black flex flex-col justify-between space-y-2">
               <div>
-                <span className="text-blue-300 font-extrabold uppercase text-[10px]">Group Status</span>
-                <div className="text-white font-bold text-xs mt-0.5">
+                <span className="text-slate-900 font-extrabold uppercase text-[10px]">Group Status</span>
+                <div className="text-slate-900 font-bold text-xs mt-0.5">
                   {group.isHeld ? 'Group is Paused' : 'Active Room State'}
                 </div>
               </div>
@@ -329,8 +329,8 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 }}
                 className={`w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   group.isHeld
-                    ? 'bg-[#0052FF] text-white shadow-md border border-blue-400/30'
-                    : 'bg-[#0B2556] text-white border border-blue-400/30 hover:bg-blue-900/30 shadow-md'
+                    ? 'bg-black text-white shadow-md border border-black'
+                    : 'bg-white text-slate-900 border border-black hover:bg-slate-100 shadow-md'
                 }`}
               >
                 {group.isHeld ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
@@ -339,10 +339,10 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             </div>
 
             {/* Action 3: Change Base Currency */}
-            <div className="bg-[#07193F] p-3.5 rounded-2xl border border-blue-400/20 flex flex-col justify-between space-y-2">
+            <div className="bg-white p-3.5 rounded-2xl border border-black flex flex-col justify-between space-y-2">
               <div>
-                <span className="text-blue-300 font-extrabold uppercase text-[10px]">Base Currency</span>
-                <div className="text-white font-bold text-xs mt-0.5">
+                <span className="text-slate-900 font-extrabold uppercase text-[10px]">Base Currency</span>
+                <div className="text-slate-900 font-bold text-xs mt-0.5">
                   Primary: <strong>{group.currency}</strong>
                 </div>
               </div>
@@ -352,7 +352,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   if (onChangeBaseCurrency) onChangeBaseCurrency(e.target.value);
                   triggerHaptic(hapticPatterns.click);
                 }}
-                className="w-full py-2 px-3 rounded-xl font-extrabold text-xs bg-[#0B2556] text-white border border-blue-400/30 focus:outline-none cursor-pointer"
+                className="w-full py-2 px-3 rounded-xl font-extrabold text-xs bg-white text-slate-900 border border-black focus:outline-none cursor-pointer"
               >
                 <option value="AED">AED (Dirham)</option>
                 <option value="USD">USD (US Dollar)</option>
@@ -364,14 +364,14 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             </div>
 
             {/* Action 4: Delete / Remove Group */}
-            <div className="bg-[#07193F] p-3.5 rounded-2xl border border-blue-400/20 flex flex-col justify-between space-y-2">
+            <div className="bg-white p-3.5 rounded-2xl border border-black flex flex-col justify-between space-y-2">
               <div>
-                <span className="text-blue-300 font-extrabold uppercase text-[10px]">Delete Group</span>
-                <div className="text-white font-bold text-xs mt-0.5">Remove Room Group</div>
+                <span className="text-slate-900 font-extrabold uppercase text-[10px]">Delete Group</span>
+                <div className="text-slate-900 font-bold text-xs mt-0.5">Remove Room Group</div>
               </div>
               <button
                 onClick={() => setDeleteConfirmGroup(group)}
-                className="w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer bg-rose-950/60 hover:bg-rose-900 text-rose-200 border border-rose-500/40 shadow-md"
+                className="w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer bg-white text-slate-900 hover:bg-slate-100 border border-black shadow-md"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>Delete Group</span>
@@ -383,21 +383,21 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* CREATE NEW GROUP MODAL FORM */}
       {showCreateGroup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
           <GlassContainer
             variant="modal"
             blur="3xl"
-            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border border-blue-400/30 shadow-2xl space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto bg-[#0B2556] text-white"
+            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border-2 border-black shadow-2xl space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto bg-white text-slate-900"
           >
-            <div className="flex items-center justify-between border-b border-blue-400/20 pb-3">
-              <h3 className="text-lg font-black text-white flex items-center gap-2">
-                <FolderPlus className="w-5 h-5 text-blue-300" />
+            <div className="flex items-center justify-between border-b-2 border-black pb-3">
+              <h3 className="text-lg font-black text-slate-950 flex items-center gap-2">
+                <FolderPlus className="w-5 h-5 text-slate-900" />
                 <span>Create New Room Group</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setShowCreateGroup(false)}
-                className="text-blue-200 hover:text-white text-xs font-bold px-2 py-1 rounded-lg hover:bg-[#07193F] transition-all cursor-pointer border border-blue-400/20"
+                className="text-slate-700 hover:text-black text-xs font-bold px-2 py-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer border border-black"
               >
                 Cancel
               </button>
@@ -405,23 +405,23 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
             <form onSubmit={handleCreateGroupSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-white uppercase tracking-wider mb-1">Group / Room Name *</label>
+                <label className="block font-bold text-slate-900 uppercase tracking-wider mb-1">Group / Room Name *</label>
                 <input
                   type="text"
                   placeholder="e.g. DSO Villa 402 / Silicon Oasis Room 3"
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#07193F] border border-blue-400/30 rounded-2xl font-bold text-white placeholder-blue-300/40 focus:outline-none focus:ring-2 focus:ring-[#0052FF]"
+                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black"
                   required
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-white uppercase tracking-wider mb-1">Base Room Currency *</label>
+                <label className="block font-bold text-slate-900 uppercase tracking-wider mb-1">Base Room Currency *</label>
                 <select
                   value={newGroupCurrency}
                   onChange={(e) => setNewGroupCurrency(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#07193F] border border-blue-400/30 rounded-2xl font-bold text-white focus:outline-none focus:ring-2 focus:ring-[#0052FF] cursor-pointer"
+                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-black cursor-pointer"
                 >
                   <option value="AED">AED - UAE Dirham</option>
                   <option value="USD">USD - US Dollar</option>
@@ -434,7 +434,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
               <button
                 type="submit"
-                className="w-full bg-[#0052FF] hover:bg-blue-600 text-white font-black py-3.5 rounded-2xl text-sm shadow-md transition-all cursor-pointer border border-blue-400/40 uppercase tracking-wider shadow-blue-600/30"
+                className="w-full bg-black hover:bg-slate-800 text-white font-black py-3.5 rounded-2xl text-sm shadow-md transition-all cursor-pointer border border-black uppercase tracking-wider"
               >
                 Confirm & Create Group
               </button>
@@ -445,24 +445,24 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* DELETE GROUP CONFIRMATION MODAL */}
       {deleteConfirmGroup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
           <GlassContainer
             variant="modal"
             blur="3xl"
-            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border border-rose-500/40 shadow-2xl space-y-4 text-white my-auto relative box-border max-h-[90vh] overflow-y-auto bg-[#0B2556]"
+            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border-2 border-black shadow-2xl space-y-4 text-slate-900 my-auto relative box-border max-h-[90vh] overflow-y-auto bg-white"
           >
-            <div className="flex items-center gap-3 border-b border-rose-500/30 pb-3">
-              <Trash2 className="w-6 h-6 shrink-0 text-rose-400" />
-              <h3 className="text-lg font-black text-white">Delete Room Group</h3>
+            <div className="flex items-center gap-3 border-b-2 border-black pb-3">
+              <Trash2 className="w-6 h-6 shrink-0 text-slate-900" />
+              <h3 className="text-lg font-black text-slate-950">Delete Room Group</h3>
             </div>
-            <p className="text-xs text-blue-100 font-medium leading-relaxed">
-              Are you sure you want to delete room group <strong className="text-white font-black">{deleteConfirmGroup.name}</strong>? All associated room data and member configurations for this group will be removed.
+            <p className="text-xs text-slate-800 font-medium leading-relaxed">
+              Are you sure you want to delete room group <strong className="text-slate-950 font-black">{deleteConfirmGroup.name}</strong>? All associated room data and member configurations for this group will be removed.
             </p>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-blue-400/20">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-black">
               <button
                 type="button"
                 onClick={() => setDeleteConfirmGroup(null)}
-                className="px-4 py-2 bg-[#07193F] hover:bg-blue-900/40 border border-blue-400/30 rounded-xl text-xs font-bold text-white transition-all cursor-pointer"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-black rounded-xl text-xs font-bold text-slate-900 transition-all cursor-pointer"
               >
                 Cancel
               </button>
@@ -473,7 +473,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   setDeleteConfirmGroup(null);
                   triggerHaptic(hapticPatterns.error);
                 }}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black shadow-md transition-all cursor-pointer border border-rose-400/40 uppercase tracking-wider"
+                className="px-4 py-2 bg-black hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-md transition-all cursor-pointer border border-black uppercase tracking-wider"
               >
                 Confirm & Delete
               </button>
@@ -484,24 +484,24 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* DELETE MEMBER CONFIRMATION MODAL */}
       {deleteConfirmMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
           <GlassContainer
             variant="modal"
             blur="3xl"
-            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border border-rose-500/40 shadow-2xl space-y-4 text-white my-auto relative box-border max-h-[90vh] overflow-y-auto bg-[#0B2556]"
+            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border-2 border-black shadow-2xl space-y-4 text-slate-900 my-auto relative box-border max-h-[90vh] overflow-y-auto bg-white"
           >
-            <div className="flex items-center gap-3 border-b border-rose-500/30 pb-3">
-              <Trash2 className="w-6 h-6 shrink-0 text-rose-400" />
-              <h3 className="text-lg font-black text-white">Delete Room Member</h3>
+            <div className="flex items-center gap-3 border-b-2 border-black pb-3">
+              <Trash2 className="w-6 h-6 shrink-0 text-slate-900" />
+              <h3 className="text-lg font-black text-slate-950">Delete Room Member</h3>
             </div>
-            <p className="text-xs text-blue-100 font-medium leading-relaxed">
-              Are you sure you want to delete member <strong className="text-white font-black">{deleteConfirmMember.name}</strong> ({deleteConfirmMember.phone || deleteConfirmMember.email || 'No contact info'}) from <strong className="text-white font-black">{group.name}</strong>?
+            <p className="text-xs text-slate-800 font-medium leading-relaxed">
+              Are you sure you want to delete member <strong className="text-slate-950 font-black">{deleteConfirmMember.name}</strong> ({deleteConfirmMember.phone || deleteConfirmMember.email || 'No contact info'}) from <strong className="text-slate-950 font-black">{group.name}</strong>?
             </p>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-blue-400/20">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-black">
               <button
                 type="button"
                 onClick={() => setDeleteConfirmMember(null)}
-                className="px-4 py-2 bg-[#07193F] hover:bg-blue-900/40 border border-blue-400/30 rounded-xl text-xs font-bold text-white transition-all cursor-pointer"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-black rounded-xl text-xs font-bold text-slate-900 transition-all cursor-pointer"
               >
                 Cancel
               </button>
@@ -512,7 +512,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   setDeleteConfirmMember(null);
                   triggerHaptic(hapticPatterns.error);
                 }}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black shadow-lg transition-all cursor-pointer border border-rose-400/40"
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-lg transition-all cursor-pointer"
               >
                 Confirm & Delete Member
               </button>
@@ -523,21 +523,21 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* SECTION 1: Google Sheets Direct Integration Panel (Admin Only) */}
       {isAdmin && (
-        <GlassContainer variant="card" className="p-5 border border-blue-400/25 bg-[#0B2556] text-white shadow-md space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-blue-400/20 pb-3 gap-3">
+        <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-black/20 pb-3 gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#0052FF] text-white flex items-center justify-center font-bold border border-blue-400/30 shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold border border-black shrink-0">
                 <FileSpreadsheet className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-white">Master Google Sheet Storage</h3>
-                  <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-400/30">
+                  <h3 className="text-base font-bold text-slate-900">Master Google Sheet Storage</h3>
+                  <span className="bg-black text-white text-[10px] font-bold px-2 py-0.5 rounded-full border border-black">
                     Connected Live
                   </span>
                 </div>
-                <p className="text-xs text-blue-200">
-                  Shared Account: <strong className="text-white">Master Cloud Account (Connected)</strong>
+                <p className="text-xs text-slate-700">
+                  Shared Account: <strong className="text-slate-950">Master Cloud Account (Connected)</strong>
                 </p>
               </div>
             </div>
@@ -550,7 +550,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   onSyncSheetsNow();
                 }}
                 disabled={isSyncing}
-                className="bg-[#0052FF] hover:bg-blue-600 text-white font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer border border-blue-400/30 disabled:opacity-50"
+                className="bg-black hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span>{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
@@ -562,7 +562,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   triggerHaptic(hapticPatterns.click);
                   setIsEditingSheetConfig(!isEditingSheetConfig);
                 }}
-                className="bg-[#07193F] hover:bg-blue-900/40 text-blue-100 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all border border-blue-400/30 active:scale-95 cursor-pointer"
+                className="bg-white hover:bg-slate-100 text-slate-900 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all border border-black active:scale-95 cursor-pointer"
               >
                 <Edit className="w-3.5 h-3.5" />
                 <span>{isEditingSheetConfig ? 'Close Settings' : 'Edit Sheet ID'}</span>
@@ -572,31 +572,31 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
           {/* Edit Sheet Config Form */}
           {isEditingSheetConfig && (
-            <form onSubmit={handleSaveSheetConfigSubmit} className="bg-[#07193F] p-4 rounded-2xl border border-blue-400/25 space-y-3">
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider">Configure Google Sheet & Web App Script</h4>
+            <form onSubmit={handleSaveSheetConfigSubmit} className="bg-slate-50 p-4 rounded-2xl border border-black space-y-3">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Configure Google Sheet & Web App Script</h4>
               <div className="space-y-2">
                 <div>
-                  <label className="block text-[11px] text-blue-200 font-semibold mb-1">Google Spreadsheet ID:</label>
+                  <label className="block text-[11px] text-slate-900 font-semibold mb-1">Google Spreadsheet ID:</label>
                   <input
                     type="text"
                     value={sheetIdInput}
                     onChange={(e) => setSheetIdInput(e.target.value)}
                     placeholder="e.g. 1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM"
-                    className="w-full bg-[#0B2556] border border-blue-400/30 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-[#0052FF]"
+                    className="w-full bg-white border border-black rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-black"
                   />
-                  <p className="text-[10px] text-blue-300/70 mt-0.5">Found in your Google Sheet URL between /d/ and /edit</p>
+                  <p className="text-[10px] text-slate-600 mt-0.5">Found in your Google Sheet URL between /d/ and /edit</p>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-blue-200 font-semibold mb-1">Google Apps Script Web App URL (Optional for Direct Live Auto-Push):</label>
+                  <label className="block text-[11px] text-slate-900 font-semibold mb-1">Google Apps Script Web App URL (Optional for Direct Live Auto-Push):</label>
                   <input
                     type="text"
                     value={webAppUrlInput}
                     onChange={(e) => setWebAppUrlInput(e.target.value)}
                     placeholder="e.g. https://script.google.com/macros/s/AKfycb.../exec"
-                    className="w-full bg-[#0B2556] border border-blue-400/30 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-[#0052FF]"
+                    className="w-full bg-white border border-black rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-black"
                   />
-                  <p className="text-[10px] text-blue-300/70 mt-0.5">Optional Apps Script URL to push data live directly into your sheet on every edit.</p>
+                  <p className="text-[10px] text-slate-600 mt-0.5">Optional Apps Script URL to push data live directly into your sheet on every edit.</p>
                 </div>
               </div>
 
@@ -604,7 +604,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowAppsScriptModal(true)}
-                  className="text-xs text-blue-300 underline font-bold flex items-center gap-1 hover:text-white cursor-pointer"
+                  className="text-xs text-slate-900 underline font-bold flex items-center gap-1 hover:text-black cursor-pointer"
                 >
                   <Code className="w-3.5 h-3.5" />
                   Get 1-Click Apps Script Code
@@ -612,7 +612,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
                 <button
                   type="submit"
-                  className="bg-[#0052FF] hover:bg-blue-600 text-white font-black px-4 py-1.5 rounded-xl text-xs transition-all shadow-md active:scale-95 cursor-pointer border border-blue-400/30"
+                  className="bg-black hover:bg-slate-800 text-white font-black px-4 py-1.5 rounded-xl text-xs transition-all shadow-md active:scale-95 cursor-pointer"
                 >
                   Save & Sync Sheet
                 </button>
@@ -622,31 +622,31 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
           {/* Config details */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-            <div className="bg-[#07193F] p-3 rounded-2xl border border-blue-400/20">
-              <span className="text-blue-300 block text-[10px] uppercase font-bold">Central Spreadsheet ID</span>
-              <span className="font-mono font-bold text-white truncate block mt-0.5 text-xs" title={group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}>
+            <div className="bg-slate-50 p-3 rounded-2xl border border-black">
+              <span className="text-slate-700 block text-[10px] uppercase font-bold">Central Spreadsheet ID</span>
+              <span className="font-mono font-bold text-slate-950 truncate block mt-0.5 text-xs" title={group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}>
                 {group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}
               </span>
             </div>
 
-            <div className="bg-[#07193F] p-3 rounded-2xl border border-blue-400/20">
-              <span className="text-blue-300 block text-[10px] uppercase font-bold">Last Synced At</span>
-              <span className="font-bold text-white block mt-0.5">
+            <div className="bg-slate-50 p-3 rounded-2xl border border-black">
+              <span className="text-slate-700 block text-[10px] uppercase font-bold">Last Synced At</span>
+              <span className="font-bold text-slate-950 block mt-0.5">
                 {sheetsConfig.lastSyncedAt || 'Just Now'}
               </span>
             </div>
 
-            <div className="bg-[#07193F] p-3 rounded-2xl border border-blue-400/20">
-              <span className="text-blue-300 block text-[10px] uppercase font-bold">Group Currency</span>
-              <span className="font-bold text-white block mt-0.5">
+            <div className="bg-slate-50 p-3 rounded-2xl border border-black">
+              <span className="text-slate-700 block text-[10px] uppercase font-bold">Group Currency</span>
+              <span className="font-bold text-slate-950 block mt-0.5">
                 {group.currency} (United Arab Emirates Dirham)
               </span>
             </div>
           </div>
 
-          <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-blue-200">
+          <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-700">
             <span className="flex items-center gap-1.5 font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-slate-900 shrink-0" />
               Central DB Linked: Expenses, Members, and Utilities auto-sync to this Google Sheet.
             </span>
 
@@ -654,9 +654,9 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowAppsScriptModal(true)}
-                className="inline-flex items-center gap-1.5 bg-[#07193F] hover:bg-blue-900/40 text-blue-100 font-bold px-3 py-1.5 rounded-xl border border-blue-400/30 transition-all text-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-900 font-bold px-3 py-1.5 rounded-xl border border-black transition-all text-xs cursor-pointer"
               >
-                <Code className="w-3.5 h-3.5 text-blue-300" />
+                <Code className="w-3.5 h-3.5 text-slate-900" />
                 <span>Apps Script Code</span>
               </button>
 
@@ -664,7 +664,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 href={`https://docs.google.com/spreadsheets/d/${group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}/edit`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 bg-[#0052FF] hover:bg-blue-600 text-white font-black px-3.5 py-1.5 rounded-xl transition-all shadow-md active:scale-95 text-xs self-start sm:self-auto cursor-pointer border border-blue-400/30"
+                className="inline-flex items-center gap-1.5 bg-black hover:bg-slate-800 text-white font-black px-3.5 py-1.5 rounded-xl transition-all shadow-md active:scale-95 text-xs self-start sm:self-auto cursor-pointer"
               >
                 <span>Open Linked Google Sheet</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -676,27 +676,27 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* Apps Script Guide Modal */}
       {showAppsScriptModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-          <GlassContainer variant="card" className="max-w-2xl w-full p-6 space-y-4 border border-blue-400/30 bg-[#0B2556] text-white max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-blue-400/20 pb-3">
-              <div className="flex items-center gap-2 text-white font-bold text-base">
-                <Code className="w-5 h-5 text-blue-300" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <GlassContainer variant="card" className="max-w-2xl w-full p-6 space-y-4 border-2 border-black bg-white text-slate-900 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-black/20 pb-3">
+              <div className="flex items-center gap-2 text-slate-900 font-bold text-base">
+                <Code className="w-5 h-5 text-slate-900" />
                 <span>Google Apps Script Auto-Save Setup</span>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAppsScriptModal(false)}
-                className="text-blue-200 hover:text-white font-extrabold text-sm px-2 py-1 bg-[#07193F] rounded-lg cursor-pointer border border-blue-400/20"
+                className="text-slate-600 hover:text-black font-extrabold text-sm px-2 py-1 bg-slate-100 rounded-lg cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-blue-100 leading-relaxed font-medium">
+            <p className="text-xs text-slate-700 leading-relaxed font-medium">
               To connect your own Google Sheet for live auto-save without setup limits:
             </p>
 
-            <ol className="list-decimal list-inside text-xs text-blue-200 space-y-1.5 font-medium">
+            <ol className="list-decimal list-inside text-xs text-slate-800 space-y-1.5 font-medium">
               <li>Open your Google Sheet and click <strong>Extensions &gt; Apps Script</strong>.</li>
               <li>Delete any existing code, paste the script below, and click <strong>Save</strong>.</li>
               <li>Click <strong>Deploy &gt; New deployment &gt; Select type: Web App</strong>.</li>
@@ -704,7 +704,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               <li>Click <strong>Deploy</strong> and copy the generated Web App URL into the <strong>Google Sheet Settings</strong> input above.</li>
             </ol>
 
-            <div className="relative bg-[#07193F] p-3 rounded-xl border border-blue-400/30 text-white">
+            <div className="relative bg-slate-900 p-3 rounded-xl border border-black text-white">
               <pre className="text-[11px] font-mono text-emerald-300 whitespace-pre-wrap overflow-x-auto leading-tight">
 {`function doPost(e) {
   try {
@@ -770,7 +770,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   setCopiedScript(true);
                   setTimeout(() => setCopiedScript(false), 2500);
                 }}
-                className="absolute top-3 right-3 bg-[#0052FF] text-white font-extrabold px-3 py-1 rounded-lg text-xs cursor-pointer shadow-md active:scale-95 border border-blue-400/30"
+                className="absolute top-3 right-3 bg-white text-black font-extrabold px-3 py-1 rounded-lg text-xs cursor-pointer shadow-md active:scale-95 border border-black"
               >
                 {copiedScript ? 'Copied Code!' : 'Copy Apps Script'}
               </button>
@@ -780,7 +780,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowAppsScriptModal(false)}
-                className="bg-[#0052FF] text-white font-bold px-4 py-1.5 rounded-xl text-xs hover:bg-blue-600 cursor-pointer border border-blue-400/30"
+                className="bg-black text-white font-bold px-4 py-1.5 rounded-xl text-xs hover:bg-slate-800 cursor-pointer"
               >
                 Done
               </button>
@@ -791,15 +791,15 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* SECTION 2: Global Display Currency & Conversion Rates (Admin Only) */}
       {isAdmin && (
-        <GlassContainer variant="card" className="p-5 border border-blue-400/25 bg-[#0B2556] text-white shadow-md space-y-3">
+        <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Coins className="w-5 h-5 text-blue-300" />
+              <Coins className="w-5 h-5 text-slate-900" />
               <div>
-                <h3 className="text-base font-bold text-white">
+                <h3 className="text-base font-bold text-slate-900">
                   Preferred Display Currency & Conversion
                 </h3>
-                <p className="text-xs text-blue-200">
+                <p className="text-xs text-slate-700">
                   Display expense totals in both {group.currency} (base) and your local currency
                 </p>
               </div>
@@ -807,21 +807,21 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
             <button
               onClick={onOpenCurrencySettings}
-              className="bg-[#07193F] hover:bg-blue-900/40 text-white font-bold px-3.5 py-2 rounded-2xl text-xs flex items-center gap-1.5 border border-blue-400/30 transition-all cursor-pointer"
+              className="bg-white hover:bg-slate-100 text-slate-900 font-bold px-3.5 py-2 rounded-2xl text-xs flex items-center gap-1.5 border border-black transition-all cursor-pointer"
             >
-              <ArrowRightLeft className="w-3.5 h-3.5 text-blue-300" />
+              <ArrowRightLeft className="w-3.5 h-3.5 text-slate-900" />
               <span>Configure Currency</span>
             </button>
           </div>
 
-          <div className="bg-[#07193F] p-3.5 rounded-2xl border border-blue-400/20 flex items-center justify-between text-xs">
+          <div className="bg-slate-50 p-3.5 rounded-2xl border border-black flex items-center justify-between text-xs">
             <div>
-              <span className="text-blue-300 block text-[10px] uppercase font-bold">Currently Active Preferred Currency</span>
-              <span className="font-extrabold text-white text-sm block mt-0.5">
+              <span className="text-slate-700 block text-[10px] uppercase font-bold">Currently Active Preferred Currency</span>
+              <span className="font-extrabold text-slate-950 text-sm block mt-0.5">
                 {preferredCurrency} (Base Currency: {group.currency})
               </span>
             </div>
-            <span className="bg-[#0052FF] text-white font-bold px-2.5 py-1 rounded-full text-[11px] border border-blue-400/30 shadow-sm">
+            <span className="bg-black text-white font-bold px-2.5 py-1 rounded-full text-[11px] border border-black">
               Dual Currency Mode Active
             </span>
           </div>
@@ -829,11 +829,11 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       )}
 
       {/* SECTION 2: Members Management List */}
-      <GlassContainer variant="card" className="p-5 border border-blue-400/25 bg-[#0B2556] text-white shadow-md space-y-4">
-        <div className="flex items-center justify-between border-b border-blue-400/20 pb-3">
+      <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-4">
+        <div className="flex items-center justify-between border-b border-black/20 pb-3">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-300" />
-            <h3 className="text-base font-black text-white tracking-wide uppercase">
+            <Users className="w-5 h-5 text-slate-900" />
+            <h3 className="text-base font-black text-slate-900 tracking-wide uppercase">
               ACTIVE ROOM MEMBERS ({group.members.length})
             </h3>
           </div>
@@ -841,7 +841,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
           {isAdmin && (
             <button
               onClick={() => setShowAddMember(true)}
-              className="bg-[#0052FF] hover:bg-blue-600 text-white font-black px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-md border border-blue-400/30 active:scale-95 cursor-pointer"
+              className="bg-black hover:bg-slate-800 text-white font-black px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-md border border-black active:scale-95 cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               <span>+ Add Member</span>
@@ -856,26 +856,26 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             return (
               <div
                 key={member.id}
-                className="bg-[#07193F] border border-blue-400/20 rounded-3xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-white shadow-xs"
+                className="bg-white border border-black rounded-3xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-slate-900 shadow-xs"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#0052FF] text-white font-black flex items-center justify-center text-sm shadow-md shrink-0">
+                  <div className="w-10 h-10 rounded-2xl bg-black text-white font-black flex items-center justify-center text-sm shadow-md shrink-0">
                     {member.avatar}
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white">{member.name}</h4>
-                    <p className="text-xs text-blue-300 font-mono">{member.phone || member.email}</p>
+                    <h4 className="text-sm font-bold text-slate-900">{member.name}</h4>
+                    <p className="text-xs text-slate-600 font-mono">{member.phone || member.email}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-1">
-                      <span className="text-[10px] text-blue-200 font-bold bg-[#0B2556] px-2 py-0.5 rounded-md border border-blue-400/20">
+                      <span className="text-[10px] text-slate-900 font-bold bg-slate-100 px-2 py-0.5 rounded-md border border-black">
                         Scope: {activeCount}/{ALL_EXPENSE_OPTIONS.length} Expenses
                       </span>
                       {isAdmin && (
                         <button
                           type="button"
                           onClick={() => openEditMemberModal(member)}
-                          className="text-[10px] text-blue-200 bg-[#0B2556] hover:bg-blue-900/40 px-2 py-0.5 rounded-md border border-blue-400/30 font-bold cursor-pointer transition-all flex items-center gap-1"
+                          className="text-[10px] text-slate-900 bg-white hover:bg-slate-100 px-2 py-0.5 rounded-md border border-black font-bold cursor-pointer transition-all flex items-center gap-1"
                         >
-                          <Edit className="w-3 h-3 text-blue-300" />
+                          <Edit className="w-3 h-3 text-slate-900" />
                           <span>Edit Scope</span>
                         </button>
                       )}
@@ -883,14 +883,14 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-blue-400/20">
+                <div className="flex items-center gap-4 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-black/20">
                   {isAdmin && (
                     <button
                       onClick={() => setDeleteConfirmMember(member)}
-                      className="p-1.5 px-2.5 text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 rounded-xl transition-all border border-rose-500/30 cursor-pointer flex items-center gap-1 text-xs font-bold shadow-xs"
+                      className="p-1.5 px-2.5 text-slate-900 bg-white hover:bg-slate-100 rounded-xl transition-all border border-black cursor-pointer flex items-center gap-1 text-xs font-bold shadow-xs"
                       title="Delete member"
                     >
-                      <Trash2 className="w-4 h-4 text-rose-300" />
+                      <Trash2 className="w-4 h-4 text-slate-900" />
                       <span>Delete</span>
                     </button>
                   )}
@@ -903,20 +903,20 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* Add Member Modal */}
       {showAddMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
           <GlassContainer
             variant="card"
-            className="w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border border-blue-400/30 bg-[#0B2556] text-white space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border-2 border-black bg-white text-slate-900 space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto"
           >
-            <div className="flex items-center justify-between border-b border-blue-400/20 pb-3">
-              <h3 className="text-lg font-black text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-300" />
+            <div className="flex items-center justify-between border-b border-black/20 pb-3">
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <Users className="w-5 h-5 text-slate-900" />
                 <span>Add New Room Member</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setShowAddMember(false)}
-                className="text-blue-200 hover:text-white text-xs font-bold px-2 py-1 rounded-lg hover:bg-[#07193F] transition-all cursor-pointer border border-blue-400/20"
+                className="text-slate-600 hover:text-black text-xs font-bold px-2 py-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
               >
                 Cancel
               </button>
@@ -924,7 +924,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
             <form onSubmit={handleAddMemberSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-bold text-white uppercase mb-1">
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
                   Member Full Name *
                 </label>
                 <input
@@ -933,12 +933,12 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   placeholder="e.g. Mahfuzur Rahman"
                   value={newMemberName}
                   onChange={(e) => setNewMemberName(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#07193F] border border-blue-400/30 rounded-2xl text-xs font-bold text-white placeholder-blue-300/40 focus:ring-2 focus:ring-[#0052FF] focus:outline-none"
+                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-white uppercase mb-1">
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
                   Mobile Number (Login Credential) *
                 </label>
                 <input
@@ -947,12 +947,12 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   placeholder="e.g. +971 50 123 4567"
                   value={newMemberPhone}
                   onChange={(e) => setNewMemberPhone(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#07193F] border border-blue-400/30 rounded-2xl text-xs font-bold text-white placeholder-blue-300/40 focus:ring-2 focus:ring-[#0052FF] focus:outline-none"
+                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-white uppercase mb-1">
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
                   Login Password *
                 </label>
                 <input
@@ -961,25 +961,25 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   placeholder="e.g. 123456 or uae2024"
                   value={newMemberPassword}
                   onChange={(e) => setNewMemberPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#07193F] border border-blue-400/30 rounded-2xl text-xs font-bold text-white placeholder-blue-300/40 focus:ring-2 focus:ring-[#0052FF] focus:outline-none"
+                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
                 />
-                <p className="text-[10px] text-blue-200/80 mt-1">
+                <p className="text-[10px] text-slate-600 mt-1">
                   This mobile number and password will be used by this user to log in.
                 </p>
               </div>
 
               {/* Expense Inclusions Checkboxes */}
               <div>
-                <label className="block text-xs font-bold text-white uppercase mb-1 flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1 flex items-center justify-between">
                   <span>Expense Scope & Inclusions (কোন কোন খরচের আওতায় থাকবে) *</span>
-                  <span className="text-[10px] text-white font-bold bg-[#0052FF] px-2 py-0.5 rounded-full border border-blue-400/30">
+                  <span className="text-[10px] text-white font-bold bg-black px-2 py-0.5 rounded-full border border-black">
                     {newMemberCategories.length}/{ALL_EXPENSE_OPTIONS.length} Selected
                   </span>
                 </label>
-                <p className="text-[11px] text-blue-200 mb-2">
+                <p className="text-[11px] text-slate-600 mb-2">
                   Tick the checkboxes for expenses this member will participate in. Unchecked expenses will NOT be charged to this member.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-2.5 bg-[#07193F] border border-blue-400/30 rounded-2xl shadow-inner">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-2.5 bg-slate-50 border border-black rounded-2xl shadow-inner">
                   {ALL_EXPENSE_OPTIONS.map((opt) => {
                     const isChecked = newMemberCategories.includes(opt.id);
                     return (
@@ -987,21 +987,21 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                         key={opt.id}
                         className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
                           isChecked
-                            ? 'bg-[#0052FF] text-white border-blue-400/40 shadow-xs'
-                            : 'bg-[#0B2556] text-blue-100 border-blue-400/20 hover:bg-blue-900/40'
+                            ? 'bg-black text-white border-black shadow-xs'
+                            : 'bg-white text-slate-700 border-black hover:bg-slate-100'
                         }`}
                       >
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => toggleCategoryForNewMember(opt.id)}
-                          className="mt-0.5 w-4 h-4 rounded text-[#0052FF] focus:ring-[#0052FF] cursor-pointer accent-[#0052FF] shrink-0"
+                          className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black cursor-pointer accent-black shrink-0"
                         />
                         <div className="leading-tight">
-                          <span className={`text-xs font-bold block ${isChecked ? 'text-white' : 'text-white'}`}>
+                          <span className={`text-xs font-bold block ${isChecked ? 'text-white' : 'text-slate-900'}`}>
                             {opt.label}
                           </span>
-                          <span className={`text-[10px] opacity-75 block ${isChecked ? 'text-blue-100' : 'text-blue-300'}`}>{opt.desc}</span>
+                          <span className={`text-[10px] opacity-75 block ${isChecked ? 'text-slate-200' : 'text-slate-600'}`}>{opt.desc}</span>
                         </div>
                       </label>
                     );
@@ -1009,17 +1009,17 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-2 border-t border-blue-400/20">
+              <div className="flex items-center gap-2 pt-2 border-t border-black/20">
                 <button
                   type="button"
                   onClick={() => setShowAddMember(false)}
-                  className="w-1/2 py-3 rounded-2xl border border-blue-400/30 text-xs font-bold text-white hover:bg-[#07193F] transition-all cursor-pointer"
+                  className="w-1/2 py-3 rounded-2xl border border-black text-xs font-bold text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="w-1/2 py-3 rounded-2xl bg-[#0052FF] hover:bg-blue-600 text-white text-xs font-black shadow-md transition-all cursor-pointer border border-blue-400/40"
+                  className="w-1/2 py-3 rounded-2xl bg-black hover:bg-slate-800 text-white text-xs font-black shadow-md transition-all cursor-pointer"
                 >
                   Add Member
                 </button>
@@ -1031,20 +1031,20 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* Edit Member Scope Modal */}
       {editingMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
           <GlassContainer
             variant="card"
-            className="w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border border-blue-400/30 bg-[#0B2556] text-white space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border-2 border-black bg-white text-slate-900 space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto"
           >
-            <div className="flex items-center justify-between border-b border-blue-400/20 pb-3">
-              <h3 className="text-lg font-black text-white flex items-center gap-2">
-                <Edit className="w-5 h-5 text-blue-300" />
+            <div className="flex items-center justify-between border-b border-black/20 pb-3">
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <Edit className="w-5 h-5 text-slate-900" />
                 <span>Edit Scope: {editingMember.name}</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setEditingMember(null)}
-                className="text-blue-200 hover:text-white text-xs font-bold px-2 py-1 rounded-lg hover:bg-[#07193F] transition-all cursor-pointer border border-blue-400/20"
+                className="text-slate-600 hover:text-black text-xs font-bold px-2 py-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
               >
                 Cancel
               </button>
@@ -1053,7 +1053,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             <form onSubmit={handleSaveEditMemberSubmit} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-white uppercase mb-1">
+                  <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
                     Member Name
                   </label>
                   <input
@@ -1061,12 +1061,12 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     required
                     value={editMemberName}
                     onChange={(e) => setEditMemberName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-[#07193F] border border-blue-400/30 rounded-xl text-xs font-bold text-white focus:ring-2 focus:ring-[#0052FF] focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-white uppercase mb-1">
+                  <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
                     Mobile / Phone
                   </label>
                   <input
@@ -1074,12 +1074,12 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     required
                     value={editMemberPhone}
                     onChange={(e) => setEditMemberPhone(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-[#07193F] border border-blue-400/30 rounded-xl text-xs font-bold text-white focus:ring-2 focus:ring-[#0052FF] focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-white uppercase mb-1">
+                  <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
                     Password
                   </label>
                   <input
@@ -1087,23 +1087,23 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     placeholder="Member Password"
                     value={editMemberPassword}
                     onChange={(e) => setEditMemberPassword(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-[#07193F] border border-blue-400/30 rounded-xl text-xs font-bold text-white focus:ring-2 focus:ring-[#0052FF] focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Expense Inclusions Checkboxes */}
               <div>
-                <label className="block text-xs font-bold text-white uppercase mb-1 flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1 flex items-center justify-between">
                   <span>Expense Inclusions & Scope (খরচের টিক বক্স) *</span>
-                  <span className="text-[10px] text-white font-bold bg-[#0052FF] px-2 py-0.5 rounded-full border border-blue-400/30">
+                  <span className="text-[10px] text-white font-bold bg-black px-2 py-0.5 rounded-full border border-black">
                     {editMemberCategories.length}/{ALL_EXPENSE_OPTIONS.length} Ticked
                   </span>
                 </label>
-                <p className="text-[11px] text-blue-200 mb-2">
+                <p className="text-[11px] text-slate-600 mb-2">
                   Checkboxes that are checked will charge this user for that expense. Unchecked expenses will NOT apply to this user.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto p-2.5 bg-[#07193F] border border-blue-400/30 rounded-2xl shadow-inner">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto p-2.5 bg-slate-50 border border-black rounded-2xl shadow-inner">
                   {ALL_EXPENSE_OPTIONS.map((opt) => {
                     const isChecked = editMemberCategories.includes(opt.id);
                     return (
@@ -1111,21 +1111,21 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                         key={opt.id}
                         className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
                           isChecked
-                            ? 'bg-[#0052FF] text-white border-blue-400/40 shadow-xs'
-                            : 'bg-[#0B2556] text-blue-100 border-blue-400/20 hover:bg-blue-900/40'
+                            ? 'bg-black text-white border-black shadow-xs'
+                            : 'bg-white text-slate-700 border-black hover:bg-slate-100'
                         }`}
                       >
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => toggleCategoryForEditMember(opt.id)}
-                          className="mt-0.5 w-4 h-4 rounded text-[#0052FF] focus:ring-[#0052FF] cursor-pointer accent-[#0052FF] shrink-0"
+                          className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black cursor-pointer accent-black shrink-0"
                         />
                         <div className="leading-tight">
-                          <span className={`text-xs font-bold block ${isChecked ? 'text-white' : 'text-white'}`}>
+                          <span className={`text-xs font-bold block ${isChecked ? 'text-white' : 'text-slate-900'}`}>
                             {opt.label}
                           </span>
-                          <span className={`text-[10px] opacity-75 block ${isChecked ? 'text-blue-100' : 'text-blue-300'}`}>{opt.desc}</span>
+                          <span className={`text-[10px] opacity-75 block ${isChecked ? 'text-slate-200' : 'text-slate-600'}`}>{opt.desc}</span>
                         </div>
                       </label>
                     );
@@ -1133,17 +1133,17 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-2 border-t border-blue-400/20">
+              <div className="flex items-center gap-2 pt-2 border-t border-black/20">
                 <button
                   type="button"
                   onClick={() => setEditingMember(null)}
-                  className="w-1/2 py-3 rounded-2xl border border-blue-400/30 text-xs font-bold text-white hover:bg-[#07193F] transition-all cursor-pointer"
+                  className="w-1/2 py-3 rounded-2xl border border-black text-xs font-bold text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="w-1/2 py-3 rounded-2xl bg-[#0052FF] hover:bg-blue-600 text-white text-xs font-black shadow-md transition-all cursor-pointer border border-blue-400/40"
+                  className="w-1/2 py-3 rounded-2xl bg-black hover:bg-slate-800 text-white text-xs font-black shadow-md transition-all cursor-pointer"
                 >
                   Save Member Scope
                 </button>

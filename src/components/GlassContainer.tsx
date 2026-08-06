@@ -42,19 +42,19 @@ export const GlassContainer: React.FC<GlassContainerProps> = ({
 
   const variantStyles: Record<GlassVariant, string> = {
     default:
-      'bg-[#0B2556] text-white border border-blue-400/25 shadow-xl shadow-blue-950/20 rounded-3xl',
+      'bg-white text-slate-900 border border-slate-200/80 shadow-lg shadow-blue-950/[0.03] rounded-3xl',
     card:
-      'bg-[#0B2556] text-white border border-blue-400/25 shadow-xl shadow-blue-950/20 rounded-3xl',
+      'bg-white text-slate-900 border border-slate-200/80 shadow-lg shadow-blue-950/[0.03] rounded-3xl',
     emerald:
-      'bg-[#0B2556] text-white border border-emerald-400/30 shadow-xl shadow-blue-950/20 rounded-3xl',
+      'bg-white text-slate-900 border border-emerald-200/80 shadow-lg shadow-emerald-950/[0.03] rounded-3xl',
     amber:
-      'bg-[#0B2556] text-white border border-amber-400/30 shadow-xl shadow-blue-950/20 rounded-3xl',
+      'bg-white text-slate-900 border border-amber-200/80 shadow-lg shadow-amber-950/[0.03] rounded-3xl',
     pill:
-      'bg-[#0B2556] text-white border border-blue-400/25 shadow-sm rounded-full',
+      'bg-white text-slate-900 border border-slate-200/80 shadow-sm rounded-full',
     subtle:
-      'bg-[#0B2556]/90 text-white border border-blue-400/20 shadow-xs rounded-2xl',
+      'bg-white/90 text-slate-900 border border-slate-200/70 shadow-xs rounded-2xl',
     modal:
-      'bg-[#07193F] text-white border border-blue-400/30 shadow-2xl shadow-blue-950/40 rounded-3xl',
+      'bg-white text-slate-900 border border-slate-200 shadow-2xl shadow-blue-950/15 rounded-3xl',
     dark:
       'bg-gradient-to-br from-[#071E55] to-[#0A297A] text-white border border-[#0F3DFF]/30 shadow-2xl shadow-blue-950/20 rounded-3xl',
   };

@@ -422,21 +422,21 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className="px-3 py-1.5 bg-[#0B2556] border border-blue-400/30 rounded-xl font-semibold text-white focus:outline-none"
+              className="px-3 py-1.5 bg-white border border-black rounded-xl font-semibold text-slate-900 focus:outline-none"
             />
-            <span className="text-blue-200">to</span>
+            <span className="text-slate-600">to</span>
             <input
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className="px-3 py-1.5 bg-[#0B2556] border border-blue-400/30 rounded-xl font-semibold text-white focus:outline-none"
+              className="px-3 py-1.5 bg-white border border-black rounded-xl font-semibold text-slate-900 focus:outline-none"
             />
           </div>
         </div>
 
         {/* Category Checkboxes */}
         <div>
-          <span className="text-xs font-bold text-white uppercase tracking-wider block mb-2">
+          <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block mb-2">
             Include Categories in Calculation:
           </span>
           <div className="flex flex-wrap items-center gap-3">
@@ -450,13 +450,13 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                 <button
                   key={key}
                   onClick={() => toggleCategory(key as keyof typeof includeCategories)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
                     isChecked
-                      ? 'bg-[#0052FF] text-white border-blue-400/40 shadow-md shadow-blue-600/30'
-                      : 'bg-[#0B2556] text-blue-200 border-blue-400/25 hover:bg-[#07193F]'
+                      ? 'bg-black text-white border-black'
+                      : 'bg-white text-slate-700 border-black hover:bg-slate-100'
                   }`}
                 >
-                  {isChecked ? <CheckSquare className="w-4 h-4 text-white" /> : <Square className="w-4 h-4 text-blue-300" />}
+                  {isChecked ? <CheckSquare className="w-4 h-4 text-white" /> : <Square className="w-4 h-4 text-slate-600" />}
                   <span>{label}</span>
                 </button>
               );
@@ -467,8 +467,8 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
       {/* Key Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <GlassContainer variant="card" className="p-4 border border-blue-400/25 bg-[#0B2556] text-white shadow-md">
-          <span className="text-[10px] font-bold text-blue-200 uppercase">Total Mess Bill</span>
+        <GlassContainer variant="card" className="p-4 border border-black bg-white text-slate-900 shadow-md">
+          <span className="text-[10px] font-bold text-slate-900 uppercase">Total Mess Bill</span>
           <div className="text-xl font-black mt-1">
             <DualCurrencyDisplay
               amount={settlementResult.totalMessExpenses}
@@ -476,14 +476,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               preferredCurrency={preferredCurrency}
               customRates={customRates}
               layout="stacked"
-              baseClassName="text-xl font-black text-white"
+              baseClassName="text-xl font-black text-slate-950"
             />
           </div>
-          <span className="text-[10px] text-blue-200/80 block mt-1">Equal split</span>
+          <span className="text-[10px] text-slate-600 block mt-1">Equal split</span>
         </GlassContainer>
 
-        <GlassContainer variant="card" className="p-4 border border-blue-400/25 bg-[#0B2556] text-white shadow-md">
-          <span className="text-[10px] font-bold text-blue-200 uppercase">General Expenses</span>
+        <GlassContainer variant="card" className="p-4 border border-black bg-white text-slate-900 shadow-md">
+          <span className="text-[10px] font-bold text-slate-900 uppercase">General Expenses</span>
           <div className="text-xl font-black mt-1">
             <DualCurrencyDisplay
               amount={settlementResult.totalGeneralExpenses}
@@ -491,14 +491,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               preferredCurrency={preferredCurrency}
               customRates={customRates}
               layout="stacked"
-              baseClassName="text-xl font-black text-white"
+              baseClassName="text-xl font-black text-slate-950"
             />
           </div>
-          <span className="text-[10px] text-blue-200/80 block mt-1">Equal split</span>
+          <span className="text-[10px] text-slate-600 block mt-1">Equal split</span>
         </GlassContainer>
 
-        <GlassContainer variant="card" className="p-4 border border-blue-400/25 bg-[#0B2556] text-white shadow-md">
-          <span className="text-[10px] font-bold text-blue-200 uppercase">Utilities (DEWA & WiFi)</span>
+        <GlassContainer variant="card" className="p-4 border border-black bg-white text-slate-900 shadow-md">
+          <span className="text-[10px] font-bold text-slate-900 uppercase">Utilities (DEWA & WiFi)</span>
           <div className="text-xl font-black mt-1">
             <DualCurrencyDisplay
               amount={settlementResult.totalUtilities}
@@ -506,14 +506,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               preferredCurrency={preferredCurrency}
               customRates={customRates}
               layout="stacked"
-              baseClassName="text-xl font-black text-white"
+              baseClassName="text-xl font-black text-slate-950"
             />
           </div>
-          <span className="text-[10px] text-blue-200/80 block mt-1">DEWA & WiFi Bills</span>
+          <span className="text-[10px] text-slate-600 block mt-1">DEWA & WiFi Bills</span>
         </GlassContainer>
 
-        <GlassContainer variant="card" className="p-4 border border-blue-400/30 bg-[#0B2556] text-white shadow-md">
-          <span className="text-[10px] font-bold text-blue-200 uppercase">Grand Total</span>
+        <GlassContainer variant="card" className="p-4 border-2 border-black bg-white text-slate-900 shadow-md">
+          <span className="text-[10px] font-bold text-slate-900 uppercase">Grand Total</span>
           <div className="text-xl font-black mt-1">
             <DualCurrencyDisplay
               amount={settlementResult.grandTotalExpenses}
@@ -521,22 +521,22 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               preferredCurrency={preferredCurrency}
               customRates={customRates}
               layout="stacked"
-              baseClassName="text-xl font-black text-white"
+              baseClassName="text-xl font-black text-slate-950"
             />
           </div>
-          <span className="text-[10px] text-blue-200/80 block mt-1">{group.members.length} Members</span>
+          <span className="text-[10px] text-slate-600 block mt-1">{group.members.length} Members</span>
         </GlassContainer>
       </div>
 
       {/* SECTION 1: Member-wise Calculation Table */}
-      <GlassContainer variant="card" className="p-5 border border-blue-400/25 bg-[#0B2556] text-white shadow-md space-y-4">
-        <div className="flex items-center justify-between border-b border-blue-400/20 pb-3">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <User className="w-4 h-4 text-blue-300" />
+      <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-4">
+        <div className="flex items-center justify-between border-b border-black/20 pb-3">
+          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <User className="w-4 h-4 text-slate-900" />
             Member-wise Calculation Breakdown
           </h3>
-          <span className="text-xs text-blue-200 font-medium">
-            Split Mode: <strong className="text-white">Equal Split</strong>
+          <span className="text-xs text-slate-700 font-medium">
+            Split Mode: <strong className="text-slate-950">Equal Split</strong>
           </span>
         </div>
 
@@ -547,33 +547,33 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
             return (
               <div
                 key={ms.memberId}
-                className="bg-[#07193F] p-3.5 rounded-2xl border border-blue-400/20 space-y-2.5 text-xs text-white shadow-xs"
+                className="bg-white p-3.5 rounded-2xl border border-black space-y-2.5 text-xs text-slate-900 shadow-xs"
               >
-                <div className="flex items-center justify-between border-b border-blue-400/20 pb-2">
-                  <span className="font-extrabold text-sm text-white flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-blue-300" />
+                <div className="flex items-center justify-between border-b border-black/20 pb-2">
+                  <span className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-slate-900" />
                     {ms.memberName}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-[11px]">
-                  <div className="bg-[#0B2556] p-2 rounded-xl border border-blue-400/20">
-                    <span className="text-blue-200/80 block text-[10px] font-medium">Actual Share</span>
-                    <span className="font-extrabold text-white">{ms.totalActualExpense.toFixed(2)} AED</span>
+                  <div className="bg-slate-50 p-2 rounded-xl border border-black">
+                    <span className="text-slate-600 block text-[10px] font-medium">Actual Share</span>
+                    <span className="font-extrabold text-slate-950">{ms.totalActualExpense.toFixed(2)} AED</span>
                   </div>
-                  <div className="bg-[#0B2556] p-2 rounded-xl border border-blue-400/20">
-                    <span className="text-blue-200/80 block text-[10px] font-medium">Amount Paid</span>
-                    <span className="font-extrabold text-white">{ms.totalAmountSpent.toFixed(2)} AED</span>
+                  <div className="bg-slate-50 p-2 rounded-xl border border-black">
+                    <span className="text-slate-600 block text-[10px] font-medium">Amount Paid</span>
+                    <span className="font-extrabold text-slate-950">{ms.totalAmountSpent.toFixed(2)} AED</span>
                   </div>
                 </div>
 
                 <div className="pt-1 flex items-center justify-between">
-                  <span className="text-[11px] text-blue-200 font-semibold">Final Status:</span>
+                  <span className="text-[11px] text-slate-700 font-semibold">Final Status:</span>
                   <span
                     className={`inline-block px-3 py-1 rounded-xl text-xs font-black ${
                       isOverpaid
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                        : 'bg-rose-500/20 text-rose-300 border border-rose-400/30'
+                        ? 'bg-slate-100 text-slate-900 border border-black'
+                        : 'bg-rose-50 text-rose-950 border border-black'
                     }`}
                   >
                     {isOverpaid ? `+${ms.balance.toFixed(2)} AED (Gets Back)` : `${ms.balance.toFixed(2)} AED (DUE)`}
@@ -588,28 +588,28 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-[#07193F] text-blue-200 uppercase tracking-wider font-bold border-b border-blue-400/20">
+              <tr className="bg-slate-100 text-slate-900 uppercase tracking-wider font-bold border-b border-black">
                 <th className="py-3 px-3">Member</th>
                 <th className="py-3 px-2 text-right">Actual Expense Share</th>
                 <th className="py-3 px-2 text-right">Amount Paid</th>
                 <th className="py-3 px-3 text-right">Final Balance</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-blue-400/15 font-medium text-white">
+            <tbody className="divide-y divide-black/15 font-medium text-slate-900">
               {settlementResult.memberSummaries.map((ms) => {
                 const isOverpaid = ms.balance >= 0;
 
                 return (
-                  <tr key={ms.memberId} className="hover:bg-[#07193F]/50 transition-colors">
-                    <td className="py-3 px-3 font-bold text-white">
+                  <tr key={ms.memberId} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-3 font-bold text-slate-900">
                       <span>{ms.memberName}</span>
                     </td>
 
-                    <td className="py-3 px-2 text-right font-semibold text-blue-100">
+                    <td className="py-3 px-2 text-right font-semibold text-slate-800">
                       {ms.totalActualExpense.toFixed(2)} AED
                     </td>
 
-                    <td className="py-3 px-2 text-right font-bold text-white">
+                    <td className="py-3 px-2 text-right font-bold text-slate-950">
                       {ms.totalAmountSpent.toFixed(2)} AED
                     </td>
 
@@ -617,8 +617,8 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                       <span
                         className={`inline-block px-2.5 py-1 rounded-xl text-xs ${
                           isOverpaid
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                            : 'bg-rose-500/20 text-rose-300 border border-rose-400/30'
+                            ? 'bg-slate-100 text-slate-900 border border-black'
+                            : 'bg-rose-50 text-rose-950 border border-black'
                         }`}
                       >
                         {isOverpaid ? `+${ms.balance.toFixed(2)} AED (Gets Back)` : `${ms.balance.toFixed(2)} AED (DUE)`}

@@ -1,23 +1,35 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>UAE Mess System</title>
+    <meta name="theme-color" content="#0B4A3F" />
+    <meta name="application-name" content="UAE MESS SYSTEM" />
 
-    <!-- Manifest -->
-    <link rel="manifest" href="./manifest.json" />
+    <!-- Apple iOS Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="UAE MESS" />
+    <link rel="apple-touch-icon" href="/uae_mess_logo.jpeg" />
 
-    <!-- Favicon & Apple Touch Icons -->
-    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png" />
-    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <!-- Favicons & App Icons -->
+    <link rel="icon" type="image/jpeg" href="/uae_mess_logo.jpeg" />
+    <link rel="shortcut icon" href="/uae_mess_logo.jpeg" />
 
-    <!-- Theme Color -->
-    <meta name="theme-color" content="#000000" />
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <title>UAE MESS SYSTEM</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js');
+        });
+      }
+    </script>
   </body>
 </html>

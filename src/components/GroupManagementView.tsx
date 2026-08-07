@@ -22,6 +22,7 @@ import {
   FolderPlus,
   Lock,
   AlertCircle,
+  HandCoins,
 } from 'lucide-react';
 
 interface GroupManagementViewProps {
@@ -44,6 +45,7 @@ interface GroupManagementViewProps {
   onRemoveGroup?: (groupId: string) => void;
   onChangeBaseCurrency?: (newCurrency: string) => void;
   onUpdateSpreadsheetConfig?: (spreadsheetId: string, webAppUrl?: string) => void;
+  onOpenPayTo?: () => void;
 }
 
 export const ALL_EXPENSE_OPTIONS = [
@@ -77,6 +79,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   onRemoveGroup,
   onChangeBaseCurrency,
   onUpdateSpreadsheetConfig,
+  onOpenPayTo,
 }) => {
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
@@ -256,6 +259,41 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             <span>Flutter & API Architecture Guide</span>
           </button>
         )}
+      </GlassContainer>
+
+      {/* 1st Sub-Component / PAY TO Option Button */}
+      <GlassContainer
+        variant="card"
+        className="p-4 sm:p-5 border-2 border-emerald-500/40 bg-gradient-to-r from-[#07193F] via-[#0b2866] to-[#041029] text-white shadow-xl rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+      >
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/10">
+            <HandCoins className="w-6 h-6 stroke-[2.3]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-black text-white">PAY TO (Payment Status & Rent Ledger)</h3>
+              <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400/30 uppercase tracking-wider">
+                PAYMENT STATUS
+              </span>
+            </div>
+            <p className="text-xs text-blue-100/80 font-medium mt-0.5">
+              Check who paid rent, due amounts, and add payment transactions
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            triggerHaptic(hapticPatterns.click);
+            if (onOpenPayTo) onOpenPayTo();
+          }}
+          className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-3 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer shrink-0 border border-emerald-300/50 uppercase tracking-wider"
+        >
+          <HandCoins className="w-4 h-4 stroke-[2.5]" />
+          <span>Open PAY TO Ledger</span>
+        </button>
       </GlassContainer>
 
       {/* ADMIN PERMISSION CONTROL SECTION (Visible ONLY to App Admin) */}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import html2pdf from 'html2pdf.js';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
 import { Group, Expense, UtilityBill, RentContribution } from '../types';
 import { calculateSettlement } from '../utils/settlementCalculator';
@@ -73,24 +74,64 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     includeCategories
   );
 
-  // Safe html2pdf engine resolver to handle Vercel Vite CJS/ESM bundling & dynamic imports
-  const getHtml2PdfEngine = async () => {
+  // Generate PDF file using html2canvas and jsPDF directly for cross-browser & Vercel deployment reliability
+  const createPdfWithHtml2CanvasAndJsPdf = async (
+    element: HTMLElement,
+    fileName: string,
+    autoDownload = false
+  ): Promise<File | null> => {
     try {
-      let engine: any = html2pdf;
-      if (typeof engine === 'function') return engine;
-      if (typeof engine?.default === 'function') return engine.default;
-      if (typeof engine?.default?.default === 'function') return engine.default.default;
-      if (typeof (window as any)?.html2pdf === 'function') return (window as any).html2pdf;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        onclone: sanitizeDocumentForHtml2Canvas,
+      });
 
-      const imported: any = await import('html2pdf.js');
-      if (typeof imported === 'function') return imported;
-      if (typeof imported?.default === 'function') return imported.default;
-      if (typeof imported?.default?.default === 'function') return imported.default.default;
-      if (typeof (window as any)?.html2pdf === 'function') return (window as any).html2pdf;
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true,
+      });
+
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 5;
+      const contentWidth = pageWidth - margin * 2; // 200 mm
+      const maxContentHeight = pageHeight - margin * 2; // 287 mm
+
+      const imgWidth = contentWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = margin;
+
+      pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+      heightLeft -= maxContentHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + margin;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+        heightLeft -= maxContentHeight;
+      }
+
+      if (autoDownload) {
+        pdf.save(fileName);
+      }
+
+      const pdfBlob = pdf.output('blob');
+      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+      return file;
     } catch (err) {
-      console.warn('html2pdf engine import error:', err);
+      console.error('html2canvas + jsPDF generation error:', err);
+      return null;
     }
-    return null;
   };
 
   // Pre-generate PDF file as soon as PDF preview modal opens
@@ -110,27 +151,8 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       const element = document.getElementById('pdf-report-document');
       if (!element) return;
       try {
-        const engine = await getHtml2PdfEngine();
-        if (!engine) return;
-
         const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
-        const opt = {
-          margin: [5, 5, 5, 5],
-          filename: fileName,
-          image: { type: 'jpeg' as const, quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            logging: false,
-            backgroundColor: '#ffffff',
-            onclone: sanitizeDocumentForHtml2Canvas,
-          },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-        };
-        const worker = engine().set(opt).from(element);
-        const blob = await worker.output('blob');
-        const file = new File([blob], fileName, { type: 'application/pdf' });
+        const file = await createPdfWithHtml2CanvasAndJsPdf(element, fileName, false);
         cachedPdfFileRef.current = file;
       } catch (err) {
         console.warn('Background PDF pregeneration for share failed:', err);
@@ -204,53 +226,96 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
   const sanitizeDocumentForHtml2Canvas = (clonedDoc: Document) => {
     try {
-      // 1. Remove external link stylesheets so html2canvas doesn't fail parsing Tailwind v4 CSS functions (oklch, oklab) on Vercel production bundles
-      const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
-      links.forEach((link) => link.remove());
+      const origReport = document.getElementById('pdf-report-document');
+      const clonedReport = clonedDoc.getElementById('pdf-report-document');
 
-      // 2. Sanitize existing style tags
+      if (origReport && clonedReport) {
+        // Set fixed width and container styling for A4 canvas rendering
+        clonedReport.style.width = '794px';
+        clonedReport.style.maxWidth = '794px';
+        clonedReport.style.margin = '0 auto';
+        clonedReport.style.backgroundColor = '#ffffff';
+        clonedReport.style.boxSizing = 'border-box';
+
+        const origElements = [origReport, ...Array.from(origReport.querySelectorAll('*'))];
+        const clonedElements = [clonedReport, ...Array.from(clonedReport.querySelectorAll('*'))];
+
+        for (let i = 0; i < origElements.length; i++) {
+          const orig = origElements[i] as HTMLElement;
+          const clone = clonedElements[i] as HTMLElement;
+          if (!orig || !clone) continue;
+
+          try {
+            const comp = window.getComputedStyle(orig);
+
+            // Copy essential layout & display properties
+            clone.style.display = comp.display;
+            if (comp.display === 'flex' || comp.display === 'inline-flex') {
+              clone.style.flexDirection = comp.flexDirection;
+              clone.style.alignItems = comp.alignItems;
+              clone.style.justifyContent = comp.justifyContent;
+              clone.style.flexWrap = comp.flexWrap;
+              clone.style.flexShrink = comp.flexShrink;
+              clone.style.flexGrow = comp.flexGrow;
+              clone.style.gap = comp.gap;
+            } else if (comp.display === 'grid' || comp.display === 'inline-grid') {
+              clone.style.gridTemplateColumns = comp.gridTemplateColumns;
+              clone.style.gap = comp.gap;
+            }
+
+            // Colors & Backgrounds
+            clone.style.backgroundColor = comp.backgroundColor;
+            clone.style.color = comp.color;
+
+            // Typography
+            clone.style.fontFamily = 'Arial, Helvetica, sans-serif';
+            clone.style.fontSize = comp.fontSize;
+            clone.style.fontWeight = comp.fontWeight;
+            clone.style.lineHeight = comp.lineHeight;
+            clone.style.textAlign = comp.textAlign;
+            clone.style.textTransform = comp.textTransform;
+
+            // Padding & Margin
+            clone.style.paddingTop = comp.paddingTop;
+            clone.style.paddingRight = comp.paddingRight;
+            clone.style.paddingBottom = comp.paddingBottom;
+            clone.style.paddingLeft = comp.paddingLeft;
+
+            clone.style.marginTop = comp.marginTop;
+            clone.style.marginRight = comp.marginRight;
+            clone.style.marginBottom = comp.marginBottom;
+            clone.style.marginLeft = comp.marginLeft;
+
+            // Borders
+            clone.style.borderTopWidth = comp.borderTopWidth;
+            clone.style.borderTopStyle = comp.borderTopStyle;
+            clone.style.borderTopColor = comp.borderTopColor;
+
+            clone.style.borderRightWidth = comp.borderRightWidth;
+            clone.style.borderRightStyle = comp.borderRightStyle;
+            clone.style.borderRightColor = comp.borderRightColor;
+
+            clone.style.borderBottomWidth = comp.borderBottomWidth;
+            clone.style.borderBottomStyle = comp.borderBottomStyle;
+            clone.style.borderBottomColor = comp.borderBottomColor;
+
+            clone.style.borderLeftWidth = comp.borderLeftWidth;
+            clone.style.borderLeftStyle = comp.borderLeftStyle;
+            clone.style.borderLeftColor = comp.borderLeftColor;
+
+            clone.style.borderRadius = comp.borderRadius;
+            clone.style.boxSizing = 'border-box';
+          } catch (e) {
+            // Ignore individual node compute style errors
+          }
+        }
+      }
+
+      // Sanitize any inline styles or remaining style tags
       const styles = clonedDoc.querySelectorAll('style');
       styles.forEach((s) => {
         if (s.textContent) {
           s.textContent = sanitizeCssText(s.textContent);
-        }
-      });
-
-      // 3. Inject explicit self-contained light theme styles for html2canvas
-      const styleTag = clonedDoc.createElement('style');
-      styleTag.textContent = `
-        * { color-scheme: light !important; box-sizing: border-box !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        #pdf-report-document { background-color: #ffffff !important; color: #0f172a !important; font-family: system-ui, -apple-system, sans-serif !important; margin: 0 auto !important; width: 100% !important; }
-        .bg-white { background-color: #ffffff !important; }
-        .bg-slate-50 { background-color: #f8fafc !important; }
-        .bg-slate-100 { background-color: #f1f5f9 !important; }
-        .bg-emerald-50 { background-color: #ecfdf5 !important; }
-        .bg-emerald-100 { background-color: #d1fae5 !important; }
-        .bg-amber-100 { background-color: #fef3c7 !important; }
-        .bg-slate-900 { background-color: #0f172a !important; }
-        .text-slate-900, .text-slate-950 { color: #0f172a !important; }
-        .text-slate-800 { color: #1e293b !important; }
-        .text-slate-700 { color: #334155 !important; }
-        .text-slate-600 { color: #475569 !important; }
-        .text-slate-500, .text-slate-400 { color: #64748b !important; }
-        .text-emerald-700, .text-emerald-800, .text-emerald-900, .text-emerald-950 { color: #047857 !important; }
-        .text-rose-700, .text-rose-500 { color: #be123c !important; }
-        .text-amber-700 { color: #b45309 !important; }
-        .border-slate-200 { border-color: #e2e8f0 !important; }
-        .border-slate-400 { border-color: #94a3b8 !important; }
-        .border-slate-900 { border-color: #0f172a !important; }
-        .border-emerald-200, .border-emerald-300 { border-color: #a7f3d0 !important; }
-        .border-amber-300 { border-color: #fcd34d !important; }
-      `;
-      clonedDoc.head.appendChild(styleTag);
-
-      // 4. Clean up element inline style attributes
-      const elements = clonedDoc.querySelectorAll('*');
-      elements.forEach((el) => {
-        const htmlEl = el as HTMLElement;
-        const styleAttr = htmlEl.getAttribute('style');
-        if (styleAttr) {
-          htmlEl.setAttribute('style', sanitizeCssText(styleAttr));
         }
       });
     } catch (e) {
@@ -269,42 +334,10 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
     try {
       setIsGeneratingPdf(true);
-      const engine = await getHtml2PdfEngine();
-      if (!engine) {
+      const file = await createPdfWithHtml2CanvasAndJsPdf(element, fileName, true);
+      if (!file) {
         window.print();
         return;
-      }
-
-      const opt = {
-        margin: [5, 5, 5, 5],
-        filename: fileName,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          onclone: sanitizeDocumentForHtml2Canvas,
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-      };
-
-      try {
-        await engine().set(opt).from(element).save(fileName);
-      } catch (saveErr) {
-        console.warn('Direct html2pdf save failed, falling back to blob download:', saveErr);
-        const worker = engine().set(opt).from(element);
-        const blob = await worker.output('blob');
-        const blobUrl = URL.createObjectURL(blob);
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.href = blobUrl;
-        downloadAnchor.download = fileName;
-        downloadAnchor.style.display = 'none';
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        document.body.removeChild(downloadAnchor);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
       }
     } catch (err) {
       console.error('PDF export error, falling back to window.print():', err);
@@ -345,32 +378,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       if (!targetFile) {
         const element = document.getElementById('pdf-report-document');
         if (element) {
-          const engine = await getHtml2PdfEngine();
-          if (engine) {
-            const opt = {
-              margin: [5, 5, 5, 5],
-              filename: fileName,
-              image: { type: 'jpeg' as const, quality: 0.98 },
-              html2canvas: {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                logging: false,
-                backgroundColor: '#ffffff',
-                onclone: sanitizeDocumentForHtml2Canvas,
-              },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-            };
-
-            const worker = engine().set(opt).from(element);
-            const blob = await worker.output('blob');
-            targetFile = new File([blob], fileName, { type: 'application/pdf' });
+          targetFile = await createPdfWithHtml2CanvasAndJsPdf(element, fileName, false);
+          if (targetFile) {
             cachedPdfFileRef.current = targetFile;
           }
         }
       }
 
-      // 1. Web Share API with PDF file (Supported mobile browsers)
+      // 1. Web Share API with PDF file (Supported mobile browsers & devices)
       if (
         targetFile &&
         typeof navigator !== 'undefined' &&
@@ -380,12 +395,13 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         try {
           await navigator.share({
             title: `${group.name} Settlement Report`,
-            text: summaryText,
+            text: `Here is the settlement report for ${group.name} (${fromDate} to ${toDate}).`,
             files: [targetFile],
           });
           return;
         } catch (shareErr: any) {
           if (shareErr?.name === 'AbortError') return;
+          console.warn('Native PDF file share failed, trying text share fallback:', shareErr);
         }
       }
 
@@ -397,8 +413,8 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
             text: summaryText,
           });
           return;
-        } catch (e: any) {
-          if (e?.name === 'AbortError') return;
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') return;
         }
       }
 
@@ -544,7 +560,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                 {/* 3 Small Boxes Side-by-Side in 1 Alignment */}
                 <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
                   <div className="bg-white p-2 rounded-xl border border-slate-200 text-center shadow-2xs">
-                    <span className="text-slate-500 block text-[9px] sm:text-[10px] font-extrabold uppercase">Actual Share</span>
+                    <span className="text-slate-500 block text-[9px] sm:text-[10px] font-extrabold uppercase">Per Person Cost</span>
                     <span className="font-black text-slate-900 block mt-0.5">{ms.totalActualExpense.toFixed(2)} {group.currency}</span>
                   </div>
 
@@ -684,14 +700,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                         className="w-12 h-12 rounded-xl object-cover border-2 border-amber-500/80 shadow-md shrink-0"
                       />
                       <div>
-                        <h1 className="text-lg font-black text-slate-900 uppercase tracking-tight leading-tight">
+                        <h1 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight leading-tight">
                           UAE MESS SYSTEM
                         </h1>
-                        <p className="text-xs text-emerald-800 font-extrabold uppercase">
-                          {group.name} • SETTLEMENT STATEMENT
+                        <p className="text-xs text-slate-900 font-black uppercase tracking-wide leading-tight mt-0.5">
+                          {group.name ? group.name.toUpperCase() : 'ROOM NO 3'}
                         </p>
-                        <p className="text-[10px] text-slate-500 font-semibold">
-                          UNITED ARAB EMIRATES • MESS EXPENSE MANAGEMENT SYSTEM
+                        <p className="text-xs text-emerald-800 font-extrabold uppercase tracking-wide leading-tight mt-0.5">
+                          SETTLEMENT STATEMENT
                         </p>
                       </div>
                     </div>
@@ -779,7 +795,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                         <thead>
                           <tr className="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] tracking-wider">
                             <th className="p-2.5 border-b border-r border-slate-200">Member</th>
-                            <th className="p-2.5 border-b border-r border-slate-200 text-right">Actual Share</th>
+                            <th className="p-2.5 border-b border-r border-slate-200 text-right">Per Person Cost</th>
                             <th className="p-2.5 border-b border-r border-slate-200 text-right">Amount Paid</th>
                             <th className="p-2.5 border-b border-slate-200 text-right">Final Balance</th>
                           </tr>

@@ -1405,6 +1405,7 @@ export default function App() {
                   onRemoveGroup={handleRemoveGroup}
                   onChangeBaseCurrency={handleChangeBaseCurrency}
                   onUpdateSpreadsheetConfig={handleUpdateSpreadsheetConfig}
+                  onOpenPayTo={() => setActiveTab('payto')}
                 />
               )}
 

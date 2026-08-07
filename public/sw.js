@@ -1,45 +1,44 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#0B4A3F" />
-    <meta name="application-name" content="UAE MESS" />
-    
-    <!-- iOS / Safari Web App Meta Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="UAE MESS" />
-    <meta name="mobile-web-app-capable" content="yes" />
+const CACHE_NAME = 'uae-mess-v2';
+const ASSETS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/manifest.json?v=2',
+  '/icon-192.png?v=2',
+  '/icon-512.png?v=2',
+  '/apple-touch-icon.png?v=2',
+  '/favicon-32x32.png?v=2',
+  '/favicon-16x16.png?v=2'
+];
 
-    <!-- Apple iOS Touch Icons (Cache-Busted with ?v=2) -->
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2" />
-    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png?v=2" />
-    <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon-precomposed.png?v=2" />
+// Install Event
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE);
+    }).then(() => self.skipWaiting())
+  );
+});
 
-    <!-- Android Chrome Favicons & App Icons (Cache-Busted with ?v=2) -->
-    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=2" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=2" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2" />
-    <link rel="icon" type="image/png" href="/icon-192.png?v=2" />
-    <link rel="shortcut icon" href="/apple-touch-icon.png?v=2" />
+// Activate Event (Delete old caches)
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            return caches.delete(cache);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
+});
 
-    <!-- Web App Manifest -->
-    <link rel="manifest" href="/manifest.json?v=2" />
-
-    <title>UAE MESS SYSTEM</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
-        });
-      }
-    </script>
-  </body>
-</html>
+// Fetch Event
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
+  );
+});

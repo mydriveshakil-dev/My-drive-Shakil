@@ -3,18 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0B4A3F" />
+    <meta name="theme-color" content="#0b1d3a" />
     <meta name="application-name" content="UAE MESS SYSTEM" />
 
     <!-- Apple iOS Support -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="UAE MESS" />
-    <link rel="apple-touch-icon" href="/uae_mess_logo.jpeg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- Favicons & App Icons -->
-    <link rel="icon" type="image/jpeg" href="/uae_mess_logo.jpeg" />
-    <link rel="shortcut icon" href="/uae_mess_logo.jpeg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="shortcut icon" href="/icon-192.png" />
 
     <!-- Web App Manifest -->
     <link rel="manifest" href="/manifest.json" />
@@ -23,11 +23,11 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main.jsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
         });
       }
     </script>

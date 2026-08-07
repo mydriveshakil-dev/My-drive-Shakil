@@ -1,25 +1,29 @@
-const CACHE_NAME = 'uae-mess-v3';
+const CACHE_NAME = 'uae-mess-cache-v2';
+
+// যেসব ফাইল ক্যাশ করতে হবে
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/apple-touch-icon.png',
+  '/favicon-16x16.png',
   '/favicon-32x32.png',
-  '/favicon-16x16.png'
+  '/apple-touch-icon.png',
+  '/icon-180.png',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
-// Install Event
+// Install Event: নতুন ক্যাশ সেভ করা
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
+    })
   );
+  self.skipWaiting();
 });
 
-// Activate Event
+// Activate Event: পুরানো ক্যাশ মুছে ফেলা
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -30,15 +34,14 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    }).then(() => self.clients.claim())
+    })
   );
+  self.clients.claim();
 });
 
-// Fetch Event
+// Fetch Event: নেটওয়ার্ক থেকে নতুন ডাটা আনা, না পেলে ক্যাশ থেকে দেখানো
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });

@@ -192,7 +192,7 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
           <div className="flex justify-center my-1">
             <span className="text-[10px] font-bold bg-amber-100 text-amber-950 border border-amber-300 px-3 py-1 rounded-full flex items-center gap-1 shadow-xs">
               <Clock className="w-3 h-3 text-amber-800 shrink-0" />
-              <span>৩ দিনের আগের চ্যাট স্বয়ংক্রিয়ভাবে মুছে যায় (Auto-deleted after 3 days)</span>
+              <span>Auto-deleted after 3 days</span>
             </span>
           </div>
 

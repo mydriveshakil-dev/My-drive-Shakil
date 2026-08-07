@@ -180,43 +180,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
     css = css.replace(/\bin\s+(oklab|oklch)\b/gi, 'in srgb');
 
-    const targets = ['oklch(', 'oklab(', 'color-mix(', 'light-dark(', 'color('];
-    let passCount = 0;
-
-    while (passCount < 30) {
-      passCount++;
-      let foundIndex = -1;
-      let foundTargetLen = 0;
-
-      const lower = css.toLowerCase();
-      for (const t of targets) {
-        const idx = lower.indexOf(t);
-        if (idx !== -1 && (foundIndex === -1 || idx < foundIndex)) {
-          foundIndex = idx;
-          foundTargetLen = t.length;
-        }
-      }
-
-      if (foundIndex === -1) break;
-
-      let depth = 0;
-      let endIdx = foundIndex;
-      for (let i = foundIndex; i < css.length; i++) {
-        if (css[i] === '(') depth++;
-        else if (css[i] === ')') {
-          depth--;
-          if (depth === 0) {
-            endIdx = i + 1;
-            break;
-          }
-        }
-      }
-
-      if (endIdx > foundIndex) {
-        css = css.substring(0, foundIndex) + '#1e293b' + css.substring(endIdx);
-      } else {
-        css = css.substring(0, foundIndex) + '#1e293b' + css.substring(foundIndex + foundTargetLen);
-      }
+    // Replace modern color functions iteratively (handling nested functions)
+    const regex = /\b(oklch|oklab|color-mix|light-dark|color)\s*\([^()]*\)/gi;
+    let prevCss = '';
+    let count = 0;
+    while (css !== prevCss && count < 25) {
+      prevCss = css;
+      css = css.replace(regex, '#1e293b');
+      count++;
     }
 
     css = css.replace(/\b(oklab|oklch)\b/gi, 'srgb');
@@ -228,6 +199,19 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     try {
       const origReport = document.getElementById('pdf-report-document');
       const clonedReport = clonedDoc.getElementById('pdf-report-document');
+
+      const sanitizeColor = (colorStr: string): string => {
+        if (!colorStr) return colorStr;
+        if (
+          colorStr.includes('oklch') ||
+          colorStr.includes('oklab') ||
+          colorStr.includes('color-mix') ||
+          colorStr.includes('light-dark')
+        ) {
+          return sanitizeCssText(colorStr);
+        }
+        return colorStr;
+      };
 
       if (origReport && clonedReport) {
         // Set fixed width and container styling for A4 canvas rendering
@@ -264,8 +248,8 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
             }
 
             // Colors & Backgrounds
-            clone.style.backgroundColor = comp.backgroundColor;
-            clone.style.color = comp.color;
+            clone.style.backgroundColor = sanitizeColor(comp.backgroundColor);
+            clone.style.color = sanitizeColor(comp.color);
 
             // Typography
             clone.style.fontFamily = 'Arial, Helvetica, sans-serif';
@@ -289,19 +273,19 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
             // Borders
             clone.style.borderTopWidth = comp.borderTopWidth;
             clone.style.borderTopStyle = comp.borderTopStyle;
-            clone.style.borderTopColor = comp.borderTopColor;
+            clone.style.borderTopColor = sanitizeColor(comp.borderTopColor);
 
             clone.style.borderRightWidth = comp.borderRightWidth;
             clone.style.borderRightStyle = comp.borderRightStyle;
-            clone.style.borderRightColor = comp.borderRightColor;
+            clone.style.borderRightColor = sanitizeColor(comp.borderRightColor);
 
             clone.style.borderBottomWidth = comp.borderBottomWidth;
             clone.style.borderBottomStyle = comp.borderBottomStyle;
-            clone.style.borderBottomColor = comp.borderBottomColor;
+            clone.style.borderBottomColor = sanitizeColor(comp.borderBottomColor);
 
             clone.style.borderLeftWidth = comp.borderLeftWidth;
             clone.style.borderLeftStyle = comp.borderLeftStyle;
-            clone.style.borderLeftColor = comp.borderLeftColor;
+            clone.style.borderLeftColor = sanitizeColor(comp.borderLeftColor);
 
             clone.style.borderRadius = comp.borderRadius;
             clone.style.boxSizing = 'border-box';
@@ -311,11 +295,28 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         }
       }
 
-      // Sanitize any inline styles or remaining style tags
+      // Sanitize all style tags in the cloned document
       const styles = clonedDoc.querySelectorAll('style');
       styles.forEach((s) => {
         if (s.textContent) {
           s.textContent = sanitizeCssText(s.textContent);
+        }
+      });
+
+      // Also check inline style attributes on cloned elements
+      const allCloned = clonedDoc.querySelectorAll('*');
+      allCloned.forEach((el) => {
+        if (el instanceof HTMLElement && el.hasAttribute('style')) {
+          const styleAttr = el.getAttribute('style');
+          if (
+            styleAttr &&
+            (styleAttr.includes('oklch') ||
+              styleAttr.includes('oklab') ||
+              styleAttr.includes('color-mix') ||
+              styleAttr.includes('light-dark'))
+          ) {
+            el.setAttribute('style', sanitizeCssText(styleAttr));
+          }
         }
       });
     } catch (e) {
@@ -467,7 +468,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
           <button
             onClick={onSaveSettlement}
-            className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/30 active:scale-95 border border-blue-400/30 cursor-pointer"
+            className="bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black px-5 py-3 rounded-[24px] text-xs flex items-center gap-1.5 shadow-md shadow-blue-950/30 active:scale-95 border border-blue-400/30 cursor-pointer uppercase tracking-wider"
           >
             <CheckCircle className="w-4 h-4 stroke-[3]" />
             <span>Finalize Settlement</span>

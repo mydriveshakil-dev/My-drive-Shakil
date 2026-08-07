@@ -597,6 +597,85 @@ export default function App() {
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isInstallPwaOpen, setIsInstallPwaOpen] = useState(false);
+
+  // Swipe Gesture Handler for Navigation Bar Tabs
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+
+  const handleNavigateNextTab = () => {
+    triggerHaptic(hapticPatterns.click);
+    if (isAddExpenseOpen) {
+      setIsAddExpenseOpen(false);
+      setActiveTab('report');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (activeTab === 'dashboard' || activeTab === 'home') {
+      setActiveTab('utilities');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (activeTab === 'utilities') {
+      setIsAddExpenseOpen(true);
+    } else if (activeTab === 'report') {
+      setActiveTab('group');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleNavigatePrevTab = () => {
+    triggerHaptic(hapticPatterns.click);
+    if (isAddExpenseOpen) {
+      setIsAddExpenseOpen(false);
+      setActiveTab('utilities');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (activeTab === 'group' || activeTab === 'payto') {
+      setActiveTab('report');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (activeTab === 'report') {
+      setIsAddExpenseOpen(true);
+    } else if (activeTab === 'utilities') {
+      setActiveTab('dashboard');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+
+    const targetTag = (e.target as HTMLElement)?.tagName?.toUpperCase();
+    if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(targetTag)) {
+      touchStartXRef.current = null;
+      touchStartYRef.current = null;
+      return;
+    }
+
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const deltaX = endX - touchStartXRef.current;
+    const deltaY = endY - touchStartYRef.current;
+
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+
+    // Minimum horizontal swipe distance 50px
+    if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
+      if (deltaX < 0) {
+        // Swiping finger to the left -> Next tab option
+        handleNavigateNextTab();
+      } else {
+        // Swiping finger to the right -> Previous tab option
+        handleNavigatePrevTab();
+      }
+    }
+  };
   const [lastReadTimestamp, setLastReadTimestamp] = useState<number>(() => {
     if (group?.id) {
       const saved = localStorage.getItem(`chat_last_read_time_${group.id}`);
@@ -1204,7 +1283,11 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col font-sans text-slate-900 selection:bg-[#0F3DFF] selection:text-white antialiased max-w-full overflow-x-hidden bg-[#F6F8FC]">
+    <div
+      className="min-h-screen relative flex flex-col font-sans text-slate-900 selection:bg-[#0F3DFF] selection:text-white antialiased max-w-full overflow-x-hidden bg-[#F6F8FC]"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Global Background Theme */}
       <div className="ios26-wallpaper-bg bg-[#F6F8FC]" />
 
@@ -1515,8 +1598,12 @@ export default function App() {
       {!isLoginModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && (
         <BottomNavBar
           activeTab={activeTab}
-          onSelectTab={setActiveTab}
+          onSelectTab={(tab) => {
+            setIsAddExpenseOpen(false);
+            setActiveTab(tab);
+          }}
           onOpenAddExpense={() => setIsAddExpenseOpen(true)}
+          isAddExpenseOpen={isAddExpenseOpen}
         />
       )}
 

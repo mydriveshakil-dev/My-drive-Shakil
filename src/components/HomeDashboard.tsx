@@ -37,7 +37,32 @@ interface HomeDashboardProps {
   currentUser?: UserAuthProfile | null;
 }
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4', '#F97316', '#14B8A6', '#6366F1', '#E11D48'];
+const COLORS = ['#48BB47', '#CDDC39', '#FFC107', '#E91E63', '#2196F3', '#9C27B0', '#00BCD4', '#FF9800'];
+
+const RADIAN = Math.PI / 180;
+const renderCustomizedPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, percent }: any) => {
+  if (percent < 0.01) return null;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="#ffffff"
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={percent < 0.08 ? 9 : 11}
+      fontWeight={800}
+      style={{
+        filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.6))',
+      }}
+    >
+      {typeof value === 'number' ? value.toFixed(2) : value}
+    </text>
+  );
+};
 
 export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   group,
@@ -431,61 +456,77 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       </div>
 
       {/* 6. Top Contributors Chart */}
-      <GlassContainer variant="card" className="p-5 border border-black shadow-md bg-white text-slate-900">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-slate-900" />
-            Top Contributors (Paid Out of Pocket)
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-xl sm:text-2xl font-bold text-[#1e3a2b] tracking-tight">
+            Top Contributors
           </h3>
-          <span className="text-xs text-slate-600">Shared Gmail Master Account</span>
+          <button
+            type="button"
+            onClick={() => onNavigateTab('report')}
+            className="text-sm sm:text-base font-semibold text-[#1e3a2b] hover:text-black cursor-pointer transition-colors"
+          >
+            View All
+          </button>
         </div>
 
-        {contributorData.length > 0 ? (
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="w-full md:w-1/2 h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={contributorData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={45}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {contributorData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: any) => [`${value} AED`, 'Amount Paid']}
-                    contentStyle={{ borderRadius: '16px', background: '#ffffff', border: '2px solid #000000', color: '#000000' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+        <div className="bg-white rounded-[28px] p-4 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.06)] border border-slate-100">
+          {contributorData.length > 0 ? (
+            <div className="flex flex-row items-center justify-start sm:justify-center gap-3 sm:gap-8">
+              {/* Pie Chart on Left */}
+              <div className="w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] flex items-center justify-center shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={contributorData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={0}
+                      outerRadius={75}
+                      dataKey="value"
+                      isAnimationActive={false}
+                      labelLine={false}
+                      label={renderCustomizedPieLabel}
+                      stroke="#ffffff"
+                      strokeWidth={1.5}
+                    >
+                      {contributorData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: any) => [`${value} AED`, 'Amount Paid']}
+                      contentStyle={{ borderRadius: '12px', background: '#ffffff', border: '1px solid #e2e8f0', color: '#0f172a', fontWeight: 'bold' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
 
-            {/* Chart Legend list */}
-            <div className="w-full md:w-1/2 space-y-2">
-              {contributorData.map((item, idx) => (
-                <div key={item.name} className="flex items-center justify-between text-xs p-2.5 rounded-2xl bg-white border border-black text-slate-900">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="w-3.5 h-3.5 rounded-full border border-black shadow-sm shrink-0"
-                      style={{ backgroundColor: COLORS[idx % COLORS.length] }}
-                    ></span>
-                    <span className="font-bold text-slate-900">{item.name}</span>
+              {/* Legend list on Right */}
+              <div className="flex flex-col space-y-2 sm:space-y-3 min-w-[140px] sm:min-w-[170px]">
+                {contributorData.map((item, idx) => (
+                  <div key={item.name} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                      <span
+                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full shrink-0 shadow-xs"
+                        style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                      />
+                      <span className="font-bold text-slate-900 text-xs sm:text-sm tracking-tight leading-tight truncate">
+                        {item.name}
+                      </span>
+                    </div>
+                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm shrink-0">
+                      {item.value.toFixed(2)}
+                    </span>
                   </div>
-                  <span className="font-extrabold text-slate-950">{item.value.toFixed(2)} AED</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        ) : (
-          <p className="text-xs text-slate-600 py-6 text-center">No expenses added yet in this cycle.</p>
-        )}
-      </GlassContainer>
+          ) : (
+            <p className="text-sm text-slate-500 py-8 text-center font-medium">No expenses added yet in this cycle.</p>
+          )}
+        </div>
+      </div>
 
       {/* 7. RECENT EXPENSES Section */}
       <div id="recent-expenses-section">

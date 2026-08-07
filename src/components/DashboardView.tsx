@@ -40,7 +40,32 @@ interface DashboardViewProps {
   onDeleteExpense?: (id: string) => void;
 }
 
-const CHART_COLORS = ['#2563EB', '#059669', '#D97706', '#7C3AED', '#EC4899', '#06B6D4', '#F97316', '#14B8A6'];
+const CHART_COLORS = ['#48BB47', '#CDDC39', '#FFC107', '#E91E63', '#2196F3', '#9C27B0', '#00BCD4', '#FF9800'];
+
+const RADIAN = Math.PI / 180;
+const renderCustomizedPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, percent }: any) => {
+  if (percent < 0.01) return null;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="#ffffff"
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={percent < 0.08 ? 9 : 11}
+      fontWeight={800}
+      style={{
+        filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.6))',
+      }}
+    >
+      {typeof value === 'number' ? value.toFixed(2) : value}
+    </text>
+  );
+};
 
 const ITEM_THEMES = [
   {
@@ -226,127 +251,76 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* TOP CONTRIBUTORS (PAID OUT OF POCKET) */}
-      <div className="bg-white border border-slate-200/80 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-50/80 border border-blue-100 flex items-center justify-center text-[#0052FF]">
-              <TrendingUp className="w-5 h-5 stroke-[2.2]" />
-            </div>
-            <div>
-              <h3 className="text-base sm:text-lg font-bold text-[#07193F] leading-snug">
-                Top Contributors
-              </h3>
-              <p className="text-xs font-semibold text-slate-400">
-                (Paid Out of Pocket)
-              </p>
-            </div>
-          </div>
-          <div className="inline-flex items-center gap-1.5 bg-[#EFF6FF] text-[#0052FF] text-xs font-extrabold px-3 py-1.5 rounded-full border border-blue-100/80 shadow-2xs">
-            <Calendar className="w-3.5 h-3.5" />
-            <span>CURRENT CYCLE</span>
-          </div>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-xl sm:text-2xl font-bold text-[#1e3a2b] tracking-tight">
+            Top Contributors
+          </h3>
+          <button
+            type="button"
+            onClick={() => onNavigateTab('report')}
+            className="text-sm sm:text-base font-semibold text-[#1e3a2b] hover:text-black cursor-pointer transition-colors"
+          >
+            View All
+          </button>
         </div>
 
-        {contributorData.length > 0 ? (
-          <div className="space-y-4">
-            <div className="flex flex-row items-center gap-3 sm:gap-6">
-              {/* Donut Pie Chart on the Left */}
-              {(() => {
-                const totalContributions = contributorData.reduce((acc, curr) => acc + curr.value, 0);
-                return (
-                  <div className="relative w-[130px] h-[130px] sm:w-[170px] sm:h-[170px] shrink-0 flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsPieChart>
-                        <Pie
-                          data={contributorData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={40}
-                          outerRadius={62}
-                          paddingAngle={3}
-                          dataKey="value"
-                          stroke="#ffffff"
-                          strokeWidth={2.5}
-                        >
-                          {contributorData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                          ))}
-                        </Pie>
-                      </RechartsPieChart>
-                    </ResponsiveContainer>
-                    {/* Center Text */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                      <span className="text-[9px] sm:text-[10px] font-bold text-[#1E3A8A] tracking-wider uppercase">TOTAL</span>
-                      <span className="text-sm sm:text-lg font-black text-[#07193F] tracking-tight leading-none my-0.5">
-                        {totalContributions.toFixed(2)}
+        <div className="bg-white rounded-[28px] p-4 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.06)] border border-slate-100">
+          {contributorData.length > 0 ? (
+            <div className="flex flex-row items-center justify-start sm:justify-center gap-3 sm:gap-8">
+              {/* Pie Chart on Left */}
+              <div className="w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] flex items-center justify-center shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={contributorData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={0}
+                      outerRadius={75}
+                      dataKey="value"
+                      isAnimationActive={false}
+                      labelLine={false}
+                      label={renderCustomizedPieLabel}
+                      stroke="#ffffff"
+                      strokeWidth={1.5}
+                    >
+                      {contributorData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: any) => [`${value} AED`, 'Amount Paid']}
+                      contentStyle={{ borderRadius: '12px', background: '#ffffff', border: '1px solid #e2e8f0', color: '#0f172a', fontWeight: 'bold' }}
+                    />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Legend list on Right */}
+              <div className="flex flex-col space-y-2 sm:space-y-3 min-w-[140px] sm:min-w-[170px]">
+                {contributorData.map((item, idx) => (
+                  <div key={item.name} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                      <span
+                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full shrink-0 shadow-xs"
+                        style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
+                      />
+                      <span className="font-bold text-slate-900 text-xs sm:text-sm tracking-tight leading-tight truncate">
+                        {item.name}
                       </span>
-                      <span className="text-[9px] sm:text-[10px] font-extrabold text-[#1E3A8A] tracking-wider uppercase">{group.currency}</span>
                     </div>
+                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm shrink-0">
+                      {item.value.toFixed(2)}
+                    </span>
                   </div>
-                );
-              })()}
-
-              {/* List of Contributor Cards on the Right */}
-              <div className="flex-1 min-w-0 space-y-2">
-                {(() => {
-                  const totalContributions = contributorData.reduce((acc, curr) => acc + curr.value, 0);
-                  return contributorData.map((item, idx) => {
-                    const pct = totalContributions > 0 ? (item.value / totalContributions) * 100 : 0;
-                    const theme = ITEM_THEMES[idx % ITEM_THEMES.length];
-                    const initials = item.name
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .slice(0, 2)
-                      .toUpperCase();
-
-                    return (
-                      <div
-                        key={item.name}
-                        className={`p-2.5 sm:p-3 rounded-2xl border flex items-center justify-between gap-2 ${theme.cardBg}`}
-                      >
-                        {/* Avatar + Name + Bar */}
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <div
-                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full text-white font-extrabold text-[10px] sm:text-xs flex items-center justify-center shrink-0 shadow-xs ${theme.avatarBg}`}
-                          >
-                            {initials}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-[#07193F] text-xs sm:text-sm truncate">
-                              {item.name}
-                            </h4>
-                            <div className={`w-full max-w-[100px] sm:max-w-[160px] h-1.5 sm:h-2 rounded-full overflow-hidden mt-0.5 ${theme.barTrack}`}>
-                              <div
-                                className={`h-full rounded-full transition-all duration-500 ${theme.barFill}`}
-                                style={{ width: `${Math.max(pct, 4)}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Right: Amount & % Pill */}
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="font-extrabold text-[#07193F] text-xs sm:text-sm">
-                            {item.value.toFixed(2)} {group.currency}
-                          </span>
-                          <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-md ${theme.pillBg}`}>
-                            {pct.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
+                ))}
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="text-center py-4 text-xs font-bold text-slate-500 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-            No contributor data recorded yet in this cycle.
-          </div>
-        )}
+          ) : (
+            <p className="text-sm text-slate-500 py-8 text-center font-medium">No expenses added yet in this cycle.</p>
+          )}
+        </div>
       </div>
 
       {/* OVERVIEW (MY CONTRIBUTION & AVG PER PERSON) */}

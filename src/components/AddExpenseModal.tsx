@@ -248,11 +248,11 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-100 overflow-y-auto flex flex-col items-center justify-center py-4 sm:py-8 px-3 sm:px-6 md:px-8 max-w-full">
+    <div className="fixed inset-0 z-[100] bg-slate-100 overflow-y-auto flex flex-col items-center py-4 sm:py-8 px-3 sm:px-6 md:px-8 max-w-full pb-32 sm:pb-40">
       <GlassContainer
         variant="card"
         blur="3xl"
-        className="w-full max-w-2xl rounded-3xl border border-slate-200/80 shadow-2xl flex flex-col overflow-hidden relative my-auto box-border text-slate-900 bg-white"
+        className="w-full max-w-2xl rounded-3xl border border-slate-200/80 shadow-2xl flex flex-col overflow-hidden relative my-auto box-border text-slate-900 bg-white mb-20 sm:mb-24"
       >
         {/* Header - Navy Main Page Banner */}
         <div className="bg-gradient-to-r from-[#07193F] to-[#041029] text-white p-5 sm:p-6 flex items-center justify-between border-b border-blue-900/40 shrink-0">
@@ -288,7 +288,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                   onClick={() => setCategory('mess')}
                   className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     category === 'mess'
-                      ? 'bg-[#07193F] hover:bg-[#0B2556] text-white shadow-md shadow-slate-900/20 font-black border border-blue-900/40'
+                      ? 'bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white shadow-md shadow-blue-950/40 font-black border border-blue-400/30'
                       : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
                   }`}
                 >
@@ -303,7 +303,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                   onClick={() => setCategory('general')}
                   className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     category === 'general'
-                      ? 'bg-[#07193F] hover:bg-[#0B2556] text-white shadow-md shadow-slate-900/20 font-black border border-blue-900/40'
+                      ? 'bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white shadow-md shadow-blue-950/40 font-black border border-blue-400/30'
                       : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
                   }`}
                 >
@@ -412,7 +412,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 onMouseDown={(e) => e.preventDefault()}
                 onTouchStart={(e) => e.preventDefault()}
                 onClick={handleApplyCalculation}
-                className="px-3 py-1.5 bg-[#07193F] hover:bg-[#0B2556] active:scale-95 text-white font-black text-base rounded-xl shadow-md transition-all cursor-pointer ml-auto shrink-0 border border-blue-900/40"
+                className="px-3 py-1.5 bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] active:scale-95 text-white font-black text-base rounded-xl shadow-md transition-all cursor-pointer ml-auto shrink-0 border border-blue-400/30"
                 title="Calculate expression"
               >
                 =
@@ -443,7 +443,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                     <button
                       type="button"
                       onClick={handleApplyCalculation}
-                      className="bg-[#07193F] hover:bg-[#0B2556] text-white font-black px-2.5 py-0.5 rounded-lg text-[11px] shadow transition-all active:scale-95 cursor-pointer border border-blue-900/40"
+                      className="bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black px-2.5 py-0.5 rounded-lg text-[11px] shadow transition-all active:scale-95 cursor-pointer border border-blue-400/30"
                     >
                       Apply
                     </button>
@@ -508,13 +508,13 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                     onClick={() => handleMemberToggle(member.id)}
                     className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-bold transition-all text-left cursor-pointer ${
                       isSelected
-                        ? 'bg-[#07193F] text-white border-[#07193F] shadow-2xs'
+                        ? 'bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] text-white border-blue-400/30 shadow-2xs'
                         : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                     }`}
                   >
                     <div
                       className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] border shrink-0 ${
-                        isSelected ? 'bg-white text-[#07193F] font-black border-white' : 'bg-slate-100 text-slate-700 border-slate-200'
+                        isSelected ? 'bg-white text-[#071E55] font-black border-white' : 'bg-slate-100 text-slate-700 border-slate-200'
                       }`}
                     >
                       {isSelected ? <Check className="w-3 h-3 stroke-[3]" /> : null}
@@ -584,10 +584,10 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             <button
               type="submit"
               disabled={!dateValidation.isAllowed}
-              className={`w-full font-black py-4 rounded-2xl shadow-lg transition-all text-sm flex items-center justify-center gap-2 active:scale-98 border tracking-wider uppercase cursor-pointer ${
+              className={`w-full font-black py-4 rounded-[24px] shadow-lg transition-all text-sm flex items-center justify-center gap-2 active:scale-98 border tracking-wider uppercase cursor-pointer ${
                 !dateValidation.isAllowed
                   ? 'bg-slate-200 text-slate-500 border-slate-300 cursor-not-allowed opacity-70'
-                  : 'bg-[#0052FF] hover:bg-[#0047E0] text-white shadow-blue-600/30 border-blue-400/20'
+                  : 'bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white shadow-blue-950/40 border-blue-400/30'
               }`}
             >
               <span>{dateValidation.isAllowed ? 'SAVE YOUR EXPENSE' : 'ENTRY LOCKED (EXPENSES PAST 7TH DAY)'}</span>

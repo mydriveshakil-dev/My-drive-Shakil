@@ -23,6 +23,8 @@ import {
   Lock,
   AlertCircle,
   HandCoins,
+  KeyRound,
+  Phone,
 } from 'lucide-react';
 
 interface GroupManagementViewProps {
@@ -262,39 +264,17 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       </GlassContainer>
 
       {/* 1st Sub-Component / PAY TO Option Button */}
-      <GlassContainer
-        variant="card"
-        className="p-4 sm:p-5 border-2 border-emerald-500/40 bg-gradient-to-r from-[#07193F] via-[#0b2866] to-[#041029] text-white shadow-xl rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+      <button
+        type="button"
+        onClick={() => {
+          triggerHaptic(hapticPatterns.click);
+          if (onOpenPayTo) onOpenPayTo();
+        }}
+        className="w-full bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black px-6 py-4 rounded-[24px] text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-950/40 active:scale-95 transition-all cursor-pointer border border-blue-400/30 uppercase tracking-wider"
       >
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/10">
-            <HandCoins className="w-6 h-6 stroke-[2.3]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-black text-white">PAY TO (Payment Status & Rent Ledger)</h3>
-              <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400/30 uppercase tracking-wider">
-                PAYMENT STATUS
-              </span>
-            </div>
-            <p className="text-xs text-blue-100/80 font-medium mt-0.5">
-              Check who paid rent, due amounts, and add payment transactions
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => {
-            triggerHaptic(hapticPatterns.click);
-            if (onOpenPayTo) onOpenPayTo();
-          }}
-          className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-3 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer shrink-0 border border-emerald-300/50 uppercase tracking-wider"
-        >
-          <HandCoins className="w-4 h-4 stroke-[2.5]" />
-          <span>Open PAY TO Ledger</span>
-        </button>
-      </GlassContainer>
+        <HandCoins className="w-5 h-5 stroke-[2.5]" />
+        <span>Transaction with Group Member</span>
+      </button>
 
       {/* ADMIN PERMISSION CONTROL SECTION (Visible ONLY to App Admin) */}
       {isAdmin && (
@@ -894,35 +874,55 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             return (
               <div
                 key={member.id}
-                className="bg-white border border-slate-200/90 rounded-2xl p-3 flex items-center justify-between gap-2 text-slate-900 shadow-2xs hover:border-blue-200 transition-all"
+                className="bg-white border border-slate-200/90 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-slate-900 shadow-2xs hover:border-blue-200 transition-all"
               >
-                {/* 1 Single Line for Name, Mobile Number, and Scope */}
-                <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
-                  <h4 className="text-xs sm:text-sm font-black text-[#07193F] shrink-0">{member.name}</h4>
-                  <span className="text-[11px] text-slate-500 font-medium font-mono shrink-0">
-                    ({member.phone || member.mobileNumber || member.email || 'No Mobile'})
-                  </span>
-                  <span className="text-[10px] text-slate-700 font-extrabold bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 shrink-0">
-                    Scope: {activeCount}/{ALL_EXPENSE_OPTIONS.length}
+                {/* Left Side: Member Name & Avatar */}
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-[#07193F] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
+                    {member.name.charAt(0).toUpperCase()}
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-black text-[#07193F]">{member.name}</h4>
+                </div>
+
+                {/* Right Side: Badges & Controls (Aligned consistently to the right) */}
+                <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end shrink-0">
+                  {/* Mobile Number Badge */}
+                  <span className="text-[11px] text-slate-700 font-bold bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 font-mono flex items-center gap-1.5 shadow-2xs">
+                    <Phone className="w-3 h-3 text-slate-500" />
+                    <span>{member.phone || member.mobileNumber || member.email || 'No Mobile'}</span>
                   </span>
 
+                  {/* Password Badge (Admin Only) */}
+                  {isAdmin && (
+                    <span className="text-[11px] text-amber-900 font-bold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300/80 font-mono flex items-center gap-1.5 shadow-2xs">
+                      <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Pass: {member.password || '123456'}</span>
+                    </span>
+                  )}
+
+                  {/* Expense Scope Badge */}
+                  <span className="text-[11px] text-blue-900 font-bold bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200/80 flex items-center gap-1 shadow-2xs">
+                    <span>Scope:</span>
+                    <strong className="font-black text-blue-950">{activeCount}/{ALL_EXPENSE_OPTIONS.length}</strong>
+                  </span>
+
+                  {/* Edit Scope Button */}
                   {isAdmin && (
                     <button
                       type="button"
                       onClick={() => openEditMemberModal(member)}
-                      className="text-[10px] text-[#0052FF] bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md border border-blue-200 font-bold cursor-pointer transition-all flex items-center gap-1 shrink-0"
+                      className="text-[11px] text-[#0052FF] bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-200 font-bold cursor-pointer transition-all flex items-center gap-1 shadow-2xs"
                     >
                       <Edit className="w-3 h-3 text-[#0052FF]" />
                       <span>Edit Scope</span>
                     </button>
                   )}
-                </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                  {/* Delete Button */}
                   {isAdmin && (
                     <button
                       onClick={() => setDeleteConfirmMember(member)}
-                      className="p-1 px-2 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-all border border-rose-200 cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
+                      className="p-1 px-2.5 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-all border border-rose-200 cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
                       title="Delete member"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-rose-600" />

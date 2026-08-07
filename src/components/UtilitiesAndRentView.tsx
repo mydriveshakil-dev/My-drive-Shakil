@@ -265,7 +265,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/30 active:scale-95 border border-blue-400/30 self-start md:self-auto cursor-pointer"
+          className="bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black px-5 py-3 rounded-[24px] text-xs flex items-center gap-1.5 shadow-md shadow-blue-950/30 active:scale-95 border border-blue-400/30 self-start md:self-auto cursor-pointer uppercase tracking-wider"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           <span>+ Add Utility Bill</span>
@@ -870,7 +870,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="w-1/2 py-3 rounded-xl bg-black hover:bg-slate-800 text-white text-xs font-black shadow-md cursor-pointer"
+                  className="w-1/2 py-3 rounded-[24px] bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white text-xs font-black shadow-md border border-blue-400/30 cursor-pointer uppercase tracking-wider"
                 >
                   Save Utility
                 </button>

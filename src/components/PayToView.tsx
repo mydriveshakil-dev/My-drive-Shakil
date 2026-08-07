@@ -9,6 +9,7 @@ import {
   Clock,
   ShieldCheck,
   Filter,
+  ChevronDown,
 } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
@@ -214,111 +215,126 @@ export const PayToView: React.FC<PayToViewProps> = ({
             <DollarSign className="w-4 h-4 text-slate-900" />
             Create Loan Entry ("PAY TO")
           </h3>
-          <span className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-black/30">
-            Lender Form
-          </span>
         </div>
 
         <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs font-bold">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {/* Paid By */}
-            <div className="flex flex-col">
-              <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1.5">
-                1. Paid By (Lender) *
-              </label>
-              {isAdmin ? (
-                <select
-                  value={payById}
-                  onChange={(e) => setPayById(e.target.value)}
-                  className="w-full h-[42px] px-3.5 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
-                >
-                  {allMembers.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  readOnly
-                  disabled
-                  value={currentMember?.name || currentUser?.name || 'Logged-in User'}
-                  className="w-full h-[42px] px-3.5 bg-slate-100 border border-black rounded-2xl text-xs font-bold text-slate-900 cursor-not-allowed opacity-90"
-                />
-              )}
+            <div className="flex flex-col relative">
+              <div className="relative flex items-center w-full">
+                {isAdmin ? (
+                  <div className="relative w-full flex items-center">
+                    <select
+                      value={payById}
+                      onChange={(e) => setPayById(e.target.value)}
+                      className="w-full h-[42px] pl-3.5 pr-40 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none appearance-none cursor-pointer"
+                    >
+                      {allMembers.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-2.5 pointer-events-none flex items-center gap-1 text-[10px] font-black text-slate-700 bg-slate-200/90 px-2 py-0.5 rounded-md uppercase tracking-tight">
+                      <span>Paid By (Lender) *</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-800 stroke-[2.5]" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative w-full flex items-center">
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={currentMember?.name || currentUser?.name || 'Logged-in User'}
+                      className="w-full h-[42px] pl-3.5 pr-36 bg-slate-100 border border-black rounded-2xl text-xs font-bold text-slate-900 cursor-not-allowed opacity-90"
+                    />
+                    <span className="absolute right-2.5 pointer-events-none text-[10px] font-black text-slate-700 bg-slate-200/90 px-2 py-0.5 rounded-md uppercase tracking-tight">
+                      Paid By (Lender) *
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Paid To */}
-            <div className="flex flex-col">
-              <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1.5">
-                2. Paid To (Borrower) *
-              </label>
-              <select
-                value={payToId}
-                onChange={(e) => setPayToId(e.target.value)}
-                className="w-full h-[42px] px-3.5 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
-              >
-                {allMembers
-                  .filter((m) => isAdmin || m.id !== (currentMember?.id || payById))
-                  .map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-              </select>
+            <div className="flex flex-col relative">
+              <div className="relative flex items-center w-full">
+                <select
+                  value={payToId}
+                  onChange={(e) => setPayToId(e.target.value)}
+                  className="w-full h-[42px] pl-3.5 pr-44 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none appearance-none cursor-pointer"
+                >
+                  {allMembers
+                    .filter((m) => isAdmin || m.id !== (currentMember?.id || payById))
+                    .map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                </select>
+                <div className="absolute right-2.5 pointer-events-none flex items-center gap-1 text-[10px] font-black text-slate-700 bg-slate-200/90 px-2 py-0.5 rounded-md uppercase tracking-tight">
+                  <span>Paid To (Borrower) *</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-800 stroke-[2.5]" />
+                </div>
+              </div>
             </div>
 
             {/* Purpose */}
-            <div className="flex flex-col">
-              <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1.5">
-                3. Purpose *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Lunch loan, Cash emergency"
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
-                className="w-full h-[42px] px-3.5 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
-              />
+            <div className="flex flex-col relative">
+              <div className="relative flex items-center w-full">
+                <input
+                  type="text"
+                  required
+                  value={purpose}
+                  onChange={(e) => setPurpose(e.target.value)}
+                  className="w-full h-[42px] pl-3.5 pr-24 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                />
+                <span className="absolute right-2.5 pointer-events-none text-[10px] font-black text-slate-700 bg-slate-200/90 px-2 py-0.5 rounded-md uppercase tracking-tight">
+                  Purpose *
+                </span>
+              </div>
             </div>
 
             {/* Amount */}
-            <div className="flex flex-col">
-              <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1.5">
-                4. Amount ({group.currency || preferredCurrency}) *
-              </label>
-              <input
-                type="number"
-                step="any"
-                min="0.01"
-                required
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-full h-[42px] px-3.5 bg-white border border-black rounded-2xl text-xs font-black text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
-              />
+            <div className="flex flex-col relative">
+              <div className="relative flex items-center w-full">
+                <input
+                  type="number"
+                  step="any"
+                  min="0.01"
+                  required
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="w-full h-[42px] pl-3.5 pr-28 bg-white border border-black rounded-2xl text-xs font-black text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                />
+                <span className="absolute right-2.5 pointer-events-none text-[10px] font-black text-slate-700 bg-slate-200/90 px-2 py-0.5 rounded-md uppercase tracking-tight">
+                  Amount ({group.currency || preferredCurrency}) *
+                </span>
+              </div>
             </div>
 
             {/* Date */}
-            <div className="flex flex-col">
-              <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1.5">
-                5. Date & Time
-              </label>
-              <input
-                type="text"
-                value={dateStr}
-                onChange={(e) => setDateStr(e.target.value)}
-                className="w-full h-[42px] px-3.5 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
-              />
+            <div className="flex flex-col relative">
+              <div className="relative flex items-center w-full">
+                <input
+                  type="text"
+                  value={dateStr}
+                  onChange={(e) => setDateStr(e.target.value)}
+                  className="w-full h-[42px] pl-3.5 pr-24 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                />
+                <span className="absolute right-2.5 pointer-events-none text-[10px] font-black text-slate-700 bg-slate-200/90 px-2 py-0.5 rounded-md uppercase tracking-tight">
+                  Date & Time
+                </span>
+              </div>
             </div>
           </div>
 
           <div className="pt-2 flex justify-end">
             <button
               type="submit"
-              className="w-full sm:w-auto px-8 py-3 bg-black hover:bg-slate-800 text-white font-black text-xs rounded-2xl border-2 border-black shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black text-xs rounded-[24px] border border-blue-400/30 shadow-lg shadow-blue-950/30 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
             >
               <Send className="w-4 h-4 stroke-[2.5]" />
               <span>SAVE TRANSACTION</span>
@@ -508,9 +524,9 @@ export const PayToView: React.FC<PayToViewProps> = ({
                           onMarkReceived(tx.id);
                         }
                       }}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-2.5 px-3 rounded-2xl border border-black shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="flex-1 bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black text-xs py-2.5 px-3 rounded-[24px] border border-blue-400/30 shadow-md shadow-blue-950/20 transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider"
                     >
-                      <CheckCircle2 className="w-4 h-4" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                       <span>Payment Received</span>
                     </button>
 
@@ -525,10 +541,10 @@ export const PayToView: React.FC<PayToViewProps> = ({
                           onDeleteTransaction(tx.id);
                         }
                       }}
-                      className="bg-white hover:bg-rose-50 text-rose-700 font-black text-xs py-2.5 px-3 rounded-2xl border border-black transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer"
+                      className="bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black text-xs py-2.5 px-3 rounded-[24px] border border-blue-400/30 shadow-md shadow-blue-950/20 transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer uppercase tracking-wider"
                       title="Delete/Clear Active Transaction"
                     >
-                      <Trash2 className="w-4 h-4 text-rose-600" />
+                      <Trash2 className="w-4 h-4 text-rose-400" />
                       <span>Delete</span>
                     </button>
                   </div>

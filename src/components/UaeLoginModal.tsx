@@ -416,7 +416,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
             type="button"
             onClick={() => handleLogin()}
             disabled={isSearchingCloud}
-            className="w-full bg-[#0052FF] hover:bg-[#0047E0] text-white font-black py-3.5 rounded-2xl shadow-lg shadow-blue-600/25 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer disabled:opacity-50 border border-blue-400/20"
+            className="w-full bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black py-4 rounded-[24px] shadow-lg shadow-blue-950/30 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer disabled:opacity-50 border border-blue-400/30 uppercase tracking-wider"
           >
             <ShieldCheck className="w-5 h-5 stroke-[2.5] text-white" />
             <span>{isSearchingCloud ? 'Connecting Cloud...' : 'Login to Mess Portal'}</span>

@@ -1,6 +1,22 @@
 {
+  "short_name": "UAE Mess",
   "name": "UAE MESS SYSTEM",
-  "description": "Official UAE Room & Mess Expense Tracker & Settlement Portal with GDRFA Visa validation, PDF statements, and group expense management.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "display": "standalone"
 }

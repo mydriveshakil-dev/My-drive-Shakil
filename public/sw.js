@@ -1,58 +1,45 @@
-// Service Worker for UAE MESS SYSTEM PWA
-const CACHE_NAME = 'uae-mess-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/apple-touch-icon.png',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/favicon-32x32.png',
-  '/favicon-16x16.png'
-];
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0B4A3F" />
+    <meta name="application-name" content="UAE MESS" />
+    
+    <!-- iOS / Safari Web App Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="UAE MESS" />
+    <meta name="mobile-web-app-capable" content="yes" />
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE).catch(() => {
-        // Ignore individual asset fetch failures during install
-      });
-    })
-  );
-  self.skipWaiting();
-});
+    <!-- Apple iOS Touch Icons (Cache-Busted with ?v=2) -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2" />
+    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png?v=2" />
+    <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon-precomposed.png?v=2" />
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
-  );
-  self.clients.claim();
-});
+    <!-- Android Chrome Favicons & App Icons (Cache-Busted with ?v=2) -->
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=2" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=2" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2" />
+    <link rel="icon" type="image/png" href="/icon-192.png?v=2" />
+    <link rel="shortcut icon" href="/apple-touch-icon.png?v=2" />
 
-self.addEventListener('fetch', (event) => {
-  // Network first strategy with fallback to cache for static assets
-  if (event.request.method !== 'GET') return;
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response && response.status === 200 && response.type === 'basic') {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
-  );
-});
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.json?v=2" />
+
+    <title>UAE MESS SYSTEM</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
+  </body>
+</html>

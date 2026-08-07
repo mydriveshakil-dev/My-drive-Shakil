@@ -1,13 +1,13 @@
-const CACHE_NAME = 'uae-mess-v2';
+const CACHE_NAME = 'uae-mess-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/manifest.json?v=2',
-  '/icon-192.png?v=2',
-  '/icon-512.png?v=2',
-  '/apple-touch-icon.png?v=2',
-  '/favicon-32x32.png?v=2',
-  '/favicon-16x16.png?v=2'
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/apple-touch-icon.png',
+  '/favicon-32x32.png',
+  '/favicon-16x16.png'
 ];
 
 // Install Event
@@ -19,7 +19,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate Event (Delete old caches)
+// Activate Event
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {

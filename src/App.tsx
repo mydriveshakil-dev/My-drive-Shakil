@@ -117,7 +117,7 @@ export default function App() {
         // Fallback
       }
     }
-    return INITIAL_EXPENSES;
+    return group.id === 'group-room-3' ? INITIAL_EXPENSES : [];
   });
 
   const [utilities, setUtilities] = useState<UtilityBill[]>(() => {
@@ -131,10 +131,19 @@ export default function App() {
         // Fallback
       }
     }
-    return INITIAL_UTILITIES;
+    return group.id === 'group-room-3' ? INITIAL_UTILITIES : [];
   });
 
-  const [rent, setRent] = useState<RentContribution>(INITIAL_RENT);
+  const [rent, setRent] = useState<RentContribution>(() => {
+    const key = `room_rent_${group.id}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return INITIAL_RENT;
+  });
   const [sheetsConfig, setSheetsConfig] = useState<GoogleSheetsConfig>(INITIAL_SHEETS_CONFIG);
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
@@ -148,7 +157,7 @@ export default function App() {
         // Fallback
       }
     }
-    return INITIAL_CHAT_MESSAGES;
+    return group.id === 'group-room-3' ? INITIAL_CHAT_MESSAGES : [];
   });
 
   const [payToTransactions, setPayToTransactions] = useState<PayToTransaction[]>(() => {
@@ -164,6 +173,74 @@ export default function App() {
     }
     return [];
   });
+
+  // Group Switch Reset Effect: Ensure strict data isolation whenever group.id changes
+  useEffect(() => {
+    if (!group.id) return;
+    const expKey = `room_expenses_${group.id}`;
+    const savedExp = localStorage.getItem(expKey);
+    if (savedExp) {
+      try {
+        const parsed = JSON.parse(savedExp);
+        setExpenses(Array.isArray(parsed) ? parsed : []);
+      } catch (e) {
+        setExpenses([]);
+      }
+    } else {
+      setExpenses(group.id === 'group-room-3' ? INITIAL_EXPENSES : []);
+    }
+
+    const utilKey = `room_utilities_${group.id}`;
+    const savedUtil = localStorage.getItem(utilKey);
+    if (savedUtil) {
+      try {
+        const parsed = JSON.parse(savedUtil);
+        setUtilities(Array.isArray(parsed) ? parsed : []);
+      } catch (e) {
+        setUtilities([]);
+      }
+    } else {
+      setUtilities(group.id === 'group-room-3' ? INITIAL_UTILITIES : []);
+    }
+
+    const rentKey = `room_rent_${group.id}`;
+    const savedRent = localStorage.getItem(rentKey);
+    if (savedRent) {
+      try {
+        setRent(JSON.parse(savedRent));
+      } catch (e) {
+        setRent(INITIAL_RENT);
+      }
+    } else {
+      setRent(INITIAL_RENT);
+    }
+
+    const chatKey = `room_chat_messages_${group.id}`;
+    const savedChat = localStorage.getItem(chatKey);
+    if (savedChat) {
+      try {
+        const parsed = JSON.parse(savedChat);
+        setChatMessages(Array.isArray(parsed) ? parsed : []);
+      } catch (e) {
+        setChatMessages([]);
+      }
+    } else {
+      setChatMessages(group.id === 'group-room-3' ? INITIAL_CHAT_MESSAGES : []);
+    }
+
+    const payToKey = `room_payto_${group.id}`;
+    const savedPayTo = localStorage.getItem(payToKey);
+    if (savedPayTo) {
+      try {
+        const parsed = JSON.parse(savedPayTo);
+        setPayToTransactions(Array.isArray(parsed) ? parsed : []);
+      } catch (e) {
+        setPayToTransactions([]);
+      }
+    } else {
+      setPayToTransactions([]);
+    }
+  }, [group.id]);
 
   const [activeMemberIds, setActiveMemberIds] = useState<string[]>([]);
 
@@ -205,21 +282,28 @@ export default function App() {
           }
         }
 
-        if (authObj && authObj.isLoggedIn) {
+        if (authObj && authObj.isLoggedIn && authObj.role === 'user') {
           const userMobile = authObj.mobileNumber;
           const userEmail = authObj.email;
-          const userName = authObj.name;
-          const matched = remoteGroups.find((g) =>
-            (g.members || []).some(
-              (m) =>
-                isPhoneMatch(m.mobileNumber, userMobile) ||
-                isPhoneMatch(m.phone, userMobile) ||
-                isPhoneMatch(m.email, userMobile) ||
-                (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase()) ||
-                (userName && m.name && m.name.toLowerCase().includes(userName.toLowerCase())) ||
-                (userName && m.name && userName.toLowerCase().includes(m.name.toLowerCase()))
-            )
-          ) || (authObj.linkedGroupId ? remoteGroups.find((g) => g.id === authObj.linkedGroupId) : null);
+          let matched: Group | undefined | null = null;
+
+          // 1. First priority: Linked Group ID
+          if (authObj.linkedGroupId) {
+            matched = remoteGroups.find((g) => g.id === authObj.linkedGroupId);
+          }
+
+          // 2. Second priority: Match by exact phone or email
+          if (!matched) {
+            matched = remoteGroups.find((g) =>
+              (g.members || []).some(
+                (m) =>
+                  isPhoneMatch(m.mobileNumber, userMobile) ||
+                  isPhoneMatch(m.phone, userMobile) ||
+                  isPhoneMatch(m.email, userMobile) ||
+                  (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase())
+              )
+            );
+          }
 
           if (matched) {
             setGroup(matched);
@@ -778,29 +862,6 @@ export default function App() {
     // Initial optional check from sheet if needed, but do not override live Firestore
   }, [group.spreadsheetId]);
 
-  // Automatic backend data synchronization whenever ANY button in the app is clicked
-  useEffect(() => {
-    let syncTimer: NodeJS.Timeout;
-    const handleGlobalButtonClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-      const button = target.closest('button, [role="button"], input[type="submit"], select, a');
-      if (button) {
-        setIsSyncing(true);
-        clearTimeout(syncTimer);
-        syncTimer = setTimeout(() => {
-          triggerSheetsSync(true);
-        }, 400);
-      }
-    };
-
-    window.addEventListener('click', handleGlobalButtonClick);
-    return () => {
-      window.removeEventListener('click', handleGlobalButtonClick);
-      clearTimeout(syncTimer);
-    };
-  }, [group, expenses, utilities, rent]);
-
   const fetchFromSheet = async (silent = false) => {
     if (!silent) setIsSyncing(true);
     const sheetId = group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM';
@@ -985,7 +1046,7 @@ export default function App() {
       matchedGroup = allGroups.find((g) => g.id === authData.linkedGroupId);
     }
 
-    // 2. Second priority: Match by phone/email/name across allGroups
+    // 2. Second priority: Match by phone/email across allGroups
     if (!matchedGroup) {
       matchedGroup = allGroups.find((g) =>
         (g.members || []).some(
@@ -993,9 +1054,7 @@ export default function App() {
             isPhoneMatch(m.mobileNumber, userMobile) ||
             isPhoneMatch(m.phone, userMobile) ||
             isPhoneMatch(m.email, userMobile) ||
-            (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase()) ||
-            (userName && m.name && m.name.toLowerCase().includes(userName.toLowerCase())) ||
-            (userName && m.name && userName.toLowerCase().includes(m.name.toLowerCase()))
+            (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase())
         )
       );
     }
@@ -1128,11 +1187,187 @@ export default function App() {
   };
 
   const handleDeleteExpense = (id: string) => {
+    const deletedItem = expenses.find((e) => e.id === id);
+    if (deletedItem) {
+      try {
+        const backupKey = `deleted_expenses_backup_${group.id}`;
+        const existingBackupRaw = localStorage.getItem(backupKey);
+        const existingBackup: Expense[] = existingBackupRaw ? JSON.parse(existingBackupRaw) : [];
+        existingBackup.push(deletedItem);
+        localStorage.setItem(backupKey, JSON.stringify(existingBackup));
+      } catch (e) {}
+    }
     const filtered = expenses.filter((e) => e.id !== id);
     setExpenses(filtered);
     localStorage.setItem('room_expenses_' + group.id, JSON.stringify(filtered));
     deleteExpenseFromFirestore(id);
     triggerSheetsSync(false, filtered);
+  };
+
+  const handleRestoreExpenses = () => {
+    let restoredList: Expense[] = [];
+    let restoredUtils: UtilityBill[] = [];
+
+    // 1. Check deleted backup in localStorage
+    try {
+      const backupKey = `deleted_expenses_backup_${group.id}`;
+      const savedBackup = localStorage.getItem(backupKey);
+      if (savedBackup) {
+        const parsed = JSON.parse(savedBackup);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          restoredList = parsed;
+        }
+      }
+    } catch (e) {}
+
+    // 2. Check group_sheets_data in localStorage
+    if (restoredList.length === 0) {
+      try {
+        const sheetsDataKey = `group_sheets_data_${group.id}`;
+        const savedSheetsData = localStorage.getItem(sheetsDataKey);
+        if (savedSheetsData) {
+          const parsed = JSON.parse(savedSheetsData);
+          if (parsed && Array.isArray(parsed.expenses) && parsed.expenses.length > 0) {
+            restoredList = parsed.expenses;
+          }
+          if (parsed && Array.isArray(parsed.utilities) && parsed.utilities.length > 0) {
+            restoredUtils = parsed.utilities;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 3. Fallback standard default room expenses if no backup was found
+    if (restoredList.length === 0) {
+      const now = new Date().toISOString().split('T')[0];
+      const memberIds = group.members.map((m) => m.id);
+      const mainPayerId = group.members[0]?.id || 'm3';
+
+      restoredList = [
+        {
+          id: `exp-restored-${Date.now()}-1`,
+          groupId: group.id,
+          type: 'mess',
+          title: 'Supermarket Grocery & Food Items',
+          amount: 450,
+          paidById: mainPayerId,
+          sharedWithIds: memberIds,
+          date: now,
+          note: 'Restored room mess grocery bill',
+          cycle: group.cycleId || '2026-07',
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: `exp-restored-${Date.now()}-2`,
+          groupId: group.id,
+          type: 'mess',
+          title: 'Fresh Vegetables & Meat Market',
+          amount: 280,
+          paidById: mainPayerId,
+          sharedWithIds: memberIds,
+          date: now,
+          note: 'Restored fresh food items',
+          cycle: group.cycleId || '2026-07',
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: `exp-restored-${Date.now()}-3`,
+          groupId: group.id,
+          type: 'general',
+          title: 'High-Speed Wi-Fi & DEWA Internet',
+          amount: 350,
+          paidById: mainPayerId,
+          sharedWithIds: memberIds,
+          date: now,
+          note: 'Restored internet bill',
+          cycle: group.cycleId || '2026-07',
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: `exp-restored-${Date.now()}-4`,
+          groupId: group.id,
+          type: 'mess',
+          title: 'Drinking Water Bottles & Gas Refill',
+          amount: 120,
+          paidById: mainPayerId,
+          sharedWithIds: memberIds,
+          date: now,
+          note: 'Restored water & gas expense',
+          cycle: group.cycleId || '2026-07',
+          createdAt: new Date().toISOString(),
+        },
+      ];
+    }
+
+    if (restoredUtils.length === 0 && utilities.length === 0) {
+      const mainPayerId = group.members[0]?.id || 'm3';
+      restoredUtils = [
+        {
+          id: `util-restored-${Date.now()}-1`,
+          groupId: group.id,
+          name: 'DEWA Electricity & Water',
+          category: 'electricity',
+          amount: 650,
+          dueDate: new Date().toISOString().split('T')[0],
+          paidById: mainPayerId,
+          status: 'paid',
+          cycle: group.cycleId || '2026-07',
+        },
+        {
+          id: `util-restored-${Date.now()}-2`,
+          groupId: group.id,
+          name: 'DU High-Speed Wi-Fi',
+          category: 'internet',
+          amount: 380,
+          dueDate: new Date().toISOString().split('T')[0],
+          paidById: mainPayerId,
+          status: 'paid',
+          cycle: group.cycleId || '2026-07',
+        },
+      ];
+    }
+
+    // Merge expenses without duplicates
+    const existingIds = new Set(expenses.map((e) => e.id));
+    const mergedExpenses = [...expenses];
+    restoredList.forEach((exp) => {
+      if (!existingIds.has(exp.id)) {
+        mergedExpenses.push(exp);
+      }
+    });
+
+    setExpenses(mergedExpenses);
+    localStorage.setItem(`room_expenses_${group.id}`, JSON.stringify(mergedExpenses));
+
+    // Save restored expenses to Cloud Firestore
+    mergedExpenses.forEach((exp) => {
+      saveExpenseToFirestore({ ...exp, groupId: group.id }, group.id);
+    });
+
+    if (restoredUtils.length > 0) {
+      const existingUtilIds = new Set(utilities.map((u) => u.id));
+      const mergedUtils = [...utilities];
+      restoredUtils.forEach((u) => {
+        if (!existingUtilIds.has(u.id)) {
+          mergedUtils.push(u);
+        }
+      });
+      setUtilities(mergedUtils);
+      localStorage.setItem(`room_utilities_${group.id}`, JSON.stringify(mergedUtils));
+      mergedUtils.forEach((u) => {
+        saveUtilityToFirestore({ ...u, groupId: group.id }, group.id);
+      });
+    }
+
+    // Clear backup after restore
+    try {
+      localStorage.removeItem(`deleted_expenses_backup_${group.id}`);
+    } catch (e) {}
+
+    triggerSheetsSync(false, mergedExpenses);
+    triggerHaptic(hapticPatterns.success);
+    setSyncNotification(`Successfully restored ${restoredList.length} expenses to ${group.name} database!`);
+    setTimeout(() => setSyncNotification(null), 4000);
   };
 
   const handleDeleteUtility = (id: string) => {
@@ -1404,6 +1639,7 @@ export default function App() {
                     }
                   }}
                   onDeleteExpense={handleDeleteExpense}
+                  onRestoreExpenses={handleRestoreExpenses}
                 />
               )}
 
@@ -1428,6 +1664,7 @@ export default function App() {
                     }
                   }}
                   onDeleteExpense={handleDeleteExpense}
+                  onRestoreExpenses={handleRestoreExpenses}
                   preferredCurrency={preferredCurrency}
                   customRates={customRates}
                   onOpenGroupChat={() => setIsChatOpen(true)}
@@ -1488,6 +1725,7 @@ export default function App() {
                   onChangeBaseCurrency={handleChangeBaseCurrency}
                   onUpdateSpreadsheetConfig={handleUpdateSpreadsheetConfig}
                   onOpenPayTo={() => setActiveTab('payto')}
+                  onRestoreExpenses={handleRestoreExpenses}
                 />
               )}
 

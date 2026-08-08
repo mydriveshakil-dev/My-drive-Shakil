@@ -17,6 +17,7 @@ import {
   Trash2,
   MessageCircle,
   UserCheck,
+  RotateCcw,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
@@ -31,6 +32,7 @@ interface HomeDashboardProps {
   onOpenAddExpense: () => void;
   onNavigateTab: (tab: 'home' | 'expenses' | 'utilities' | 'report' | 'group') => void;
   onDeleteExpense: (id: string) => void;
+  onRestoreExpenses?: () => void;
   preferredCurrency?: string;
   customRates?: Record<string, number>;
   onOpenGroupChat?: () => void;
@@ -72,6 +74,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   onOpenAddExpense,
   onNavigateTab,
   onDeleteExpense,
+  onRestoreExpenses,
   preferredCurrency = 'USD',
   customRates,
   onOpenGroupChat,
@@ -544,7 +547,18 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            {onRestoreExpenses && (
+              <button
+                type="button"
+                onClick={onRestoreExpenses}
+                className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-full border border-black shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                title="Restore deleted room expenses"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Restore Expenses
+              </button>
+            )}
             <span className="text-[10px] font-black bg-black text-white px-3 py-1 rounded-full uppercase tracking-wider">
               {expenses.length} Total Expenses
             </span>
@@ -598,8 +612,18 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
           if (displayedList.length === 0) {
             return (
-              <div className="py-8 text-center bg-slate-50 border border-black rounded-2xl p-4">
+              <div className="py-8 text-center bg-slate-50 border border-black rounded-2xl p-6 space-y-3">
                 <p className="text-xs font-bold text-slate-600">No expenses recorded for this user in the running month.</p>
+                {onRestoreExpenses && (
+                  <button
+                    type="button"
+                    onClick={onRestoreExpenses}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl border border-black shadow-md inline-flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Restore Deleted Expenses
+                  </button>
+                )}
               </div>
             );
           }

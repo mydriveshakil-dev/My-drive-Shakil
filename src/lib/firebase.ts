@@ -143,8 +143,23 @@ export function isPhoneMatch(p1?: string, p2?: string): boolean {
   return false;
 }
 
+let isQuotaExceeded = false;
+
+function isQuotaError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (msg.includes('resource-exhausted') || msg.includes('Quota limit exceeded') || (err as any)?.code === 'resource-exhausted') {
+    if (!isQuotaExceeded) {
+      isQuotaExceeded = true;
+      console.warn('Firestore Quota Limit Exceeded: Operating in local storage mode.');
+    }
+    return true;
+  }
+  return false;
+}
+
 // User Profiles Cloud Sync for Multi-Device Login
 export async function saveUserProfileToFirestore(profile: UserAuthProfile) {
+  if (isQuotaExceeded) return;
   try {
     const rawMob = profile.mobileNumber || profile.email || '';
     const cleanDigits = cleanPhoneDigits(rawMob);
@@ -166,18 +181,10 @@ export async function saveUserProfileToFirestore(profile: UserAuthProfile) {
 
     const userRef = doc(db, 'users', cleanDocId);
     await setDoc(userRef, payload, { merge: true });
-
-    if (cleanDigits && cleanDigits !== cleanDocId) {
-      const altRef = doc(db, 'users', cleanDigits);
-      await setDoc(altRef, payload, { merge: true });
-    }
-
-    if (localFormat && localFormat !== cleanDigits && localFormat !== cleanDocId) {
-      const localRef = doc(db, 'users', localFormat);
-      await setDoc(localRef, payload, { merge: true });
-    }
   } catch (err) {
-    console.error('Error saving user profile to Firestore:', err);
+    if (!isQuotaError(err)) {
+      console.warn('Warning saving user profile to Firestore:', err);
+    }
   }
 }
 
@@ -337,6 +344,7 @@ export function subscribeToGroup(
 }
 
 export async function saveGroupToFirestore(group: Group) {
+  if (isQuotaExceeded) return;
   try {
     const groupRef = doc(db, 'groups', group.id);
     const payload = removeUndefinedFields(group);
@@ -362,16 +370,21 @@ export async function saveGroupToFirestore(group: Group) {
       }
     }
   } catch (err) {
-    console.error('Error saving group to Firestore:', err);
+    if (!isQuotaError(err)) {
+      console.warn('Warning saving group to Firestore:', err);
+    }
   }
 }
 
 export async function deleteGroupFromFirestore(groupId: string) {
+  if (isQuotaExceeded) return;
   try {
     const groupRef = doc(db, 'groups', groupId);
     await deleteDoc(groupRef);
   } catch (err) {
-    console.error('Error deleting group from Firestore:', err);
+    if (!isQuotaError(err)) {
+      console.warn('Warning deleting group from Firestore:', err);
+    }
   }
 }
 
@@ -393,28 +406,36 @@ export function subscribeToExpenses(
       onUpdate(items);
     },
     (err) => {
-      console.warn('Firestore expenses listener warning:', err);
+      if (!isQuotaError(err)) {
+        console.warn('Firestore expenses listener warning:', err);
+      }
     }
   );
 }
 
 export async function saveExpenseToFirestore(expense: Expense, activeGroupId?: string) {
+  if (isQuotaExceeded) return;
   try {
     const expenseRef = doc(db, 'expenses', expense.id);
     const targetGroupId = expense.groupId || activeGroupId || 'group-room-3';
     const payload = removeUndefinedFields({ ...expense, groupId: targetGroupId });
     await setDoc(expenseRef, payload, { merge: true });
   } catch (err) {
-    console.error('Error saving expense to Firestore:', err);
+    if (!isQuotaError(err)) {
+      console.warn('Warning saving expense to Firestore:', err);
+    }
   }
 }
 
 export async function deleteExpenseFromFirestore(expenseId: string) {
+  if (isQuotaExceeded) return;
   try {
     const expenseRef = doc(db, 'expenses', expenseId);
     await deleteDoc(expenseRef);
   } catch (err) {
-    console.error('Error deleting expense from Firestore:', err);
+    if (!isQuotaError(err)) {
+      console.warn('Warning deleting expense from Firestore:', err);
+    }
   }
 }
 
@@ -436,28 +457,36 @@ export function subscribeToUtilities(
       onUpdate(items);
     },
     (err) => {
-      console.warn('Firestore utilities listener warning:', err);
+      if (!isQuotaError(err)) {
+        console.warn('Firestore utilities listener warning:', err);
+      }
     }
   );
 }
 
 export async function saveUtilityToFirestore(utility: UtilityBill, activeGroupId?: string) {
+  if (isQuotaExceeded) return;
   try {
     const utilRef = doc(db, 'utilities', utility.id);
     const targetGroupId = utility.groupId || activeGroupId || 'group-room-3';
     const payload = removeUndefinedFields({ ...utility, groupId: targetGroupId });
     await setDoc(utilRef, payload, { merge: true });
   } catch (err) {
-    console.error('Error saving utility to Firestore:', err);
+    if (!isQuotaError(err)) {
+      console.warn('Warning saving utility to Firestore:', err);
+    }
   }
 }
 
 export async function deleteUtilityFromFirestore(utilityId: string) {
+  if (isQuotaExceeded) return;
   try {
     const utilRef = doc(db, 'utilities', utilityId);
     await deleteDoc(utilRef);
   } catch (err) {
-    console.error('Error deleting utility from Firestore:', err);
+    if (!isQuotaError(err)) {
+      console.warn('Warning deleting utility from Firestore:', err);
+    }
   }
 }
 
@@ -477,18 +506,23 @@ export function subscribeToRent(
       }
     },
     (err) => {
-      console.warn('Firestore rent listener warning:', err);
+      if (!isQuotaError(err)) {
+        console.warn('Firestore rent listener warning:', err);
+      }
     }
   );
 }
 
 export async function saveRentToFirestore(groupId: string, rent: RentContribution) {
+  if (isQuotaExceeded) return;
   try {
     const rentRef = doc(db, 'rent', groupId);
     const payload = removeUndefinedFields(rent);
     await setDoc(rentRef, payload, { merge: true });
   } catch (err) {
-    console.error('Error saving rent to Firestore:', err);
+    if (!isQuotaError(err)) {
+      console.warn('Warning saving rent to Firestore:', err);
+    }
   }
 }
 
@@ -550,6 +584,7 @@ export function subscribeToChatMessages(
 }
 
 export async function saveChatMessageToFirestore(groupId: string, message: ChatMessage) {
+  if (isQuotaExceeded) return;
   try {
     const msgRef = doc(db, 'chatMessages', message.id);
     const createdMs = message.createdMs || getMessageTimestampMs(message);
@@ -562,27 +597,35 @@ export async function saveChatMessageToFirestore(groupId: string, message: ChatM
     });
     await setDoc(msgRef, payload, { merge: true });
   } catch (err) {
-    console.error('Error saving chat message to Firestore:', err);
+    if (!isQuotaError(err)) {
+      console.warn('Warning saving chat message to Firestore:', err);
+    }
   }
 }
 
 // 6. PayTo Personal Ledger Firestore Cloud Sync
 export async function savePayToTransactionToFirestore(groupId: string, tx: PayToTransaction) {
+  if (isQuotaExceeded) return;
   try {
     const docRef = doc(db, `payto_${groupId}`, tx.id);
     const payload = removeUndefinedFields({ ...tx, updatedAtMs: Date.now() });
     await setDoc(docRef, payload, { merge: true });
   } catch (err) {
-    console.error('Error saving payto transaction to Firestore:', err);
+    if (!isQuotaError(err)) {
+      console.warn('Warning saving payto transaction to Firestore:', err);
+    }
   }
 }
 
 export async function deletePayToTransactionFromFirestore(groupId: string, txId: string) {
+  if (isQuotaExceeded) return;
   try {
     const docRef = doc(db, `payto_${groupId}`, txId);
     await deleteDoc(docRef);
   } catch (err) {
-    console.error('Error deleting payto transaction from Firestore:', err);
+    if (!isQuotaError(err)) {
+      console.warn('Warning deleting payto transaction from Firestore:', err);
+    }
   }
 }
 
@@ -599,7 +642,9 @@ export function subscribeToPayToTransactions(groupId: string, onUpdate: (txs: Pa
       onUpdate(items);
     },
     (err) => {
-      console.warn('Firestore payto listener warning:', err);
+      if (!isQuotaError(err)) {
+        console.warn('Firestore payto listener warning:', err);
+      }
     }
   );
 }
@@ -613,7 +658,7 @@ export interface UserPresence {
 }
 
 export async function updateUserPresenceInFirestore(groupId: string, memberId: string, memberName: string) {
-  if (!groupId || !memberId) return;
+  if (!groupId || !memberId || isQuotaExceeded) return;
   try {
     const docId = `${groupId}_${memberId.replace(/[^a-zA-Z0-9_\-]/g, '_')}`;
     const docRef = doc(db, 'room_presence', docId);
@@ -628,7 +673,9 @@ export async function updateUserPresenceInFirestore(groupId: string, memberId: s
       { merge: true }
     );
   } catch (err) {
-    console.warn('Error updating presence in Firestore:', err);
+    if (!isQuotaError(err)) {
+      console.warn('Error updating presence in Firestore:', err);
+    }
   }
 }
 

@@ -416,8 +416,9 @@ export function subscribeToExpenses(
 export async function saveExpenseToFirestore(expense: Expense, activeGroupId?: string) {
   if (isQuotaExceeded) return;
   try {
+    const targetGroupId = expense.groupId || activeGroupId;
+    if (!targetGroupId) return;
     const expenseRef = doc(db, 'expenses', expense.id);
-    const targetGroupId = expense.groupId || activeGroupId || 'group-room-3';
     const payload = removeUndefinedFields({ ...expense, groupId: targetGroupId });
     await setDoc(expenseRef, payload, { merge: true });
   } catch (err) {
@@ -467,8 +468,9 @@ export function subscribeToUtilities(
 export async function saveUtilityToFirestore(utility: UtilityBill, activeGroupId?: string) {
   if (isQuotaExceeded) return;
   try {
+    const targetGroupId = utility.groupId || activeGroupId;
+    if (!targetGroupId) return;
     const utilRef = doc(db, 'utilities', utility.id);
-    const targetGroupId = utility.groupId || activeGroupId || 'group-room-3';
     const payload = removeUndefinedFields({ ...utility, groupId: targetGroupId });
     await setDoc(utilRef, payload, { merge: true });
   } catch (err) {

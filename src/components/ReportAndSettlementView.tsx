@@ -457,16 +457,33 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
+            onClick={() => {
+              setIsPdfPreviewOpen(true);
+              setTimeout(() => {
+                window.print();
+              }, 300);
+            }}
+            className="bg-[#0052FF] hover:bg-blue-600 text-white font-extrabold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2 border border-blue-400/40 transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30"
+            title="Print-Ready PDF Statement"
+          >
+            <Printer className="w-4 h-4 text-blue-100" />
+            <span>Print-Ready PDF</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setIsPdfPreviewOpen(true)}
             className="bg-white/10 hover:bg-white/20 text-white font-extrabold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 border border-white/20 transition-all active:scale-95 cursor-pointer shadow-md"
           >
             <FileText className="w-4 h-4 text-blue-300" />
-            <span>Export to PDF</span>
+            <span>Export PDF</span>
           </button>
 
           <button
+            type="button"
             onClick={onSaveSettlement}
             className="bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black px-5 py-3 rounded-[24px] text-xs flex items-center gap-1.5 shadow-md shadow-blue-950/30 active:scale-95 border border-blue-400/30 cursor-pointer uppercase tracking-wider"
           >
@@ -613,6 +630,17 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               </div>
 
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                {/* Print Ready Button */}
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-extrabold px-2.5 sm:px-3.5 py-1.5 sm:py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
+                  title="Print Report"
+                >
+                  <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                  <span className="hidden sm:inline">Print</span>
+                </button>
+
                 {/* Save / Download PDF Button */}
                 <button
                   type="button"
@@ -870,6 +898,95 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                     ) : (
                       <p className="text-xs text-emerald-700 font-bold p-3 bg-emerald-50 rounded-xl border border-emerald-200">
                         ✓ All member balances are fully settled in this cycle.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Utility Bills Breakdown Section */}
+                  <div className="space-y-2 pt-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 pb-1.5 border-b border-slate-200 flex items-center justify-between">
+                      <span>3. Utility Bills Breakdown (DEWA & WiFi)</span>
+                      <span className="text-slate-500 font-normal text-[11px]">
+                        Total: {settlementResult.totalUtilities.toFixed(2)} {group.currency}
+                      </span>
+                    </h3>
+                    {utilities && utilities.length > 0 ? (
+                      <div className="w-full rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] tracking-wider">
+                              <th className="p-2 border-b border-r border-slate-200">Utility Name</th>
+                              <th className="p-2 border-b border-r border-slate-200">Category</th>
+                              <th className="p-2 border-b border-r border-slate-200">Date / Cycle</th>
+                              <th className="p-2 border-b border-r border-slate-200 text-right">Amount</th>
+                              <th className="p-2 border-b border-slate-200 text-center">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200 font-medium text-[11px]">
+                            {utilities.map((u) => (
+                              <tr key={u.id} className="even:bg-slate-50/70">
+                                <td className="p-2 border-r border-slate-200 font-bold text-slate-900">{u.title || u.type}</td>
+                                <td className="p-2 border-r border-slate-200 text-slate-600 uppercase text-[10px]">{u.category || u.type}</td>
+                                <td className="p-2 border-r border-slate-200 text-slate-600">{u.date || u.cycle || 'Current'}</td>
+                                <td className="p-2 border-r border-slate-200 text-right font-black text-slate-900">{u.amount.toFixed(2)} {group.currency}</td>
+                                <td className="p-2 text-center font-bold">
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] ${u.isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                                    {u.isPaid ? 'PAID' : 'PENDING'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 italic p-2 bg-slate-50 rounded-lg border border-slate-200">
+                        No utility bills recorded for this period.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Itemized Billing Cycle Expenses Breakdown */}
+                  <div className="space-y-2 pt-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 pb-1.5 border-b border-slate-200 flex items-center justify-between">
+                      <span>4. Current Cycle Expenses Summary</span>
+                      <span className="text-slate-500 font-normal text-[11px]">
+                        Total: {settlementResult.totalMessExpenses.toFixed(2)} {group.currency}
+                      </span>
+                    </h3>
+                    {expenses && expenses.length > 0 ? (
+                      <div className="w-full rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] tracking-wider">
+                              <th className="p-2 border-b border-r border-slate-200">Date</th>
+                              <th className="p-2 border-b border-r border-slate-200">Title</th>
+                              <th className="p-2 border-b border-r border-slate-200">Category</th>
+                              <th className="p-2 border-b border-r border-slate-200">Paid By</th>
+                              <th className="p-2 border-b border-slate-200 text-right">Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200 font-medium text-[11px]">
+                            {expenses.slice(0, 20).map((e) => (
+                              <tr key={e.id} className="even:bg-slate-50/70">
+                                <td className="p-2 border-r border-slate-200 text-slate-600">{e.date}</td>
+                                <td className="p-2 border-r border-slate-200 font-bold text-slate-900">{e.title}</td>
+                                <td className="p-2 border-r border-slate-200 text-slate-600 uppercase text-[10px]">{e.category || 'Mess'}</td>
+                                <td className="p-2 border-r border-slate-200 text-slate-800 font-semibold">{e.paidByName || 'Member'}</td>
+                                <td className="p-2 text-right font-black text-slate-900">{e.amount.toFixed(2)} {group.currency}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {expenses.length > 20 && (
+                          <p className="text-[10px] text-slate-500 italic p-1.5 text-center bg-slate-50">
+                            Showing 20 of {expenses.length} expenses in statement report.
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 italic p-2 bg-slate-50 rounded-lg border border-slate-200">
+                        No individual expenses recorded for this period.
                       </p>
                     )}
                   </div>

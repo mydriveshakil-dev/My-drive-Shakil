@@ -48,22 +48,38 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onLogout,
   onOpenInstallPwa,
 }) => {
-  const previousCycleOptions = getPreviousCycleOptions(24, group?.createdAt);
+  const previousCycleOptions = getPreviousCycleOptions(24);
   const isAdmin = currentUser?.role === 'admin';
   const [showGroupDropdown, setShowGroupDropdown] = useState(false);
+
+  const isCustomGroupWithoutCustomSheet = group?.id !== 'group-room-3' && (!group?.spreadsheetId || group.spreadsheetId === '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM');
 
   // Helper to calculate total expenses for a specific cycleId
   const getCycleTotalExpenses = (cId: string) => {
     return expenses
       .filter((e) => {
+        const itemGroupId = e.groupId;
+        if (itemGroupId && itemGroupId !== group.id) return false;
+        if (!itemGroupId && group.id !== 'group-room-3') return false;
+
+        if (isCustomGroupWithoutCustomSheet) {
+          if (!e.id.startsWith('exp-')) {
+            return false;
+          }
+        }
         const expCycle = e.cycle || (e.date ? e.date.slice(0, 7) : '');
         return expCycle === cId;
       })
-      .reduce((sum, e) => sum + e.amount, 0);
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
   };
 
-  const activeSelectedPreviousCycleId = selectedPreviousCycle || previousCycleOptions[0]?.cycleId || '2026-06';
+  const activeSelectedPreviousCycleId = selectedPreviousCycle || previousCycleOptions[0]?.cycleId || '2026-07';
   const activePreviousCycleTotal = getCycleTotalExpenses(activeSelectedPreviousCycleId);
+  const sheetUrl = group?.spreadsheetId
+    ? `https://docs.google.com/spreadsheets/d/${group.spreadsheetId}/edit`
+    : group?.id === 'group-room-3'
+    ? 'https://docs.google.com/spreadsheets/d/1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM/edit'
+    : null;
 
   return (
     <header className="mb-4 z-30 relative w-full">
@@ -202,15 +218,17 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 <span>{isSyncing ? 'Syncing...' : 'Synced'}</span>
               </div>
 
-              <a
-                href={`https://docs.google.com/spreadsheets/d/${group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}/edit`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/15 text-white font-medium px-3 py-1.5 rounded-xl border border-white/20 transition-all cursor-pointer"
-              >
-                <ExternalLink className="w-3.5 h-3.5 text-blue-300" />
-                <span>Google Sheet</span>
-              </a>
+              {sheetUrl && (
+                <a
+                  href={sheetUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/15 text-white font-medium px-3 py-1.5 rounded-xl border border-white/20 transition-all cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-blue-300" />
+                  <span>Google Sheet</span>
+                </a>
+              )}
 
               <button
                 onClick={onOpenArchGuide}

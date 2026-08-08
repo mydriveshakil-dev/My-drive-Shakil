@@ -514,7 +514,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div>
                 <h3 className="text-sm font-black text-[#07193F]">Google Sheets Central Synchronization</h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Spreadsheet ID: <code className="text-[#07193F] font-mono font-bold">{group.spreadsheetId ? group.spreadsheetId.substring(0, 16) + '...' : '1-VBgqW...'}</code>
+                  Spreadsheet ID: <code className="text-[#07193F] font-mono font-bold">{group.spreadsheetId ? group.spreadsheetId.substring(0, 16) + '...' : (group.id === 'group-room-3' ? '1-VBgqW...' : 'Not Linked')}</code>
                 </p>
               </div>
             </div>
@@ -525,15 +525,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <span>{isSyncing ? 'Auto-Syncing...' : 'Auto-Synced'}</span>
               </div>
 
-              <a
-                href={`https://docs.google.com/spreadsheets/d/${group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}/edit`}
-                target="_blank"
-                rel="noreferrer"
-                className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-bold px-3.5 py-1.5 rounded-2xl text-xs flex items-center gap-1.5 border border-blue-400/20 transition-all cursor-pointer shadow-md"
-              >
-                <ExternalLink className="w-3.5 h-3.5 text-white" />
-                <span>Open Sheet</span>
-              </a>
+              {(group.spreadsheetId || group.id === 'group-room-3') && (
+                <a
+                  href={`https://docs.google.com/spreadsheets/d/${group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}/edit`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-bold px-3.5 py-1.5 rounded-2xl text-xs flex items-center gap-1.5 border border-blue-400/20 transition-all cursor-pointer shadow-md"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-white" />
+                  <span>Open Sheet</span>
+                </a>
+              )}
             </div>
           </div>
         </div>

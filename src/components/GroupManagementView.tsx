@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Group, Member, GoogleSheetsConfig, UserAuthProfile } from '../types';
 import { GlassContainer } from './GlassContainer';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
@@ -107,10 +107,18 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
   // Google Sheet Config States
   const [isEditingSheetConfig, setIsEditingSheetConfig] = useState(false);
-  const [sheetIdInput, setSheetIdInput] = useState(group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM');
+  const [sheetIdInput, setSheetIdInput] = useState(
+    group.spreadsheetId || (group.id === 'group-room-3' ? '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM' : '')
+  );
   const [webAppUrlInput, setWebAppUrlInput] = useState(sheetsConfig.webAppUrl || localStorage.getItem('uae_sheets_webapp_url') || '');
   const [showAppsScriptModal, setShowAppsScriptModal] = useState(false);
   const [copiedScript, setCopiedScript] = useState(false);
+
+  useEffect(() => {
+    setSheetIdInput(
+      group.spreadsheetId || (group.id === 'group-room-3' ? '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM' : '')
+    );
+  }, [group.id, group.spreadsheetId]);
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -603,8 +611,8 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
             <div className="bg-slate-50 p-3 rounded-2xl border border-black">
               <span className="text-slate-700 block text-[10px] uppercase font-bold">Central Spreadsheet ID</span>
-              <span className="font-mono font-bold text-slate-950 truncate block mt-0.5 text-xs" title={group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}>
-                {group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}
+              <span className="font-mono font-bold text-slate-950 truncate block mt-0.5 text-xs" title={group.spreadsheetId || (group.id === 'group-room-3' ? '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM' : 'Not Linked')}>
+                {group.spreadsheetId || (group.id === 'group-room-3' ? '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM' : 'Not Linked')}
               </span>
             </div>
 
@@ -639,15 +647,17 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 <span>Apps Script Code</span>
               </button>
 
-              <a
-                href={`https://docs.google.com/spreadsheets/d/${group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}/edit`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 bg-black hover:bg-slate-800 text-white font-black px-3.5 py-1.5 rounded-xl transition-all shadow-md active:scale-95 text-xs self-start sm:self-auto cursor-pointer"
-              >
-                <span>Open Linked Google Sheet</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
+              {(group.spreadsheetId || group.id === 'group-room-3') && (
+                <a
+                  href={`https://docs.google.com/spreadsheets/d/${group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}/edit`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 bg-black hover:bg-slate-800 text-white font-black px-3.5 py-1.5 rounded-xl transition-all shadow-md active:scale-95 text-xs self-start sm:self-auto cursor-pointer"
+                >
+                  <span>Open Linked Google Sheet</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
             </div>
           </div>
         </GlassContainer>

@@ -177,12 +177,22 @@ export default function App() {
   // Group Switch Reset Effect: Ensure strict data isolation whenever group.id changes
   useEffect(() => {
     if (!group.id) return;
+    const isCustomGroupWithoutCustomSheet = group.id !== 'group-room-3' && (!group.spreadsheetId || group.spreadsheetId === '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM');
+
     const expKey = `room_expenses_${group.id}`;
     const savedExp = localStorage.getItem(expKey);
     if (savedExp) {
       try {
-        const parsed = JSON.parse(savedExp);
-        setExpenses(Array.isArray(parsed) ? parsed : []);
+        let parsed = JSON.parse(savedExp);
+        if (Array.isArray(parsed)) {
+          parsed = parsed.filter((e: Expense) => (e.groupId ? e.groupId === group.id : group.id === 'group-room-3'));
+          if (isCustomGroupWithoutCustomSheet) {
+            parsed = parsed.filter((e: Expense) => e.id.startsWith('exp-'));
+          }
+          setExpenses(parsed);
+        } else {
+          setExpenses([]);
+        }
       } catch (e) {
         setExpenses([]);
       }
@@ -194,8 +204,16 @@ export default function App() {
     const savedUtil = localStorage.getItem(utilKey);
     if (savedUtil) {
       try {
-        const parsed = JSON.parse(savedUtil);
-        setUtilities(Array.isArray(parsed) ? parsed : []);
+        let parsed = JSON.parse(savedUtil);
+        if (Array.isArray(parsed)) {
+          parsed = parsed.filter((u: UtilityBill) => (u.groupId ? u.groupId === group.id : group.id === 'group-room-3'));
+          if (isCustomGroupWithoutCustomSheet) {
+            parsed = parsed.filter((u: UtilityBill) => u.id.startsWith('util-'));
+          }
+          setUtilities(parsed);
+        } else {
+          setUtilities([]);
+        }
       } catch (e) {
         setUtilities([]);
       }
@@ -240,6 +258,8 @@ export default function App() {
     } else {
       setPayToTransactions([]);
     }
+
+    setBillingCycleType('current');
   }, [group.id]);
 
   const [activeMemberIds, setActiveMemberIds] = useState<string[]>([]);
@@ -355,46 +375,42 @@ export default function App() {
 
     // 2. Expenses subscription - Instant multi-device sync
     const unsubExp = subscribeToExpenses(group.id, (remoteExpenses) => {
-      if (remoteExpenses && remoteExpenses.length > 0) {
-        setExpenses(remoteExpenses);
-        localStorage.setItem(`room_expenses_${group.id}`, JSON.stringify(remoteExpenses));
-      } else if (remoteExpenses && remoteExpenses.length === 0) {
-        const saved = localStorage.getItem(`room_expenses_${group.id}`);
-        let localExpenses: Expense[] = [];
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) localExpenses = parsed;
-          } catch (e) {}
-        }
-        if (localExpenses.length > 0) {
-          setExpenses(localExpenses);
-        } else {
-          setExpenses([]);
-        }
+      const isCustomGroupWithoutCustomSheet = group.id !== 'group-room-3' && (!group.spreadsheetId || group.spreadsheetId === '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM');
+
+      let groupExp = (remoteExpenses || []).filter((e) => {
+        if (e.groupId) return e.groupId === group.id;
+        return group.id === 'group-room-3';
+      });
+
+      // Strict group data isolation: for custom groups, purge leaked sample sheet expenses from state and Firestore
+      if (isCustomGroupWithoutCustomSheet) {
+        const leaked = groupExp.filter((e) => !e.id.startsWith('exp-'));
+        leaked.forEach((e) => deleteExpenseFromFirestore(e.id));
+        groupExp = groupExp.filter((e) => e.id.startsWith('exp-'));
       }
+
+      setExpenses(groupExp);
+      localStorage.setItem(`room_expenses_${group.id}`, JSON.stringify(groupExp));
     });
 
     // 3. Utilities subscription - Instant multi-device sync
     const unsubUtil = subscribeToUtilities(group.id, (remoteUtilities) => {
-      if (remoteUtilities && remoteUtilities.length > 0) {
-        setUtilities(remoteUtilities);
-        localStorage.setItem(`room_utilities_${group.id}`, JSON.stringify(remoteUtilities));
-      } else if (remoteUtilities && remoteUtilities.length === 0) {
-        const saved = localStorage.getItem(`room_utilities_${group.id}`);
-        let localUtils: UtilityBill[] = [];
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) localUtils = parsed;
-          } catch (e) {}
-        }
-        if (localUtils.length > 0) {
-          setUtilities(localUtils);
-        } else {
-          setUtilities([]);
-        }
+      const isCustomGroupWithoutCustomSheet = group.id !== 'group-room-3' && (!group.spreadsheetId || group.spreadsheetId === '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM');
+
+      let groupUtil = (remoteUtilities || []).filter((u) => {
+        if (u.groupId) return u.groupId === group.id;
+        return group.id === 'group-room-3';
+      });
+
+      // Strict group data isolation: for custom groups, purge leaked sample sheet utilities from state and Firestore
+      if (isCustomGroupWithoutCustomSheet) {
+        const leaked = groupUtil.filter((u) => !u.id.startsWith('util-'));
+        leaked.forEach((u) => deleteUtilityFromFirestore(u.id));
+        groupUtil = groupUtil.filter((u) => u.id.startsWith('util-'));
       }
+
+      setUtilities(groupUtil);
+      localStorage.setItem(`room_utilities_${group.id}`, JSON.stringify(groupUtil));
     });
 
     // 4. Rent subscription - Instant multi-device sync
@@ -630,24 +646,46 @@ export default function App() {
   }, [group, activeCycleId, activeCycleLabel]);
 
   const displayedExpenses = useMemo(() => {
+    const isCustomGroupWithoutCustomSheet = group.id !== 'group-room-3' && (!group.spreadsheetId || group.spreadsheetId === '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM');
+
     return expenses.filter((e) => {
+      const itemGroupId = e.groupId;
+      if (itemGroupId && itemGroupId !== group.id) return false;
+      if (!itemGroupId && group.id !== 'group-room-3') return false;
+
+      if (isCustomGroupWithoutCustomSheet) {
+        if (!e.id.startsWith('exp-')) {
+          return false;
+        }
+      }
       const expCycle = e.cycle || (e.date ? e.date.slice(0, 7) : '');
       if (expCycle) {
         return expCycle === activeCycleId;
       }
       return activeCycleId === currentCycleId;
     });
-  }, [expenses, activeCycleId, currentCycleId]);
+  }, [expenses, activeCycleId, currentCycleId, group.id, group.spreadsheetId]);
 
   const displayedUtilities = useMemo(() => {
+    const isCustomGroupWithoutCustomSheet = group.id !== 'group-room-3' && (!group.spreadsheetId || group.spreadsheetId === '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM');
+
     return utilities.filter((u) => {
+      const itemGroupId = u.groupId;
+      if (itemGroupId && itemGroupId !== group.id) return false;
+      if (!itemGroupId && group.id !== 'group-room-3') return false;
+
+      if (isCustomGroupWithoutCustomSheet) {
+        if (!u.id.startsWith('util-')) {
+          return false;
+        }
+      }
       const utilCycle = u.cycle || (u.date ? u.date.slice(0, 7) : '');
       if (utilCycle) {
         return utilCycle === activeCycleId;
       }
       return activeCycleId === currentCycleId;
     });
-  }, [utilities, activeCycleId, currentCycleId]);
+  }, [utilities, activeCycleId, currentCycleId, group.id, group.spreadsheetId]);
 
   const displayedRent = useMemo(() => {
     if (!rent) return rent;
@@ -864,17 +902,27 @@ export default function App() {
 
   const fetchFromSheet = async (silent = false) => {
     if (!silent) setIsSyncing(true);
-    const sheetId = group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM';
+    const sheetId = group.spreadsheetId || (group.id === 'group-room-3' ? '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM' : '');
+    if (!sheetId) {
+      if (!silent) {
+        setIsSyncing(false);
+        setSyncNotification('No custom Google Sheet linked for this group.');
+        setTimeout(() => setSyncNotification(null), 3500);
+      }
+      return;
+    }
     const fetched = await GoogleSheetsService.fetchLatestSheetData(sheetId, group.id);
 
     if (fetched.success) {
       if (fetched.expenses && fetched.expenses.length > 0) {
-        setExpenses(fetched.expenses);
-        fetched.expenses.forEach((e) => saveExpenseToFirestore({ ...e, groupId: group.id }, group.id));
+        const groupExp = fetched.expenses.map((e) => ({ ...e, groupId: group.id }));
+        setExpenses(groupExp);
+        groupExp.forEach((e) => saveExpenseToFirestore(e, group.id));
       }
       if (fetched.utilities && fetched.utilities.length > 0) {
-        setUtilities(fetched.utilities);
-        fetched.utilities.forEach((u) => saveUtilityToFirestore({ ...u, groupId: group.id }, group.id));
+        const groupUtil = fetched.utilities.map((u) => ({ ...u, groupId: group.id }));
+        setUtilities(groupUtil);
+        groupUtil.forEach((u) => saveUtilityToFirestore(u, group.id));
       }
     }
 
@@ -899,15 +947,18 @@ export default function App() {
     customRent?: RentContribution,
     customGroup?: Group
   ) => {
+    const activeGroup = customGroup || groupRef.current;
+    const sheetId = activeGroup.spreadsheetId || (activeGroup.id === 'group-room-3' ? '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM' : '');
+    if (!sheetId) return;
+
     if (!silent) setIsSyncing(true);
 
     const activeExpenses = customExpenses || expensesRef.current;
     const activeUtilities = customUtilities || utilitiesRef.current;
     const activeRent = customRent || rentRef.current;
-    const activeGroup = customGroup || groupRef.current;
 
     const result = await GoogleSheetsService.syncToGoogleSheet(
-      activeGroup.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM',
+      sheetId,
       {
         group: activeGroup,
         expenses: activeExpenses,
@@ -1382,8 +1433,8 @@ export default function App() {
   const handleUpdateUtilityStatus = (id: string, status: 'paid' | 'pending') => {
     const updated = utilities.map((u) => {
       if (u.id === id) {
-        const item = { ...u, status };
-        saveUtilityToFirestore(item);
+        const item = { ...u, status, groupId: u.groupId || group.id };
+        saveUtilityToFirestore(item, group.id);
         return item;
       }
       return u;
@@ -1395,11 +1446,12 @@ export default function App() {
   const handleAddUtility = (newUtil: Omit<UtilityBill, 'id'>) => {
     const util: UtilityBill = {
       ...newUtil,
+      groupId: group.id,
       id: `util-${Date.now()}`,
     };
     const updated = [...utilities, util];
     setUtilities(updated);
-    saveUtilityToFirestore(util);
+    saveUtilityToFirestore(util, group.id);
     triggerSheetsSync(false, expenses, updated);
   };
 

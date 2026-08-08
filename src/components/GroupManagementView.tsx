@@ -120,7 +120,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
     );
   }, [group.id, group.spreadsheetId]);
 
-  const isAdmin = currentUser?.role === 'admin';
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.email?.toLowerCase() === 'mydriveshakil@gmail.com';
 
   const toggleCategoryForNewMember = (catId: string) => {
     if (newMemberCategories.includes(catId)) {
@@ -1168,6 +1168,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   {/* Delete Button */}
                   {isAdmin && (
                     <button
+                      type="button"
                       onClick={() => setDeleteConfirmMember(member)}
                       className="p-1 px-2.5 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-all border border-rose-200 cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
                       title="Delete member"

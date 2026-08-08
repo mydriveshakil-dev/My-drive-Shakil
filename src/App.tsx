@@ -17,6 +17,7 @@ import {
   saveGroupToFirestore,
   deleteGroupFromFirestore,
   saveUserProfileToFirestore,
+  deleteUserProfileFromFirestore,
   subscribeToExpenses,
   saveExpenseToFirestore,
   deleteExpenseFromFirestore,
@@ -1554,9 +1555,16 @@ export default function App() {
   };
 
   const handleRemoveMember = (id: string) => {
+    if (userAuth.role !== 'admin' && userAuth.email?.toLowerCase() !== 'mydriveshakil@gmail.com') {
+      setIsLoginModalOpen(true);
+      return;
+    }
+
+    const memberToRemove = group.members.find((m) => m.id === id);
+    const updatedMembers = group.members.filter((m) => m.id !== id);
     const updatedGroup = {
       ...group,
-      members: group.members.filter((m) => m.id !== id),
+      members: updatedMembers,
     };
     setGroup(updatedGroup);
     saveGroupToFirestore(updatedGroup);
@@ -1565,7 +1573,15 @@ export default function App() {
     setAllGroups(updatedAll);
     localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
 
+    if (memberToRemove) {
+      const mob = memberToRemove.mobileNumber || memberToRemove.phone || memberToRemove.email;
+      if (mob) {
+        deleteUserProfileFromFirestore(mob);
+      }
+    }
+
     triggerSheetsSync(true, expenses, utilities, rent, updatedGroup);
+    triggerHaptic(hapticPatterns.error);
   };
 
   return (

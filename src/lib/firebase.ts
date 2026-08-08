@@ -188,6 +188,40 @@ export async function saveUserProfileToFirestore(profile: UserAuthProfile) {
   }
 }
 
+export async function deleteUserProfileFromFirestore(identifier: string) {
+  if (!identifier || !identifier.trim() || isQuotaExceeded) return;
+  try {
+    const trimmed = identifier.trim();
+    const cleanInputDigits = cleanPhoneDigits(trimmed);
+    const possibleDocIds = new Set<string>();
+    possibleDocIds.add(trimmed.replace(/[^a-zA-Z0-9_\-]/g, '_'));
+    if (cleanInputDigits) {
+      possibleDocIds.add(cleanInputDigits);
+      if (cleanInputDigits.startsWith('9715') && cleanInputDigits.length >= 12) {
+        possibleDocIds.add('0' + cleanInputDigits.slice(3));
+      } else if (cleanInputDigits.startsWith('05') && cleanInputDigits.length >= 10) {
+        possibleDocIds.add('971' + cleanInputDigits.slice(1));
+      } else if (cleanInputDigits.startsWith('5') && cleanInputDigits.length === 9) {
+        possibleDocIds.add('0' + cleanInputDigits);
+        possibleDocIds.add('971' + cleanInputDigits);
+      }
+    }
+
+    for (const docId of possibleDocIds) {
+      try {
+        const userRef = doc(db, 'users', docId);
+        await deleteDoc(userRef);
+      } catch (e) {
+        // Ignore single doc delete errors
+      }
+    }
+  } catch (err) {
+    if (!isQuotaError(err)) {
+      console.warn('Warning deleting user profile from Firestore:', err);
+    }
+  }
+}
+
 export async function getUserProfileFromFirestore(identifier: string): Promise<UserAuthProfile | null> {
   if (!identifier || !identifier.trim()) return null;
   const trimmed = identifier.trim();

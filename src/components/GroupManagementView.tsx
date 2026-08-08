@@ -325,11 +325,14 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 <div className="text-slate-900 font-bold text-xs mt-0.5">Create New Room Group</div>
               </div>
               <button
-                onClick={() => setShowCreateGroup(true)}
+                onClick={() => {
+                  triggerHaptic(hapticPatterns.click);
+                  setShowCreateGroup(!showCreateGroup);
+                }}
                 className="w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer bg-black hover:bg-slate-800 text-white shadow-md border border-black"
               >
                 <FolderPlus className="w-4 h-4" />
-                <span>+ Create Group</span>
+                <span>{showCreateGroup ? 'Close Form' : '+ Create Group'}</span>
               </button>
             </div>
 
@@ -396,147 +399,105 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               </button>
             </div>
           </div>
-        </GlassContainer>
-      )}
 
-      {/* CREATE NEW GROUP MODAL FORM */}
-      {showCreateGroup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
-          <GlassContainer
-            variant="modal"
-            blur="3xl"
-            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border-2 border-black shadow-2xl space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto bg-white text-slate-900"
-          >
-            <div className="flex items-center justify-between border-b-2 border-black pb-3">
-              <h3 className="text-lg font-black text-slate-950 flex items-center gap-2">
-                <FolderPlus className="w-5 h-5 text-slate-900" />
-                <span>Create New Room Group</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowCreateGroup(false)}
-                className="text-slate-700 hover:text-black text-xs font-bold px-2 py-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer border border-black"
-              >
-                Cancel
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateGroupSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-slate-900 uppercase tracking-wider mb-1">Group / Room Name *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. DSO Villa 402 / Silicon Oasis Room 3"
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-900 uppercase tracking-wider mb-1">Base Room Currency *</label>
-                <select
-                  value={newGroupCurrency}
-                  onChange={(e) => setNewGroupCurrency(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-black cursor-pointer"
+          {/* CREATE NEW GROUP INLINE FORM PANEL */}
+          {showCreateGroup && (
+            <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border-2 border-black shadow-md space-y-4 my-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between border-b-2 border-black pb-2.5">
+                <h3 className="text-sm sm:text-base font-black text-slate-950 flex items-center gap-2">
+                  <FolderPlus className="w-5 h-5 text-slate-900" />
+                  <span>Create New Room Group</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateGroup(false)}
+                  className="text-slate-700 hover:text-black text-xs font-bold px-2.5 py-1 rounded-xl bg-white hover:bg-slate-200 transition-all cursor-pointer border border-black"
                 >
-                  <option value="AED">AED - UAE Dirham</option>
-                  <option value="USD">USD - US Dollar</option>
-                  <option value="EUR">EUR - Euro</option>
-                  <option value="INR">INR - Indian Rupee</option>
-                  <option value="BDT">BDT - Bangladeshi Taka</option>
-                  <option value="SAR">SAR - Saudi Riyal</option>
-                </select>
+                  Close
+                </button>
               </div>
 
-              <button
-                type="submit"
-                className="w-full bg-black hover:bg-slate-800 text-white font-black py-3.5 rounded-2xl text-sm shadow-md transition-all cursor-pointer border border-black uppercase tracking-wider"
-              >
-                Confirm & Create Group
-              </button>
-            </form>
-          </GlassContainer>
-        </div>
-      )}
+              <form onSubmit={handleCreateGroupSubmit} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="block font-bold text-slate-900 uppercase tracking-wider mb-1">Group / Room Name *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. DSO Villa 402 / Silicon Oasis Room 3"
+                    value={newGroupName}
+                    onChange={(e) => setNewGroupName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black"
+                    required
+                  />
+                </div>
 
-      {/* DELETE GROUP CONFIRMATION MODAL */}
-      {deleteConfirmGroup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
-          <GlassContainer
-            variant="modal"
-            blur="3xl"
-            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border-2 border-black shadow-2xl space-y-4 text-slate-900 my-auto relative box-border max-h-[90vh] overflow-y-auto bg-white"
-          >
-            <div className="flex items-center gap-3 border-b-2 border-black pb-3">
-              <Trash2 className="w-6 h-6 shrink-0 text-slate-900" />
-              <h3 className="text-lg font-black text-slate-950">Delete Room Group</h3>
-            </div>
-            <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              Are you sure you want to delete room group <strong className="text-slate-950 font-black">{deleteConfirmGroup.name}</strong>? All associated room data and member configurations for this group will be removed.
-            </p>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-black">
-              <button
-                type="button"
-                onClick={() => setDeleteConfirmGroup(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-black rounded-xl text-xs font-bold text-slate-900 transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (onRemoveGroup) onRemoveGroup(deleteConfirmGroup.id);
-                  setDeleteConfirmGroup(null);
-                  triggerHaptic(hapticPatterns.error);
-                }}
-                className="px-4 py-2 bg-black hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-md transition-all cursor-pointer border border-black uppercase tracking-wider"
-              >
-                Confirm & Delete
-              </button>
-            </div>
-          </GlassContainer>
-        </div>
-      )}
+                <div>
+                  <label className="block font-bold text-slate-900 uppercase tracking-wider mb-1">Base Room Currency *</label>
+                  <select
+                    value={newGroupCurrency}
+                    onChange={(e) => setNewGroupCurrency(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-black cursor-pointer"
+                  >
+                    <option value="AED">AED - UAE Dirham</option>
+                    <option value="USD">USD - US Dollar</option>
+                    <option value="EUR">EUR - Euro</option>
+                    <option value="INR">INR - Indian Rupee</option>
+                    <option value="BDT">BDT - Bangladeshi Taka</option>
+                    <option value="SAR">SAR - Saudi Riyal</option>
+                  </select>
+                </div>
 
-      {/* DELETE MEMBER CONFIRMATION MODAL */}
-      {deleteConfirmMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
-          <GlassContainer
-            variant="modal"
-            blur="3xl"
-            className="w-full max-w-md p-5 sm:p-6 rounded-3xl border-2 border-black shadow-2xl space-y-4 text-slate-900 my-auto relative box-border max-h-[90vh] overflow-y-auto bg-white"
-          >
-            <div className="flex items-center gap-3 border-b-2 border-black pb-3">
-              <Trash2 className="w-6 h-6 shrink-0 text-slate-900" />
-              <h3 className="text-lg font-black text-slate-950">Delete Room Member</h3>
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateGroup(false)}
+                    className="w-1/2 py-2.5 rounded-xl border border-black text-xs font-bold text-slate-900 bg-white hover:bg-slate-200 transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-1/2 bg-black hover:bg-slate-800 text-white font-black py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer border border-black uppercase tracking-wider"
+                  >
+                    Confirm & Create Group
+                  </button>
+                </div>
+              </form>
             </div>
-            <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              Are you sure you want to delete member <strong className="text-slate-950 font-black">{deleteConfirmMember.name}</strong> ({deleteConfirmMember.phone || deleteConfirmMember.email || 'No contact info'}) from <strong className="text-slate-950 font-black">{group.name}</strong>?
-            </p>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-black">
-              <button
-                type="button"
-                onClick={() => setDeleteConfirmMember(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-black rounded-xl text-xs font-bold text-slate-900 transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onRemoveMember(deleteConfirmMember.id);
-                  setDeleteConfirmMember(null);
-                  triggerHaptic(hapticPatterns.error);
-                }}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-lg transition-all cursor-pointer"
-              >
-                Confirm & Delete Member
-              </button>
+          )}
+
+          {/* DELETE GROUP CONFIRMATION INLINE BANNER */}
+          {deleteConfirmGroup && (
+            <div className="bg-rose-50 border-2 border-rose-600 rounded-2xl p-4 space-y-3 my-3 text-slate-900 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2 border-b border-rose-200 pb-2">
+                <Trash2 className="w-5 h-5 shrink-0 text-rose-600" />
+                <h3 className="text-sm font-black text-rose-950">Delete Room Group</h3>
+              </div>
+              <p className="text-xs text-slate-800 font-medium leading-relaxed">
+                Are you sure you want to delete room group <strong className="text-slate-950 font-black">{deleteConfirmGroup.name}</strong>? All associated room data and member configurations for this group will be removed.
+              </p>
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmGroup(null)}
+                  className="px-3.5 py-1.5 bg-white hover:bg-slate-100 border border-black rounded-xl text-xs font-bold text-slate-900 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onRemoveGroup) onRemoveGroup(deleteConfirmGroup.id);
+                    setDeleteConfirmGroup(null);
+                    triggerHaptic(hapticPatterns.error);
+                  }}
+                  className="px-3.5 py-1.5 bg-black hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-md transition-all cursor-pointer border border-black uppercase tracking-wider"
+                >
+                  Confirm & Delete
+                </button>
+              </div>
             </div>
-          </GlassContainer>
-        </div>
+          )}
+        </GlassContainer>
       )}
 
       {/* SECTION 1: Google Sheets Direct Integration Panel (Admin Only) */}
@@ -858,16 +819,292 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
           {isAdmin && (
             <button
-              onClick={() => setShowAddMember(true)}
+              onClick={() => {
+                triggerHaptic(hapticPatterns.click);
+                setShowAddMember(!showAddMember);
+              }}
               className="bg-black hover:bg-slate-800 text-white font-black px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-md border border-black active:scale-95 cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
-              <span>+ Add Member</span>
+              <span>{showAddMember ? 'Close Form' : '+ Add Member'}</span>
             </button>
           )}
         </div>
 
-        {/* Member cards */}
+        {/* ADD MEMBER INLINE PANEL */}
+        {showAddMember && (
+          <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border-2 border-black shadow-md space-y-4 mb-4 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b-2 border-black pb-2.5">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <Users className="w-5 h-5 text-slate-900" />
+                <span>Add New Room Member</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowAddMember(false)}
+                className="text-slate-600 hover:text-black text-xs font-bold px-2.5 py-1 bg-white border border-black rounded-lg transition-all cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+
+            <form onSubmit={handleAddMemberSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
+                  Member Full Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Mahfuzur Rahman"
+                  value={newMemberName}
+                  onChange={(e) => setNewMemberName(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
+                  Mobile Number (Login Credential) *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="e.g. +971 50 123 4567"
+                  value={newMemberPhone}
+                  onChange={(e) => setNewMemberPhone(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
+                  Login Password *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 123456 or uae2024"
+                  value={newMemberPassword}
+                  onChange={(e) => setNewMemberPassword(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
+                />
+                <p className="text-[10px] text-slate-600 mt-1">
+                  This mobile number and password will be used by this user to log in.
+                </p>
+              </div>
+
+              {/* Expense Inclusions Checkboxes */}
+              <div>
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1 flex items-center justify-between">
+                  <span>Expense Scope & Inclusions (কোন কোন খরচের আওতায় থাকবে) *</span>
+                  <span className="text-[10px] text-white font-bold bg-black px-2 py-0.5 rounded-full border border-black">
+                    {newMemberCategories.length}/{ALL_EXPENSE_OPTIONS.length} Selected
+                  </span>
+                </label>
+                <p className="text-[11px] text-slate-600 mb-2">
+                  Tick the checkboxes for expenses this member will participate in. Unchecked expenses will NOT be charged to this member.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-2.5 bg-white border border-black rounded-2xl shadow-inner">
+                  {ALL_EXPENSE_OPTIONS.map((opt) => {
+                    const isChecked = newMemberCategories.includes(opt.id);
+                    return (
+                      <label
+                        key={opt.id}
+                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                          isChecked
+                            ? 'bg-black text-white border-black shadow-xs'
+                            : 'bg-white text-slate-700 border-black hover:bg-slate-100'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleCategoryForNewMember(opt.id)}
+                          className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black cursor-pointer accent-black shrink-0"
+                        />
+                        <div className="leading-tight">
+                          <span className={`text-xs font-bold block ${isChecked ? 'text-white' : 'text-slate-900'}`}>
+                            {opt.label}
+                          </span>
+                          <span className={`text-[10px] opacity-75 block ${isChecked ? 'text-slate-200' : 'text-slate-600'}`}>{opt.desc}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2 border-t border-black/20">
+                <button
+                  type="button"
+                  onClick={() => setShowAddMember(false)}
+                  className="w-1/2 py-3 rounded-2xl border border-black text-xs font-bold text-slate-900 bg-white hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="w-1/2 py-3 rounded-2xl bg-black hover:bg-slate-800 text-white text-xs font-black shadow-md transition-all cursor-pointer uppercase tracking-wider border border-black"
+                >
+                  Add Member
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* EDIT MEMBER SCOPE INLINE PANEL */}
+        {editingMember && (
+          <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border-2 border-black shadow-md space-y-4 mb-4 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b-2 border-black pb-2.5">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <Edit className="w-5 h-5 text-slate-900" />
+                <span>Edit Scope: {editingMember.name}</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingMember(null)}
+                className="text-slate-600 hover:text-black text-xs font-bold px-2.5 py-1 bg-white border border-black rounded-lg transition-all cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditMemberSubmit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
+                    Member Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editMemberName}
+                    onChange={(e) => setEditMemberName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
+                    Mobile / Phone
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={editMemberPhone}
+                    onChange={(e) => setEditMemberPhone(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
+                    Password
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Member Password"
+                    value={editMemberPassword}
+                    onChange={(e) => setEditMemberPassword(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Expense Inclusions Checkboxes */}
+              <div>
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1 flex items-center justify-between">
+                  <span>Expense Inclusions & Scope (খরচের টিক বক্স) *</span>
+                  <span className="text-[10px] text-white font-bold bg-black px-2 py-0.5 rounded-full border border-black">
+                    {editMemberCategories.length}/{ALL_EXPENSE_OPTIONS.length} Ticked
+                  </span>
+                </label>
+                <p className="text-[11px] text-slate-600 mb-2">
+                  Checkboxes that are checked will charge this user for that expense. Unchecked expenses will NOT apply to this user.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto p-2.5 bg-white border border-black rounded-2xl shadow-inner">
+                  {ALL_EXPENSE_OPTIONS.map((opt) => {
+                    const isChecked = editMemberCategories.includes(opt.id);
+                    return (
+                      <label
+                        key={opt.id}
+                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                          isChecked
+                            ? 'bg-black text-white border-black shadow-xs'
+                            : 'bg-white text-slate-700 border-black hover:bg-slate-100'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleCategoryForEditMember(opt.id)}
+                          className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black cursor-pointer accent-black shrink-0"
+                        />
+                        <div className="leading-tight">
+                          <span className={`text-xs font-bold block ${isChecked ? 'text-white' : 'text-slate-900'}`}>
+                            {opt.label}
+                          </span>
+                          <span className={`text-[10px] opacity-75 block ${isChecked ? 'text-slate-200' : 'text-slate-600'}`}>{opt.desc}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2 border-t border-black/20">
+                <button
+                  type="button"
+                  onClick={() => setEditingMember(null)}
+                  className="w-1/2 py-3 rounded-2xl border border-black text-xs font-bold text-slate-900 bg-white hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="w-1/2 py-3 rounded-2xl bg-black hover:bg-slate-800 text-white text-xs font-black shadow-md transition-all cursor-pointer uppercase tracking-wider border border-black"
+                >
+                  Save Member Scope
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* DELETE MEMBER CONFIRMATION INLINE BANNER */}
+        {deleteConfirmMember && (
+          <div className="bg-rose-50 border-2 border-rose-600 rounded-2xl p-4 space-y-3 mb-4 text-slate-900 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2 border-b border-rose-200 pb-2">
+              <Trash2 className="w-5 h-5 shrink-0 text-rose-600" />
+              <h3 className="text-sm font-black text-rose-950">Delete Room Member</h3>
+            </div>
+            <p className="text-xs text-slate-800 font-medium leading-relaxed">
+              Are you sure you want to delete member <strong className="text-slate-950 font-black">{deleteConfirmMember.name}</strong> ({deleteConfirmMember.phone || deleteConfirmMember.email || 'No contact info'}) from <strong className="text-slate-950 font-black">{group.name}</strong>?
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmMember(null)}
+                className="px-3.5 py-1.5 bg-white hover:bg-slate-100 border border-black rounded-xl text-xs font-bold text-slate-900 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onRemoveMember(deleteConfirmMember.id);
+                  setDeleteConfirmMember(null);
+                  triggerHaptic(hapticPatterns.error);
+                }}
+                className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-md transition-all cursor-pointer border border-rose-700 uppercase tracking-wider"
+              >
+                Confirm & Delete Member
+              </button>
+            </div>
+          </div>
+        )}
         <div className="space-y-2">
           {group.members.map((member) => {
             const activeCount = (member.includedCategories || ALL_EXPENSE_OPTIONS.map((o) => o.id)).length;
@@ -936,257 +1173,6 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
         </div>
       </GlassContainer>
 
-      {/* Add Member Modal */}
-      {showAddMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
-          <GlassContainer
-            variant="card"
-            className="w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border-2 border-black bg-white text-slate-900 space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between border-b border-black/20 pb-3">
-              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                <Users className="w-5 h-5 text-slate-900" />
-                <span>Add New Room Member</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowAddMember(false)}
-                className="text-slate-600 hover:text-black text-xs font-bold px-2 py-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-
-            <form onSubmit={handleAddMemberSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
-                  Member Full Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Mahfuzur Rahman"
-                  value={newMemberName}
-                  onChange={(e) => setNewMemberName(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
-                  Mobile Number (Login Credential) *
-                </label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="e.g. +971 50 123 4567"
-                  value={newMemberPhone}
-                  onChange={(e) => setNewMemberPhone(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
-                  Login Password *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 123456 or uae2024"
-                  value={newMemberPassword}
-                  onChange={(e) => setNewMemberPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
-                />
-                <p className="text-[10px] text-slate-600 mt-1">
-                  This mobile number and password will be used by this user to log in.
-                </p>
-              </div>
-
-              {/* Expense Inclusions Checkboxes */}
-              <div>
-                <label className="block text-xs font-bold text-slate-900 uppercase mb-1 flex items-center justify-between">
-                  <span>Expense Scope & Inclusions (কোন কোন খরচের আওতায় থাকবে) *</span>
-                  <span className="text-[10px] text-white font-bold bg-black px-2 py-0.5 rounded-full border border-black">
-                    {newMemberCategories.length}/{ALL_EXPENSE_OPTIONS.length} Selected
-                  </span>
-                </label>
-                <p className="text-[11px] text-slate-600 mb-2">
-                  Tick the checkboxes for expenses this member will participate in. Unchecked expenses will NOT be charged to this member.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-2.5 bg-slate-50 border border-black rounded-2xl shadow-inner">
-                  {ALL_EXPENSE_OPTIONS.map((opt) => {
-                    const isChecked = newMemberCategories.includes(opt.id);
-                    return (
-                      <label
-                        key={opt.id}
-                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
-                          isChecked
-                            ? 'bg-black text-white border-black shadow-xs'
-                            : 'bg-white text-slate-700 border-black hover:bg-slate-100'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleCategoryForNewMember(opt.id)}
-                          className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black cursor-pointer accent-black shrink-0"
-                        />
-                        <div className="leading-tight">
-                          <span className={`text-xs font-bold block ${isChecked ? 'text-white' : 'text-slate-900'}`}>
-                            {opt.label}
-                          </span>
-                          <span className={`text-[10px] opacity-75 block ${isChecked ? 'text-slate-200' : 'text-slate-600'}`}>{opt.desc}</span>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2 border-t border-black/20">
-                <button
-                  type="button"
-                  onClick={() => setShowAddMember(false)}
-                  className="w-1/2 py-3 rounded-2xl border border-black text-xs font-bold text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="w-1/2 py-3 rounded-2xl bg-black hover:bg-slate-800 text-white text-xs font-black shadow-md transition-all cursor-pointer"
-                >
-                  Add Member
-                </button>
-              </div>
-            </form>
-          </GlassContainer>
-        </div>
-      )}
-
-      {/* Edit Member Scope Modal */}
-      {editingMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-x-hidden overflow-y-auto">
-          <GlassContainer
-            variant="card"
-            className="w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border-2 border-black bg-white text-slate-900 space-y-4 my-auto relative box-border max-h-[90vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between border-b border-black/20 pb-3">
-              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                <Edit className="w-5 h-5 text-slate-900" />
-                <span>Edit Scope: {editingMember.name}</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setEditingMember(null)}
-                className="text-slate-600 hover:text-black text-xs font-bold px-2 py-1 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEditMemberSubmit} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
-                    Member Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editMemberName}
-                    onChange={(e) => setEditMemberName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
-                    Mobile / Phone
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={editMemberPhone}
-                    onChange={(e) => setEditMemberPhone(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
-                    Password
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Member Password"
-                    value={editMemberPassword}
-                    onChange={(e) => setEditMemberPassword(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Expense Inclusions Checkboxes */}
-              <div>
-                <label className="block text-xs font-bold text-slate-900 uppercase mb-1 flex items-center justify-between">
-                  <span>Expense Inclusions & Scope (খরচের টিক বক্স) *</span>
-                  <span className="text-[10px] text-white font-bold bg-black px-2 py-0.5 rounded-full border border-black">
-                    {editMemberCategories.length}/{ALL_EXPENSE_OPTIONS.length} Ticked
-                  </span>
-                </label>
-                <p className="text-[11px] text-slate-600 mb-2">
-                  Checkboxes that are checked will charge this user for that expense. Unchecked expenses will NOT apply to this user.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto p-2.5 bg-slate-50 border border-black rounded-2xl shadow-inner">
-                  {ALL_EXPENSE_OPTIONS.map((opt) => {
-                    const isChecked = editMemberCategories.includes(opt.id);
-                    return (
-                      <label
-                        key={opt.id}
-                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
-                          isChecked
-                            ? 'bg-black text-white border-black shadow-xs'
-                            : 'bg-white text-slate-700 border-black hover:bg-slate-100'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleCategoryForEditMember(opt.id)}
-                          className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black cursor-pointer accent-black shrink-0"
-                        />
-                        <div className="leading-tight">
-                          <span className={`text-xs font-bold block ${isChecked ? 'text-white' : 'text-slate-900'}`}>
-                            {opt.label}
-                          </span>
-                          <span className={`text-[10px] opacity-75 block ${isChecked ? 'text-slate-200' : 'text-slate-600'}`}>{opt.desc}</span>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2 border-t border-black/20">
-                <button
-                  type="button"
-                  onClick={() => setEditingMember(null)}
-                  className="w-1/2 py-3 rounded-2xl border border-black text-xs font-bold text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="w-1/2 py-3 rounded-2xl bg-black hover:bg-slate-800 text-white text-xs font-black shadow-md transition-all cursor-pointer"
-                >
-                  Save Member Scope
-                </button>
-              </div>
-            </form>
-          </GlassContainer>
-        </div>
-      )}
     </div>
   );
 };

@@ -247,7 +247,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
 
     onLoginSuccess({
       name: registeredName,
-      email: defaultEmail || cloudProfile?.email || 'user@mess.com',
+      email: cloudProfile?.email || foundMember?.email || 'user@mess.com',
       mobileNumber: trimmedMobile,
       password: trimmedPass,
       idNumber: cloudProfile?.idNumber || '',

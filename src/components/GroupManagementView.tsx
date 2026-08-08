@@ -120,7 +120,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
     );
   }, [group.id, group.spreadsheetId]);
 
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.email?.toLowerCase() === 'mydriveshakil@gmail.com';
+  const isAdmin = currentUser?.isLoggedIn === true && currentUser?.role === 'admin';
 
   const toggleCategoryForNewMember = (catId: string) => {
     if (newMemberCategories.includes(catId)) {
@@ -236,27 +236,30 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       >
         <div>
           <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <span className="text-xs font-black text-blue-200 uppercase tracking-wider bg-blue-500/20 px-3.5 py-1 rounded-full border border-blue-400/30">
-              Single Master Gmail Account Setup
-            </span>
+            {isAdmin && (
+              <span className="text-xs font-black text-blue-200 uppercase tracking-wider bg-blue-500/20 px-3.5 py-1 rounded-full border border-blue-400/30">
+                Single Master Gmail Account Setup
+              </span>
+            )}
             {isAdmin ? (
               <span className="bg-emerald-500/20 text-emerald-300 text-xs font-black px-3 py-1 rounded-full border border-emerald-400/30 flex items-center gap-1 shadow-md">
                 <ShieldCheck className="w-4 h-4" />
                 APP ADMIN UNLOCKED
               </span>
             ) : (
-              <span
-                onClick={onOpenLoginModal}
-                className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20 flex items-center gap-1 cursor-pointer transition-all"
-              >
-                <Lock className="w-3.5 h-3.5 text-blue-300" />
-                General Member Mode
+              <span className="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20 flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-blue-300" />
+                Member View
               </span>
             )}
           </div>
-          <h2 className="text-2xl font-black text-white">Group & Member Settings</h2>
+          <h2 className="text-2xl font-black text-white">
+            {isAdmin ? 'Group & Member Settings' : 'Room Members & Group Details'}
+          </h2>
           <p className="text-xs text-blue-100/80 font-medium mt-1">
-            Manage room members and administrative controls
+            {isAdmin
+              ? 'Manage room members and administrative controls'
+              : 'View active room members and personal group transactions'}
           </p>
         </div>
 

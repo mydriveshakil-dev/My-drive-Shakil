@@ -88,16 +88,24 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
     };
   }, [isOpen]);
 
+  const isAdmin = currentUser?.role === 'admin';
+
   const groupMembersJoined = group.members.map((m) => m.id).join(',');
 
   useEffect(() => {
     if (isOpen) {
       setSelectedMembers(eligibleMembers.map((m) => m.id));
-      if (loggedInMember) {
-        setPaidById(loggedInMember.id);
+      if (!isAdmin) {
+        if (loggedInMember) {
+          setPaidById(loggedInMember.id);
+        }
+      } else {
+        if (!paidById || !group.members.some((m) => m.id === paidById)) {
+          if (loggedInMember) setPaidById(loggedInMember.id);
+        }
       }
     }
-  }, [isOpen, category, groupMembersJoined, loggedInMember?.id]);
+  }, [isOpen, category, groupMembersJoined, loggedInMember?.id, isAdmin]);
 
   if (!isOpen) return null;
 
@@ -475,15 +483,41 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             />
           </div>
 
-          {/* Paid By Box - Logged In User Name Aligned Cleanly */}
+          {/* Paid By Field - Unlocked for Admin, Locked for Regular Members */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Paid By *
-            </label>
-            <div className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-black text-[#07193F] flex items-center justify-between shadow-2xs">
-              <span>{currentUser?.name || loggedInMember?.name || 'Logged In User'}</span>
-              <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Paid By *
+              </label>
+              {isAdmin ? (
+                <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                  Admin Unlocked
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                  Locked to your account
+                </span>
+              )}
             </div>
+
+            {isAdmin ? (
+              <select
+                value={paidById}
+                onChange={(e) => setPaidById(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-[#07193F] focus:ring-2 focus:ring-[#07193F]/20 rounded-xl text-xs sm:text-sm font-black text-[#07193F] shadow-2xs cursor-pointer focus:outline-none"
+              >
+                {group.members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.phone || m.mobileNumber || m.email || 'Member'})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-black text-[#07193F] flex items-center justify-between shadow-2xs">
+                <span>{currentUser?.name || loggedInMember?.name || 'Logged In User'}</span>
+                <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
+              </div>
+            )}
           </div>
 
           {/* Shared With Members Checkboxes */}

@@ -841,17 +841,35 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
-                  Paid By
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-900 uppercase">
+                    Paid By
+                  </label>
+                  {isAdmin ? (
+                    <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      Admin Unlocked
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                      Locked
+                    </span>
+                  )}
+                </div>
                 <select
                   value={newUtilPayer}
                   onChange={(e) => setNewUtilPayer(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white border border-black rounded-xl text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none cursor-pointer"
+                  disabled={!isAdmin}
+                  className="w-full px-4 py-2.5 bg-white border border-black rounded-xl text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none cursor-pointer disabled:bg-slate-100 disabled:cursor-not-allowed"
                 >
-                  {loggedInMember ? (
+                  {isAdmin ? (
+                    group.members.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} ({m.phone || m.mobileNumber || m.email || 'Member'})
+                      </option>
+                    ))
+                  ) : loggedInMember ? (
                     <option value={loggedInMember.id}>
-                      {loggedInMember.name} - Logged In User
+                      {loggedInMember.name} (Your Account)
                     </option>
                   ) : (
                     group.members.map((m) => (

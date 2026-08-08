@@ -35,6 +35,8 @@ import {
   getMessageTimestampMs,
   auth,
   onAuthStateChanged,
+  isPhoneMatch,
+  cleanPhoneDigits,
 } from './lib/firebase';
 
 import { HeaderBar } from './components/HeaderBar';
@@ -55,19 +57,6 @@ import { GlassContainer } from './components/GlassContainer';
 import { BottomNavBar, AppTabType } from './components/BottomNavBar';
 import { CheckCircle2, MessageCircle, Plus, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-
-function cleanPhone(p?: string): string {
-  if (!p) return '';
-  return p.replace(/\D/g, '');
-}
-
-function isPhoneMatch(p1?: string, p2?: string): boolean {
-  if (!p1 || !p2) return false;
-  const c1 = cleanPhone(p1);
-  const c2 = cleanPhone(p2);
-  if (!c1 || !c2) return false;
-  return c1 === c2 || (c1.length >= 7 && c2.length >= 7 && (c1.endsWith(c2) || c2.endsWith(c1)));
-}
 
 export default function App() {
   const [allGroups, setAllGroups] = useState<Group[]>(() => {
@@ -295,7 +284,6 @@ export default function App() {
           } catch (e) {}
         }
         if (localExpenses.length > 0) {
-          localExpenses.forEach((exp) => saveExpenseToFirestore({ ...exp, groupId: group.id }, group.id));
           setExpenses(localExpenses);
         } else {
           setExpenses([]);
@@ -318,7 +306,6 @@ export default function App() {
           } catch (e) {}
         }
         if (localUtils.length > 0) {
-          localUtils.forEach((util) => saveUtilityToFirestore({ ...util, groupId: group.id }, group.id));
           setUtilities(localUtils);
         } else {
           setUtilities([]);
@@ -349,7 +336,6 @@ export default function App() {
           } catch (e) {}
         }
         if (localMsgs.length > 0) {
-          localMsgs.forEach((msg) => saveChatMessageToFirestore(group.id, { ...msg, groupId: group.id }));
           setChatMessages(localMsgs);
         } else {
           setChatMessages([]);
@@ -465,7 +451,7 @@ export default function App() {
     updateUserPresenceInFirestore(group.id, memberId, memberName);
     const interval = setInterval(() => {
       updateUserPresenceInFirestore(group.id, memberId, memberName);
-    }, 10000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [group.id, userAuth.isLoggedIn, userAuth.mobileNumber, userAuth.email, userAuth.name]);
@@ -991,27 +977,40 @@ export default function App() {
     const userMobile = authData.mobileNumber;
     const userEmail = authData.email;
     const userName = authData.name;
-    const matchedGroup = allGroups.find((g) =>
-      (g.members || []).some(
-        (m) =>
-          isPhoneMatch(m.mobileNumber, userMobile) ||
-          isPhoneMatch(m.phone, userMobile) ||
-          isPhoneMatch(m.email, userMobile) ||
-          (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase()) ||
-          (userName && m.name && m.name.toLowerCase().includes(userName.toLowerCase())) ||
-          (userName && m.name && userName.toLowerCase().includes(m.name.toLowerCase()))
-      )
-    ) || group || allGroups[0];
+
+    let matchedGroup: Group | undefined;
+
+    // 1. First priority: Check if linkedGroupId exists in allGroups
+    if (authData.linkedGroupId) {
+      matchedGroup = allGroups.find((g) => g.id === authData.linkedGroupId);
+    }
+
+    // 2. Second priority: Match by phone/email/name across allGroups
+    if (!matchedGroup) {
+      matchedGroup = allGroups.find((g) =>
+        (g.members || []).some(
+          (m) =>
+            isPhoneMatch(m.mobileNumber, userMobile) ||
+            isPhoneMatch(m.phone, userMobile) ||
+            isPhoneMatch(m.email, userMobile) ||
+            (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase()) ||
+            (userName && m.name && m.name.toLowerCase().includes(userName.toLowerCase())) ||
+            (userName && m.name && userName.toLowerCase().includes(m.name.toLowerCase()))
+        )
+      );
+    }
+
+    const targetGroup = matchedGroup || group || allGroups[0];
 
     const updatedAuth: UserAuthProfile = {
       ...authData,
-      linkedGroupId: matchedGroup ? matchedGroup.id : null,
+      linkedGroupId: targetGroup ? targetGroup.id : null,
     };
     setUserAuth(updatedAuth);
     localStorage.setItem('uae_user_auth', JSON.stringify(updatedAuth));
 
-    if (matchedGroup) {
-      setGroup(matchedGroup);
+    if (targetGroup) {
+      setGroup(targetGroup);
     }
     setActiveTab('dashboard'); // Open that user group's Dashboard view
     setIsLoginModalOpen(false);

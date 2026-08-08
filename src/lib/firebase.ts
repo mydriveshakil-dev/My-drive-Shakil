@@ -35,6 +35,54 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export { onAuthStateChanged, signOut };
 
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  };
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errMsg = error instanceof Error ? error.message : String(error);
+  const errInfo: FirestoreErrorInfo = {
+    error: errMsg,
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map((provider) => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || [],
+    },
+    operationType,
+    path,
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  return errInfo;
+}
+
 // Firestore Realtime listeners and persistence helpers
 
 // 0. Sync All Groups Across Devices
@@ -67,39 +115,180 @@ function removeUndefinedFields<T extends Record<string, any>>(obj: T): T {
   return cleanObj as T;
 }
 
+export function cleanPhoneDigits(p?: string): string {
+  if (!p) return '';
+  return p.replace(/\D/g, '');
+}
+
+export function isPhoneMatch(p1?: string, p2?: string): boolean {
+  if (!p1 || !p2) return false;
+  const s1 = p1.trim().toLowerCase();
+  const s2 = p2.trim().toLowerCase();
+  if (!s1 || !s2) return false;
+  if (s1 === s2) return true;
+
+  const c1 = cleanPhoneDigits(p1);
+  const c2 = cleanPhoneDigits(p2);
+  if (!c1 || !c2) return false;
+  if (c1 === c2) return true;
+
+  if (c1.includes(c2) || c2.includes(c1)) return true;
+
+  const minLen = Math.min(c1.length, c2.length);
+  if (minLen >= 3) {
+    if (c1.endsWith(c2.slice(-minLen)) || c2.endsWith(c1.slice(-minLen))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // User Profiles Cloud Sync for Multi-Device Login
 export async function saveUserProfileToFirestore(profile: UserAuthProfile) {
   try {
-    const rawId = profile.mobileNumber || profile.email || 'user';
-    const cleanDocId = rawId.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    const rawMob = profile.mobileNumber || profile.email || '';
+    const cleanDigits = cleanPhoneDigits(rawMob);
+    const cleanDocId = rawMob ? rawMob.replace(/[^a-zA-Z0-9_\-]/g, '_') : 'user';
+
+    let localFormat = cleanDigits;
+    if (cleanDigits.startsWith('9715') && cleanDigits.length >= 12) {
+      localFormat = '0' + cleanDigits.slice(3);
+    } else if (cleanDigits.startsWith('5') && cleanDigits.length === 9) {
+      localFormat = '0' + cleanDigits;
+    }
+
+    const payload = removeUndefinedFields({
+      ...profile,
+      cleanMobile: cleanDigits,
+      localMobile: localFormat,
+      updatedAt: new Date().toISOString(),
+    });
+
     const userRef = doc(db, 'users', cleanDocId);
-    const payload = removeUndefinedFields({ ...profile, updatedAt: new Date().toISOString() });
     await setDoc(userRef, payload, { merge: true });
+
+    if (cleanDigits && cleanDigits !== cleanDocId) {
+      const altRef = doc(db, 'users', cleanDigits);
+      await setDoc(altRef, payload, { merge: true });
+    }
+
+    if (localFormat && localFormat !== cleanDigits && localFormat !== cleanDocId) {
+      const localRef = doc(db, 'users', localFormat);
+      await setDoc(localRef, payload, { merge: true });
+    }
   } catch (err) {
     console.error('Error saving user profile to Firestore:', err);
   }
 }
 
 export async function getUserProfileFromFirestore(identifier: string): Promise<UserAuthProfile | null> {
+  if (!identifier || !identifier.trim()) return null;
+  const trimmed = identifier.trim();
+  const cleanInputDigits = cleanPhoneDigits(trimmed);
+
   try {
-    const cleanDocId = identifier.replace(/[^a-zA-Z0-9_\-]/g, '_');
-    const userRef = doc(db, 'users', cleanDocId);
-    const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      return snap.data() as UserAuthProfile;
+    // 1. Direct doc lookups by various clean IDs
+    const possibleDocIds = new Set<string>();
+    possibleDocIds.add(trimmed.replace(/[^a-zA-Z0-9_\-]/g, '_'));
+    if (cleanInputDigits) {
+      possibleDocIds.add(cleanInputDigits);
+      if (cleanInputDigits.startsWith('9715') && cleanInputDigits.length >= 12) {
+        possibleDocIds.add('0' + cleanInputDigits.slice(3));
+      } else if (cleanInputDigits.startsWith('05') && cleanInputDigits.length >= 10) {
+        possibleDocIds.add('971' + cleanInputDigits.slice(1));
+      } else if (cleanInputDigits.startsWith('5') && cleanInputDigits.length === 9) {
+        possibleDocIds.add('0' + cleanInputDigits);
+        possibleDocIds.add('971' + cleanInputDigits);
+      }
     }
 
+    for (const docId of possibleDocIds) {
+      const userRef = doc(db, 'users', docId);
+      const snap = await getDoc(userRef);
+      if (snap.exists()) {
+        return snap.data() as UserAuthProfile;
+      }
+    }
+
+    // 2. Query users collection by fields
     const usersRef = collection(db, 'users');
-    const qEmail = query(usersRef, where('email', '==', identifier));
+
+    if (cleanInputDigits) {
+      const qClean = query(usersRef, where('cleanMobile', '==', cleanInputDigits));
+      const snapClean = await getDocs(qClean);
+      if (!snapClean.empty) {
+        return snapClean.docs[0].data() as UserAuthProfile;
+      }
+
+      const qLocal = query(usersRef, where('localMobile', '==', cleanInputDigits));
+      const snapLocal = await getDocs(qLocal);
+      if (!snapLocal.empty) {
+        return snapLocal.docs[0].data() as UserAuthProfile;
+      }
+    }
+
+    const qMobile = query(usersRef, where('mobileNumber', '==', trimmed));
+    const snapMobile = await getDocs(qMobile);
+    if (!snapMobile.empty) {
+      return snapMobile.docs[0].data() as UserAuthProfile;
+    }
+
+    const qEmail = query(usersRef, where('email', '==', trimmed));
     const snapEmail = await getDocs(qEmail);
     if (!snapEmail.empty) {
       return snapEmail.docs[0].data() as UserAuthProfile;
     }
 
-    const qMobile = query(usersRef, where('mobileNumber', '==', identifier));
-    const snapMobile = await getDocs(qMobile);
-    if (!snapMobile.empty) {
-      return snapMobile.docs[0].data() as UserAuthProfile;
+    // 3. Scan all docs in 'users' collection with phone match
+    const allUsersSnap = await getDocs(usersRef);
+    if (!allUsersSnap.empty) {
+      for (const userDoc of allUsersSnap.docs) {
+        const uData = userDoc.data() as UserAuthProfile;
+        if (
+          isPhoneMatch(uData.mobileNumber, trimmed) ||
+          isPhoneMatch(uData.cleanMobile, trimmed) ||
+          isPhoneMatch(uData.localMobile, trimmed) ||
+          (uData.email && uData.email.toLowerCase() === trimmed.toLowerCase())
+        ) {
+          return uData;
+        }
+      }
+    }
+
+    // 4. CRITICAL FALLBACK: Scan all 'groups' in Firestore directly!
+    // If Admin created a new group and added members, scan groups to ensure new members can ALWAYS log in!
+    const groupsRef = collection(db, 'groups');
+    const groupsSnap = await getDocs(groupsRef);
+    if (!groupsSnap.empty) {
+      for (const gDoc of groupsSnap.docs) {
+        const gData = gDoc.data() as Group;
+        if (gData.members && Array.isArray(gData.members)) {
+          const matchedMember = gData.members.find(
+            (m) =>
+              isPhoneMatch(m.mobileNumber, trimmed) ||
+              isPhoneMatch(m.phone, trimmed) ||
+              isPhoneMatch(m.email, trimmed)
+          );
+          if (matchedMember) {
+            const memberPhone = matchedMember.mobileNumber || matchedMember.phone || trimmed;
+            const profile: UserAuthProfile = {
+              name: matchedMember.name || 'Mess Member',
+              email: matchedMember.email || `${cleanInputDigits || 'user'}@mess.com`,
+              mobileNumber: memberPhone,
+              password: matchedMember.password || '',
+              idNumber: '',
+              identity: null,
+              isLoggedIn: true,
+              role: 'user',
+              linkedGroupId: gData.id,
+            };
+
+            // Auto-cache profile in 'users' collection for future instant logins
+            saveUserProfileToFirestore(profile);
+            return profile;
+          }
+        }
+      }
     }
   } catch (err) {
     console.warn('Firestore fetch user profile warning:', err);
@@ -152,6 +341,26 @@ export async function saveGroupToFirestore(group: Group) {
     const groupRef = doc(db, 'groups', group.id);
     const payload = removeUndefinedFields(group);
     await setDoc(groupRef, payload, { merge: true });
+
+    // Auto-save all group members to 'users' collection so they can log in seamlessly
+    if (group.members && Array.isArray(group.members)) {
+      for (const m of group.members) {
+        const mob = m.mobileNumber || m.phone || '';
+        if (mob) {
+          saveUserProfileToFirestore({
+            name: m.name,
+            email: m.email || `${cleanPhoneDigits(mob)}@mess.com`,
+            mobileNumber: mob,
+            password: m.password || '',
+            idNumber: '',
+            identity: null,
+            isLoggedIn: true,
+            role: 'user',
+            linkedGroupId: group.id,
+          });
+        }
+      }
+    }
   } catch (err) {
     console.error('Error saving group to Firestore:', err);
   }
@@ -325,12 +534,9 @@ export function subscribeToChatMessages(
         const msg = { ...data, id: docSnap.id } as ChatMessage;
         const msgTime = getMessageTimestampMs(msg);
 
-        // Keep messages created within the last 3 days (72 hours)
+        // Keep messages created within the last 3 days (72 hours) in view
         if (now - msgTime <= THREE_DAYS_MS) {
           items.push(msg);
-        } else {
-          // Auto delete messages older than 3 days from Firestore
-          deleteDoc(doc(db, 'chatMessages', docSnap.id)).catch(() => {});
         }
       });
       // sort by timestamp ascending
@@ -437,8 +643,8 @@ export function subscribeToUserPresences(groupId: string, onUpdate: (activeMembe
       const activeIds: string[] = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data() as UserPresence;
-        // Active if pinged in last 40 seconds
-        if (data.lastActiveMs && now - data.lastActiveMs < 40000) {
+        // Active if pinged in last 3 minutes
+        if (data.lastActiveMs && now - data.lastActiveMs < 180000) {
           activeIds.push(data.memberId);
         }
       });

@@ -14,7 +14,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
-import { getMessageTimestampMs } from '../lib/firebase';
+import { getMessageTimestampMs, isPhoneMatch } from '../lib/firebase';
 
 interface GroupChatModalProps {
   isOpen: boolean;
@@ -38,7 +38,9 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
   const loggedInMember = (group?.members || []).find(
     (m) =>
       (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
-      (currentUser?.mobileNumber && m.phone?.replace(/\D/g, '').includes(currentUser.mobileNumber.replace(/\D/g, '').slice(-7))) ||
+      (currentUser?.mobileNumber &&
+        (isPhoneMatch(m.phone, currentUser.mobileNumber) ||
+          isPhoneMatch(m.mobileNumber, currentUser.mobileNumber))) ||
       (currentUser?.name && m.name.toLowerCase().includes(currentUser.name.toLowerCase())) ||
       (currentUser?.name && currentUser.name.toLowerCase().includes(m.name.toLowerCase()))
   );

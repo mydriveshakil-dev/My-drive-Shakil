@@ -5,6 +5,7 @@ import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 import { GlassContainer } from './GlassContainer';
 import { evaluateMathExpression } from '../utils/mathEvaluator';
 import { isCategoryPermittedForUser } from '../utils/permissionUtils';
+import { isPhoneMatch } from '../lib/firebase';
 
 interface UtilitiesAndRentViewProps {
   group: Group;
@@ -37,7 +38,9 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
   const loggedInMember = group.members.find(
     (m) =>
       (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
-      (currentUser?.mobileNumber && m.phone?.includes(currentUser.mobileNumber.slice(-7))) ||
+      (currentUser?.mobileNumber &&
+        (isPhoneMatch(m.phone, currentUser.mobileNumber) ||
+          isPhoneMatch(m.mobileNumber, currentUser.mobileNumber))) ||
       (currentUser?.name && m.name.toLowerCase() === currentUser.name.toLowerCase())
   ) || group.members[0];
 

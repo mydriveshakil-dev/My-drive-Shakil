@@ -121,6 +121,8 @@ export interface UserAuthProfile {
   name?: string;
   email: string;
   mobileNumber: string;
+  cleanMobile?: string;
+  localMobile?: string;
   password?: string;
   idNumber?: string;
   identity?: UaeVisaIdentity | null;

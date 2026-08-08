@@ -69,21 +69,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     <header className="mb-4 z-30 relative w-full">
       {/* Combined Single Header Card */}
       <div className="bg-gradient-to-b from-[#07193F] to-[#041029] text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-800/80 relative overflow-hidden space-y-4">
-        {/* Burj Khalifa Background SVG */}
-        <div className="absolute right-0 bottom-0 top-0 w-48 sm:w-64 opacity-25 pointer-events-none flex items-end justify-end pr-2 overflow-hidden">
-          <svg className="h-44 sm:h-52 w-auto text-white" viewBox="0 0 120 220" fill="none" stroke="currentColor" strokeWidth="1.2">
-            <path d="M60 5 V220 M60 5 L58 25 H62 L60 5 M58 25 V50 M62 25 V50 M55 50 H65 M55 50 V80 M65 50 V80 M51 80 H69 M51 80 V110 M69 80 V110 M47 110 H73 M47 110 V145 M73 110 V145 M42 145 H78 M42 145 V180 M78 145 V180 M36 180 H84 M36 180 V220 M84 180 V220" />
-            <line x1="57" y1="35" x2="63" y2="35" />
-            <line x1="54" y1="65" x2="66" y2="65" />
-            <line x1="50" y1="95" x2="70" y2="95" />
-            <line x1="45" y1="128" x2="75" y2="128" />
-            <line x1="40" y1="162" x2="80" y2="162" />
-            <line x1="34" y1="198" x2="86" y2="198" />
-            <path d="M36 220 V190 H42 V160 H47 V125 H51 V90 H55 V60 H58 V30 H60" />
-            <path d="M84 220 V190 H78 V160 H73 V125 H69 V90 H65 V60 H62 V30 H60" />
-          </svg>
-        </div>
-
         {/* Absolute Top-Right Logout Button */}
         {onLogout && (
           <button

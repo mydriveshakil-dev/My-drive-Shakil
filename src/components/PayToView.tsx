@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
+import { isPhoneMatch } from '../lib/firebase';
 
 interface PayToViewProps {
   group: Group;
@@ -46,7 +47,8 @@ export const PayToView: React.FC<PayToViewProps> = ({
     (m) =>
       (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
       (currentUser?.mobileNumber &&
-        m.phone?.replace(/\D/g, '').includes(currentUser.mobileNumber.replace(/\D/g, '').slice(-7))) ||
+        (isPhoneMatch(m.phone, currentUser.mobileNumber) ||
+          isPhoneMatch(m.mobileNumber, currentUser.mobileNumber))) ||
       (currentUser?.name && m.name.toLowerCase().includes(currentUser.name.toLowerCase()))
   );
 

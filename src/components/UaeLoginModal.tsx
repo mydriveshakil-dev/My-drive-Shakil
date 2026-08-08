@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserAuthProfile, Group, Member } from '../types';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
-import { loginWithGoogleAuth, getUserProfileFromFirestore } from '../lib/firebase';
+import { loginWithGoogleAuth, getUserProfileFromFirestore, isPhoneMatch } from '../lib/firebase';
 import {
   ShieldCheck,
   Smartphone,
@@ -29,23 +29,6 @@ interface UaeLoginModalProps {
 }
 
 const SAVED_CREDENTIALS_KEY = 'uae_saved_login_credentials';
-
-function cleanPhone(p?: string): string {
-  if (!p) return '';
-  return p.replace(/\D/g, '');
-}
-
-function isPhoneMatch(p1?: string, p2?: string): boolean {
-  if (!p1 || !p2) return false;
-  const c1 = cleanPhone(p1);
-  const c2 = cleanPhone(p2);
-  if (!c1 || !c2) return false;
-  if (c1 === c2) return true;
-  if (c1.length >= 7 && c2.length >= 7) {
-    return c1.slice(-7) === c2.slice(-7);
-  }
-  return false;
-}
 
 function isNameMatch(inputName: string, registeredName: string): boolean {
   if (!inputName || !registeredName) return false;
@@ -220,6 +203,8 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
     setIsSearchingCloud(false);
 
     let foundMember: Member | null = null;
+    let foundGroupId: string | undefined = cloudProfile?.linkedGroupId;
+
     if (allGroups && allGroups.length > 0) {
       for (const g of allGroups) {
         if (g.members) {
@@ -231,6 +216,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
           );
           if (match) {
             foundMember = match;
+            foundGroupId = g.id;
             break;
           }
         }
@@ -268,7 +254,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
       identity: null,
       isLoggedIn: true,
       role: cloudProfile?.role || 'user',
-      linkedGroupId: cloudProfile?.linkedGroupId,
+      linkedGroupId: foundGroupId || cloudProfile?.linkedGroupId,
     });
   };
 

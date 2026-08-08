@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Group, ExpenseCategory, UserAuthProfile } from '../types';
 import { X, Utensils, ShoppingBag, Upload, Calendar as CalendarIcon, UserCheck, DollarSign, Check, Calculator, AlertCircle } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
+import { isPhoneMatch } from '../lib/firebase';
 import { evaluateMathExpression } from '../utils/mathEvaluator';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 import { isCategoryPermittedForMember, isCategoryPermittedForUser } from '../utils/permissionUtils';
@@ -34,7 +35,9 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   const loggedInMember = group.members.find(
     (m) =>
       (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
-      (currentUser?.mobileNumber && (m.phone?.includes(currentUser.mobileNumber.slice(-7)) || m.mobileNumber?.includes(currentUser.mobileNumber.slice(-7)))) ||
+      (currentUser?.mobileNumber &&
+        (isPhoneMatch(m.phone, currentUser.mobileNumber) ||
+          isPhoneMatch(m.mobileNumber, currentUser.mobileNumber))) ||
       (currentUser?.name && m.name.toLowerCase() === currentUser.name.toLowerCase()) ||
       (currentUser?.name && m.name.toLowerCase().includes(currentUser.name.toLowerCase())) ||
       (currentUser?.name && currentUser.name.toLowerCase().includes(m.name.toLowerCase()))

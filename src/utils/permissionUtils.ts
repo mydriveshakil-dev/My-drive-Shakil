@@ -1,4 +1,5 @@
 import { Group, Member, UserAuthProfile } from '../types';
+import { isPhoneMatch } from '../lib/firebase';
 
 /**
  * Finds the matching Member in a Group for a given UserAuthProfile
@@ -10,8 +11,8 @@ export function getLoggedInMember(group: Group, currentUser?: UserAuthProfile | 
       (m) =>
         (currentUser.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
         (currentUser.mobileNumber &&
-          (m.phone?.includes(currentUser.mobileNumber.slice(-7)) ||
-            m.mobileNumber?.includes(currentUser.mobileNumber.slice(-7)))) ||
+          (isPhoneMatch(m.phone, currentUser.mobileNumber) ||
+            isPhoneMatch(m.mobileNumber, currentUser.mobileNumber))) ||
         (currentUser.name && m.name.toLowerCase() === currentUser.name.toLowerCase()) ||
         (currentUser.name && m.name.toLowerCase().includes(currentUser.name.toLowerCase())) ||
         (currentUser.name && currentUser.name.toLowerCase().includes(m.name.toLowerCase()))

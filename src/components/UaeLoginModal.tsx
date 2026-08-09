@@ -322,7 +322,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
           onSubmit={(e) => {
             if (loginError) {
               e.preventDefault();
-              window.open('https://wa.me/massage/Z4DT5UO7MABQL1', '_blank');
+              window.open('https://wa.me/message/Z4DT5UO7MABQL1', '_blank');
             } else {
               handleLogin(e);
             }
@@ -412,7 +412,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
           {loginError ? (
             <button
               type="button"
-              onClick={() => window.open('https://wa.me/massage/Z4DT5UO7MABQL1', '_blank')}
+              onClick={() => window.open('https://wa.me/message/Z4DT5UO7MABQL1', '_blank')}
               className="w-full bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-800 hover:from-emerald-700 hover:to-emerald-900 text-white font-black py-4 rounded-[24px] shadow-lg shadow-emerald-950/20 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer border border-emerald-400/30 uppercase tracking-wider"
             >
               <MessageCircle className="w-5 h-5 stroke-[2.5] text-white" />

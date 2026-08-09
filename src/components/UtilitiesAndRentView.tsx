@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Group, UtilityBill, RentContribution, UserAuthProfile } from '../types';
-import { Zap, Home as HomeIcon, Plus, CheckCircle2, Clock, Edit2, AlertCircle, DollarSign, Calculator, Trash2, Lock, Unlock, X } from 'lucide-react';
+import { Zap, Home as HomeIcon, Plus, CheckCircle2, Clock, Edit2, AlertCircle, DollarSign, Calculator, Trash2, Lock, Unlock, X, Users, CheckSquare, Square } from 'lucide-react';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 import { GlassContainer } from './GlassContainer';
 import { evaluateMathExpression } from '../utils/mathEvaluator';
@@ -20,6 +20,18 @@ interface UtilitiesAndRentViewProps {
   customRates?: Record<string, number>;
   currentUser?: UserAuthProfile | null;
 }
+
+const UTILITY_NAME_OPTIONS = [
+  'LPG Gass',
+  'Drinking Water',
+  'WiFi',
+  'Cigarettes',
+  'AC Repair',
+  'Room Maintenance',
+  'Washroom Maintenance.',
+  'Kitchen Maintenance',
+  'Others',
+];
 
 export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
   group,
@@ -54,17 +66,26 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
   const visibleUtilities = utilities.filter((u) => isCategoryPermittedForUser(u.category, group, currentUser));
 
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newUtilName, setNewUtilName] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newUtilNameOption, setNewUtilNameOption] = useState(UTILITY_NAME_OPTIONS[0]);
+  const [customUtilName, setCustomUtilName] = useState('');
   const [newUtilAmount, setNewUtilAmount] = useState('');
   const [newUtilPayer, setNewUtilPayer] = useState(loggedInMember?.id || 'm1');
-  const [newUtilCategory, setNewUtilCategory] = useState<'electricity' | 'internet' | 'water' | 'gas' | 'cleaner' | 'other'>('electricity');
+  const [newUtilCategory, setNewUtilCategory] = useState<'electricity' | 'internet' | 'water' | 'gas' | 'cleaner' | 'other'>('gas');
+  const [newUtilSharedWith, setNewUtilSharedWith] = useState<string[]>([]);
+
+  // Initialize sharedWith default to all group members
+  useEffect(() => {
+    if (group.members) {
+      setNewUtilSharedWith(group.members.map((m) => m.id));
+    }
+  }, [group.members]);
 
   useEffect(() => {
-    if (showAddModal && loggedInMember) {
+    if (loggedInMember) {
       setNewUtilPayer(loggedInMember.id);
     }
-  }, [showAddModal, loggedInMember?.id]);
+  }, [loggedInMember?.id]);
 
   const now = new Date();
   const currentMonthCycle = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -196,6 +217,16 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
       if (onUpdateRent) {
         onUpdateRent(updatedRent);
       }
+    } else if (val === '') {
+      const updatedRent: RentContribution = {
+        ...rent,
+        totalRent: 0,
+        perMemberAmount: 0,
+        cycle: rent.cycle || currentMonthCycle,
+      };
+      if (onUpdateRent) {
+        onUpdateRent(updatedRent);
+      }
     }
   };
 
@@ -226,7 +257,8 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUtilName.trim() || !newUtilAmount) return;
+    const finalName = newUtilNameOption === 'Others' ? (customUtilName.trim() || 'Others') : newUtilNameOption;
+    if (!finalName || !newUtilAmount) return;
 
     const res = evaluateMathExpression(newUtilAmount);
     const parsed = res.calculatedValue ?? parseFloat(newUtilAmount);
@@ -234,18 +266,21 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
     onAddUtility({
       groupId: group.id,
-      name: newUtilName.trim(),
+      name: finalName,
       category: newUtilCategory,
       amount: parsed,
       dueDate: new Date().toISOString().split('T')[0],
       paidById: newUtilPayer,
       status: 'paid',
       cycle: group.cycleId,
+      sharedWithIds: newUtilSharedWith.length > 0 ? newUtilSharedWith : group.members.map((m) => m.id),
     });
 
-    setNewUtilName('');
+    setNewUtilNameOption(UTILITY_NAME_OPTIONS[0]);
+    setCustomUtilName('');
     setNewUtilAmount('');
-    setShowAddModal(false);
+    setNewUtilSharedWith(group.members.map((m) => m.id));
+    setShowAddForm(false);
   };
 
   return (
@@ -267,26 +302,25 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         </div>
 
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => setShowAddForm(!showAddForm)}
           className="bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black px-5 py-3 rounded-[24px] text-xs flex items-center gap-1.5 shadow-md shadow-blue-950/30 active:scale-95 border border-blue-400/30 self-start md:self-auto cursor-pointer uppercase tracking-wider"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
-          <span>+ Add Utility Bill</span>
+          <span>{showAddForm ? 'Close Add Bill' : '+ Add Utility Bill'}</span>
         </button>
       </GlassContainer>
 
       {/* Summary Stat Cards - Compact Side-by-Side Boxes */}
       <div className="grid grid-cols-2 gap-2">
         <div className="p-3 border border-slate-200/90 bg-white text-slate-900 shadow-2xs rounded-2xl">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider truncate">
-              Total Utility Bills
-            </span>
-            <span className="w-7 h-7 rounded-xl bg-[#07193F] text-white flex items-center justify-center font-bold border border-blue-900/40 shrink-0">
-              <Zap className="w-3.5 h-3.5 text-blue-300" />
+          <div className="flex items-center justify-between text-slate-800 mb-1">
+            <Zap className="w-4 h-4 text-amber-500" />
+            <span className="text-[10px] font-extrabold uppercase bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200">
+              Utilities
             </span>
           </div>
-          <div>
+          <span className="text-[11px] text-slate-600 font-semibold block truncate">Total Utility Bills</span>
+          <div className="mt-1">
             <DualCurrencyDisplay
               amount={totalUtilities}
               baseCurrency={group.currency}
@@ -310,15 +344,14 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         </div>
 
         <div className="p-3 border border-slate-200/90 bg-white text-slate-900 shadow-2xs rounded-2xl">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider truncate">
-              Landlord Rent
-            </span>
-            <span className="w-7 h-7 rounded-xl bg-[#07193F] text-white flex items-center justify-center font-bold border border-blue-900/40 shrink-0">
-              <HomeIcon className="w-3.5 h-3.5 text-blue-300" />
+          <div className="flex items-center justify-between text-slate-800 mb-1">
+            <HomeIcon className="w-4 h-4 text-blue-600" />
+            <span className="text-[10px] font-extrabold uppercase bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-200">
+              Rent
             </span>
           </div>
-          <div>
+          <span className="text-[11px] text-slate-600 font-semibold block truncate">Total Room Rent</span>
+          <div className="mt-1">
             <DualCurrencyDisplay
               amount={rent.totalRent}
               baseCurrency={group.currency}
@@ -342,6 +375,273 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         </div>
       </div>
 
+      {/* INLINE ADD UTILITY BILL FORM SECTION (Renders directly on main page) */}
+      {showAddForm && (
+        <div className="p-5 sm:p-6 rounded-3xl border-2 border-black bg-white text-slate-900 shadow-xl space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center justify-between border-b border-black/10 pb-3">
+            <div className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-amber-500 stroke-[2.5]" />
+              <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">
+                Add Utility Bill Entry
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAddForm(false)}
+              className="p-1 rounded-full text-slate-400 hover:text-slate-900 hover:bg-slate-100 cursor-pointer transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleAddSubmit} className="space-y-4">
+            {/* Bill Name Selection Box */}
+            <div>
+              <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
+                Bill Name / Category
+              </label>
+              <select
+                value={newUtilNameOption}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setNewUtilNameOption(val);
+                  if (val === 'WiFi') setNewUtilCategory('internet');
+                  else if (val === 'LPG Gass') setNewUtilCategory('gas');
+                  else if (val === 'Drinking Water') setNewUtilCategory('water');
+                  else setNewUtilCategory('other');
+                }}
+                className="w-full px-4 py-2.5 bg-white border border-black rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none cursor-pointer"
+              >
+                {UTILITY_NAME_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+
+              {/* Custom name input if "Others" selected */}
+              {newUtilNameOption === 'Others' && (
+                <input
+                  type="text"
+                  required
+                  placeholder="Enter custom bill name..."
+                  value={customUtilName}
+                  onChange={(e) => setCustomUtilName(e.target.value)}
+                  className="mt-2 w-full px-4 py-2.5 bg-white border border-black rounded-xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
+                />
+              )}
+            </div>
+
+            {/* Bill Amount */}
+            <div>
+              <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
+                Amount ({group.currency})
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                required
+                placeholder="0.00 (e.g. 10+20+30)"
+                value={newUtilAmount}
+                onChange={(e) => setNewUtilAmount(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const res = evaluateMathExpression(newUtilAmount);
+                    if (res.isValid && res.calculatedValue !== null && res.hasOperator) {
+                      e.preventDefault();
+                      setNewUtilAmount(res.displayValue);
+                    }
+                  }
+                }}
+                onBlur={() => {
+                  const res = evaluateMathExpression(newUtilAmount);
+                  if (res.isValid && res.calculatedValue !== null && res.hasOperator) {
+                    setNewUtilAmount(res.displayValue);
+                  }
+                }}
+                className="w-full px-4 py-2.5 bg-white border border-black rounded-xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
+              />
+
+              {/* Quick Math Symbols Strip */}
+              <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 scrollbar-none">
+                <span className="text-[10px] font-bold text-slate-700 uppercase shrink-0 mr-0.5 flex items-center gap-1">
+                  <Calculator className="w-3 h-3 text-slate-900" />
+                  Math:
+                </span>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onTouchStart={(e) => e.preventDefault()}
+                  onClick={() => setNewUtilAmount((prev) => prev + '+')}
+                  className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onTouchStart={(e) => e.preventDefault()}
+                  onClick={() => setNewUtilAmount((prev) => prev + '-')}
+                  className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
+                >
+                  -
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onTouchStart={(e) => e.preventDefault()}
+                  onClick={() => setNewUtilAmount((prev) => prev + '*')}
+                  className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
+                >
+                  ×
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onTouchStart={(e) => e.preventDefault()}
+                  onClick={() => setNewUtilAmount((prev) => prev + '/')}
+                  className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
+                >
+                  ÷
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onTouchStart={(e) => e.preventDefault()}
+                  onClick={() => {
+                    const res = evaluateMathExpression(newUtilAmount);
+                    if (res.isValid && res.calculatedValue !== null) {
+                      setNewUtilAmount(res.displayValue);
+                    }
+                  }}
+                  className="px-2.5 py-1 bg-black hover:bg-slate-800 active:scale-95 text-white font-black text-xs rounded-lg shadow-sm cursor-pointer ml-auto"
+                >
+                  =
+                </button>
+              </div>
+            </div>
+
+            {/* Paid By Selection */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-slate-900 uppercase">
+                  Paid By
+                </label>
+                {isAdmin ? (
+                  <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    Admin Unlocked
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                    Locked
+                  </span>
+                )}
+              </div>
+              <select
+                value={newUtilPayer}
+                onChange={(e) => setNewUtilPayer(e.target.value)}
+                disabled={!isAdmin}
+                className="w-full px-4 py-2.5 bg-white border border-black rounded-xl text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none cursor-pointer disabled:bg-slate-100 disabled:cursor-not-allowed"
+              >
+                {isAdmin ? (
+                  group.members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} ({m.phone || m.mobileNumber || m.email || 'Member'})
+                    </option>
+                  ))
+                ) : loggedInMember ? (
+                  <option value={loggedInMember.id}>
+                    {loggedInMember.name} (Your Account)
+                  </option>
+                ) : (
+                  group.members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            {/* Shared With Option (Multi-Select Member Checkboxes) */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-900 uppercase">
+                  Shared With ({newUtilSharedWith.length} of {group.members.length} members)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newUtilSharedWith.length === group.members.length) {
+                      setNewUtilSharedWith([]);
+                    } else {
+                      setNewUtilSharedWith(group.members.map((m) => m.id));
+                    }
+                  }}
+                  className="text-[11px] font-bold text-blue-700 hover:underline cursor-pointer"
+                >
+                  {newUtilSharedWith.length === group.members.length ? 'Deselect All' : 'Select All'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-50 p-3 rounded-2xl border border-black max-h-48 overflow-y-auto">
+                {group.members.map((m) => {
+                  const isSelected = newUtilSharedWith.includes(m.id);
+                  return (
+                    <label
+                      key={m.id}
+                      className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-emerald-50 text-emerald-950 border-emerald-400 font-bold'
+                          : 'bg-white text-slate-400 border-slate-300 opacity-60'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {
+                          if (isSelected) {
+                            setNewUtilSharedWith(newUtilSharedWith.filter((id) => id !== m.id));
+                          } else {
+                            setNewUtilSharedWith([...newUtilSharedWith, m.id]);
+                          }
+                        }}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                      />
+                      <span className="w-5 h-5 rounded-full bg-slate-800 text-white text-[9px] font-bold flex items-center justify-center shrink-0">
+                        {m.avatar}
+                      </span>
+                      <span className="truncate">{m.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1 font-medium">
+                * Selected members will share this bill amount equally. Unselected members are excluded.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAddForm(false)}
+                className="w-1/2 py-3 rounded-xl border border-black text-xs font-bold text-slate-900 hover:bg-slate-100 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="w-1/2 py-3 rounded-[24px] bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white text-xs font-black shadow-md border border-blue-400/30 cursor-pointer uppercase tracking-wider"
+              >
+                Save Utility Bill
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* SECTION 1: Utility Bills List */}
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
@@ -349,7 +649,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
             <Zap className="w-4 h-4 text-slate-900" />
             Active Utility Bills ({utilities.length})
           </h3>
-          <span className="text-xs text-slate-600">Split equally among {group.members.length} members</span>
+          <span className="text-xs text-slate-600">Tracked & split per member inclusion</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -359,6 +659,13 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
             const isAdmin = currentUser?.role === 'admin';
             const isPayer = loggedInMember?.id === util.paidById;
             const canToggle = isAdmin || isPayer;
+            const canDelete = isAdmin || isPayer;
+
+            const sharedWithIds = util.sharedWithIds && util.sharedWithIds.length > 0
+              ? util.sharedWithIds
+              : group.members.map((m) => m.id);
+            const sharedMembers = group.members.filter((m) => sharedWithIds.includes(m.id));
+            const perMemberUtilCost = util.amount / (sharedWithIds.length || 1);
 
             return (
               <div
@@ -400,47 +707,65 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   </div>
                 </div>
 
-                <div className="mt-3 pt-2 border-t border-black/20 flex items-center justify-between text-xs text-slate-700">
-                  <span>Each member pays:</span>
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-slate-950">
-                      {(util.amount / (group.members.length || 1)).toFixed(2)} AED
-                    </span>
-                    {onDeleteUtility && (
-                      <div>
-                        {deleteConfirmUtilId === util.id ? (
-                          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-black shadow-md">
-                            <span className="text-[10px] text-slate-900 font-bold px-1">Delete?</span>
+                <div className="mt-3 pt-2 border-t border-black/20 space-y-1.5 text-xs text-slate-700">
+                  <div className="flex items-center justify-between">
+                    <span>Shared cost per member ({sharedWithIds.length}):</span>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-slate-950">
+                        {perMemberUtilCost.toFixed(2)} AED
+                      </span>
+                      {onDeleteUtility && canDelete && (
+                        <div>
+                          {deleteConfirmUtilId === util.id ? (
+                            <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-black shadow-md">
+                              <span className="text-[10px] text-slate-900 font-bold px-1">Delete?</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onDeleteUtility(util.id);
+                                  setDeleteConfirmUtilId(null);
+                                }}
+                                className="px-2 py-0.5 bg-black text-white font-black text-[10px] rounded-lg cursor-pointer"
+                              >
+                                Yes
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteConfirmUtilId(null)}
+                                className="px-1.5 py-0.5 bg-white text-slate-900 border border-black font-bold text-[10px] rounded-lg cursor-pointer"
+                              >
+                                No
+                              </button>
+                            </div>
+                          ) : (
                             <button
                               type="button"
-                              onClick={() => {
-                                onDeleteUtility(util.id);
-                                setDeleteConfirmUtilId(null);
-                              }}
-                              className="px-2 py-0.5 bg-black text-white font-black text-[10px] rounded-lg cursor-pointer"
+                              onClick={() => setDeleteConfirmUtilId(util.id)}
+                              className="p-1 text-slate-900 bg-white hover:bg-slate-100 rounded-lg transition-all border border-black flex items-center gap-1 cursor-pointer font-bold text-[10px]"
+                              title="Delete utility bill"
                             >
-                              Yes
+                              <Trash2 className="w-3.5 h-3.5 text-slate-900" />
+                              <span>Delete</span>
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => setDeleteConfirmUtilId(null)}
-                              className="px-1.5 py-0.5 bg-white text-slate-900 border border-black font-bold text-[10px] rounded-lg cursor-pointer"
-                            >
-                              No
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setDeleteConfirmUtilId(util.id)}
-                            className="p-1 text-slate-900 bg-white hover:bg-slate-100 rounded-lg transition-all border border-black flex items-center gap-1 cursor-pointer font-bold text-[10px]"
-                            title="Delete utility bill"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-slate-900" />
-                            <span>Delete</span>
-                          </button>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Shared With Badge Pills */}
+                  <div className="text-[11px] font-medium text-slate-600 flex items-center gap-1 flex-wrap">
+                    <span className="font-bold text-slate-800">Shared with:</span>
+                    {sharedMembers.length === group.members.length ? (
+                      <span className="bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded border border-slate-300">
+                        All Members
+                      </span>
+                    ) : (
+                      sharedMembers.map((m) => (
+                        <span key={m.id} className="bg-emerald-50 text-emerald-900 font-bold px-2 py-0.5 rounded border border-emerald-300">
+                          {m.name}
+                        </span>
+                      ))
                     )}
                   </div>
                 </div>
@@ -500,83 +825,69 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 )}
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative w-28 sm:w-36">
-                  <input
-                    type="number"
-                    value={totalRentInput}
-                    onChange={handleRentInputChange}
-                    disabled={isRentInputLocked}
-                    placeholder="e.g. 3500"
-                    className={`w-full bg-white border border-black rounded-xl px-3 py-2 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-black ${
-                      isRentInputLocked ? 'bg-slate-100 text-slate-500 cursor-not-allowed opacity-80' : ''
-                    }`}
-                  />
-                </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={totalRentInput}
+                  onChange={handleRentInputChange}
+                  disabled={isRentInputLocked}
+                  placeholder="e.g. 3500"
+                  className={`w-full bg-white border border-black rounded-xl px-3 py-2 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-black ${
+                    isRentInputLocked ? 'bg-slate-100 text-slate-500 cursor-not-allowed opacity-80' : ''
+                  }`}
+                />
 
+                {/* Lock / Unlock Toggle Button */}
                 {isRentInputLocked ? (
                   <button
                     type="button"
                     onClick={handleUnlockRent}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-black font-extrabold text-xs transition-all shadow-xs ${
+                    disabled={!isAdmin}
+                    className={`px-3 py-2 rounded-xl border border-black text-xs font-black flex items-center gap-1 shrink-0 ${
                       isAdmin
-                        ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-500 cursor-pointer'
-                        : 'bg-slate-200 text-slate-500 border-slate-300 cursor-not-allowed'
+                        ? 'bg-amber-400 text-slate-950 hover:bg-amber-500 cursor-pointer'
+                        : 'bg-slate-200 text-slate-500 cursor-not-allowed'
                     }`}
-                    title={isAdmin ? 'Click to Unlock Rent' : 'Locked for current month'}
+                    title={isAdmin ? 'Click to Unlock Rent' : 'Only Admin can unlock'}
                   >
-                    <Lock className="w-3.5 h-3.5 text-amber-800" />
-                    <span>LOCKED</span>
-                    {isAdmin && <span className="text-[10px] text-amber-900 underline font-bold ml-0.5">(Unlock)</span>}
+                    <Unlock className="w-3.5 h-3.5" />
+                    <span>{isAdmin ? 'Unlock' : 'Locked'}</span>
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={handleLockRent}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-black hover:bg-slate-800 text-white rounded-xl border border-black font-black text-xs shadow-md transition-all cursor-pointer active:scale-95"
-                    title="Click LOCK to save and lock rent amount"
+                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl border border-black flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
+                    title="Lock Rent Amount for this Month"
                   >
-                    <Lock className="w-3.5 h-3.5 text-amber-400 stroke-[2.5]" />
+                    <Lock className="w-3.5 h-3.5" />
                     <span>LOCK</span>
                   </button>
                 )}
               </div>
-              {isRentInputLocked && (
-                <p className="text-[11px] font-semibold text-amber-800 mt-1">
-                  * Rent modification is locked for the current month. It will automatically reset on the 1st of next month.
-                </p>
-              )}
             </div>
 
-            <div className="bg-white p-3 rounded-xl border border-black text-right shadow-xs">
-              <span className="text-[10px] font-bold text-slate-700 uppercase block">
-                Calculated Per-Member Share
+            <div className="p-3 bg-white rounded-xl border border-black text-right shrink-0 min-w-[140px]">
+              <span className="text-[10px] text-slate-600 font-extrabold uppercase block">
+                Each Member Share
               </span>
-              <span className="text-lg font-black text-slate-950">
+              <span className="text-base font-black text-slate-950 block">
                 {currentMemberRentShare.toFixed(2)} AED
               </span>
-              <span className="text-[10px] text-slate-600 block">
-                Split equally among {totalRentSplitCount} person(s) ({rentParticipatingCount} members {tempMembersCount > 0 ? `+ ${tempMembersCount} temp splitters` : ''})
+              <span className="text-[10px] text-slate-500 font-semibold block">
+                ({rentParticipatingCount} members {tempMembersCount > 0 ? `+ ${tempMembersCount} temp` : ''})
               </span>
             </div>
           </div>
         </div>
 
-        {/* Temporary Rent Splitters Section (Admin Only & Public View) */}
-        <div className="bg-slate-100 p-3.5 rounded-2xl border border-black/30 space-y-2">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div>
-              <h4 className="text-xs font-black text-slate-950 uppercase tracking-wider flex items-center gap-1.5">
-                <span>Temporary Rent Splitters</span>
-                <span className="text-[10px] font-bold bg-slate-900 text-white px-2 py-0.5 rounded-full">
-                  Rent Module Only
-                </span>
-              </h4>
-              <p className="text-[11px] text-slate-600">
-                Text-based names strictly for splitting rent (No database accounts created).
-              </p>
-            </div>
-
+        {/* Temporary Rent Splitters / Guest Roommates Box */}
+        <div className="p-3 bg-slate-50 rounded-2xl border border-black/30 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
+              Temporary Rent Splitters / Guests ({tempMembers.length})
+            </span>
             {isAdmin && (
               <button
                 type="button"
@@ -729,177 +1040,6 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
           </div>
         </div>
       </GlassContainer>
-
-      {/* Add Utility Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
-          <GlassContainer variant="card" className="w-full max-w-md rounded-3xl p-6 shadow-2xl border-2 border-black bg-white text-slate-900 space-y-4">
-            <h3 className="text-lg font-black text-slate-900">Add Utility Bill</h3>
-
-            <form onSubmit={handleAddSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
-                  Bill Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g., Water & Sewerage or Cleaning"
-                  value={newUtilName}
-                  onChange={(e) => setNewUtilName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white border border-black rounded-xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
-                  Amount ({group.currency})
-                </label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  autoComplete="off"
-                  required
-                  placeholder="0.00 (e.g. 10+20+30)"
-                  value={newUtilAmount}
-                  onChange={(e) => setNewUtilAmount(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const res = evaluateMathExpression(newUtilAmount);
-                      if (res.isValid && res.calculatedValue !== null && res.hasOperator) {
-                        e.preventDefault();
-                        setNewUtilAmount(res.displayValue);
-                      }
-                    }
-                  }}
-                  onBlur={() => {
-                    const res = evaluateMathExpression(newUtilAmount);
-                    if (res.isValid && res.calculatedValue !== null && res.hasOperator) {
-                      setNewUtilAmount(res.displayValue);
-                    }
-                  }}
-                  className="w-full px-4 py-2.5 bg-white border border-black rounded-xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
-                />
-
-                {/* Quick Math Symbols Strip */}
-                <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1 scrollbar-none">
-                  <span className="text-[10px] font-bold text-slate-700 uppercase shrink-0 mr-0.5 flex items-center gap-1">
-                    <Calculator className="w-3 h-3 text-slate-900" />
-                    Math:
-                  </span>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onTouchStart={(e) => e.preventDefault()}
-                    onClick={() => setNewUtilAmount((prev) => prev + '+')}
-                    className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
-                  >
-                    +
-                  </button>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onTouchStart={(e) => e.preventDefault()}
-                    onClick={() => setNewUtilAmount((prev) => prev + '-')}
-                    className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onTouchStart={(e) => e.preventDefault()}
-                    onClick={() => setNewUtilAmount((prev) => prev + '*')}
-                    className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
-                  >
-                    ×
-                  </button>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onTouchStart={(e) => e.preventDefault()}
-                    onClick={() => setNewUtilAmount((prev) => prev + '/')}
-                    className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
-                  >
-                    ÷
-                  </button>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onTouchStart={(e) => e.preventDefault()}
-                    onClick={() => {
-                      const res = evaluateMathExpression(newUtilAmount);
-                      if (res.isValid && res.calculatedValue !== null) {
-                        setNewUtilAmount(res.displayValue);
-                      }
-                    }}
-                    className="px-2.5 py-1 bg-black hover:bg-slate-800 active:scale-95 text-white font-black text-xs rounded-lg shadow-sm cursor-pointer ml-auto"
-                  >
-                    =
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-900 uppercase">
-                    Paid By
-                  </label>
-                  {isAdmin ? (
-                    <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      Admin Unlocked
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                      Locked
-                    </span>
-                  )}
-                </div>
-                <select
-                  value={newUtilPayer}
-                  onChange={(e) => setNewUtilPayer(e.target.value)}
-                  disabled={!isAdmin}
-                  className="w-full px-4 py-2.5 bg-white border border-black rounded-xl text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none cursor-pointer disabled:bg-slate-100 disabled:cursor-not-allowed"
-                >
-                  {isAdmin ? (
-                    group.members.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name} ({m.phone || m.mobileNumber || m.email || 'Member'})
-                      </option>
-                    ))
-                  ) : loggedInMember ? (
-                    <option value={loggedInMember.id}>
-                      {loggedInMember.name} (Your Account)
-                    </option>
-                  ) : (
-                    group.members.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="w-1/2 py-3 rounded-xl border border-black text-xs font-bold text-slate-900 hover:bg-slate-100 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="w-1/2 py-3 rounded-[24px] bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white text-xs font-black shadow-md border border-blue-400/30 cursor-pointer uppercase tracking-wider"
-                >
-                  Save Utility
-                </button>
-              </div>
-            </form>
-          </GlassContainer>
-        </div>
-      )}
     </div>
   );
 };

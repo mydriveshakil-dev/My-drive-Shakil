@@ -99,26 +99,25 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         compress: true,
       });
 
-      const pageWidth = 210;
-      const pageHeight = 297;
-      const margin = 5;
-      const contentWidth = pageWidth - margin * 2; // 200 mm
-      const maxContentHeight = pageHeight - margin * 2; // 287 mm
+      const pageWidth = 210; // Standard A4 width (mm)
+      const pageHeight = 297; // Standard A4 height (mm)
 
-      const imgWidth = contentWidth;
+      const imgWidth = pageWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       let heightLeft = imgHeight;
-      let position = margin;
+      let position = 0;
 
-      pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
-      heightLeft -= maxContentHeight;
+      // Render page 1
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= pageHeight;
 
+      // Render subsequent pages for standard A4
       while (heightLeft > 0) {
-        position = heightLeft - imgHeight + margin;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
-        heightLeft -= maxContentHeight;
+        position -= pageHeight;
+        pdf.addPage('a4', 'portrait');
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= pageHeight;
       }
 
       if (autoDownload) {
@@ -761,7 +760,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               <div className="w-full max-w-4xl lg:max-w-5xl my-1 sm:my-4">
                 <div
                   id="pdf-report-document"
-                  className="bg-white text-slate-900 rounded-2xl shadow-2xl p-4 sm:p-8 md:p-10 w-full mx-auto space-y-4 sm:space-y-6 text-xs font-sans border-2 border-slate-900 box-border relative"
+                  className="bg-white text-slate-900 rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10 w-[210mm] max-w-full min-h-[297mm] mx-auto space-y-4 sm:space-y-6 text-xs font-sans border-2 border-slate-900 box-border relative"
                   style={{ backgroundColor: '#ffffff', color: '#0f172a', borderColor: '#0f172a' }}
                 >
                   {/* Header Stamp & Title */}

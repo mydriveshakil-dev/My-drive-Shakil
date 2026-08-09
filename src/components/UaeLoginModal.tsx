@@ -14,6 +14,7 @@ import {
   Square,
   Globe,
   X,
+  MessageCircle,
 } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
 import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
@@ -317,7 +318,17 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleLogin} className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-slate-900 max-w-full">
+        <form
+          onSubmit={(e) => {
+            if (loginError) {
+              e.preventDefault();
+              window.open('https://wa.me/massage/Z4DT5UO7MABQL1', '_blank');
+            } else {
+              handleLogin(e);
+            }
+          }}
+          className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-slate-900 max-w-full"
+        >
           {/* 1. Mobile Number */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
@@ -398,16 +409,28 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
 
         {/* Footer Login Button */}
         <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200/80 shrink-0">
-          <button
-            type="button"
-            onClick={() => handleLogin()}
-            disabled={isSearchingCloud}
-            className="w-full bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black py-4 rounded-[24px] shadow-lg shadow-blue-950/30 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer disabled:opacity-50 border border-blue-400/30 uppercase tracking-wider"
-          >
-            <ShieldCheck className="w-5 h-5 stroke-[2.5] text-white" />
-            <span>{isSearchingCloud ? 'Connecting Cloud...' : 'Login to Mess Portal'}</span>
-            <ArrowRight className="w-5 h-5 stroke-[3] text-white" />
-          </button>
+          {loginError ? (
+            <button
+              type="button"
+              onClick={() => window.open('https://wa.me/massage/Z4DT5UO7MABQL1', '_blank')}
+              className="w-full bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-800 hover:from-emerald-700 hover:to-emerald-900 text-white font-black py-4 rounded-[24px] shadow-lg shadow-emerald-950/20 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer border border-emerald-400/30 uppercase tracking-wider"
+            >
+              <MessageCircle className="w-5 h-5 stroke-[2.5] text-white" />
+              <span>Contact with Admin</span>
+              <ArrowRight className="w-5 h-5 stroke-[3] text-white" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleLogin()}
+              disabled={isSearchingCloud}
+              className="w-full bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black py-4 rounded-[24px] shadow-lg shadow-blue-950/30 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer disabled:opacity-50 border border-blue-400/30 uppercase tracking-wider"
+            >
+              <ShieldCheck className="w-5 h-5 stroke-[2.5] text-white" />
+              <span>{isSearchingCloud ? 'Connecting Cloud...' : 'LOGIN'}</span>
+              <ArrowRight className="w-5 h-5 stroke-[3] text-white" />
+            </button>
+          )}
         </div>
       </GlassContainer>
     </div>

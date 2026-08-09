@@ -64,6 +64,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     general: false,
     utilities: false,
     rent: false,
+    expensesSummary: true,
   });
 
   const settlementResult = calculateSettlement(
@@ -570,6 +571,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               { key: 'mess', label: 'Mess' },
               { key: 'general', label: 'General' },
               { key: 'utilities', label: 'Utilities' },
+              { key: 'expensesSummary', label: 'Expenses Summary' },
             ].map(({ key, label }) => {
               const isChecked = includeCategories[key as keyof typeof includeCategories];
               return (
@@ -992,49 +994,51 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                   </div>
 
                   {/* Itemized Billing Cycle Expenses Breakdown */}
-                  <div className="space-y-2 pt-2">
-                    <h3 className="text-xs font-black uppercase tracking-wider pb-1.5 border-b flex items-center justify-between" style={{ color: '#1e293b', borderColor: '#e2e8f0' }}>
-                      <span>4. Current Cycle Expenses Summary</span>
-                      <span className="font-normal text-[11px]" style={{ color: '#64748b' }}>
-                        Total: {settlementResult.totalMessExpenses.toFixed(2)} {group.currency}
-                      </span>
-                    </h3>
-                    {expenses && expenses.length > 0 ? (
-                      <div className="w-full rounded-xl border shadow-xs overflow-hidden" style={{ borderColor: '#e2e8f0', backgroundColor: '#ffffff' }}>
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="uppercase font-bold text-[10px] tracking-wider" style={{ backgroundColor: '#f1f5f9', color: '#334155' }}>
-                              <th className="p-2 border-b border-r" style={{ borderColor: '#e2e8f0' }}>Date</th>
-                              <th className="p-2 border-b border-r" style={{ borderColor: '#e2e8f0' }}>Title</th>
-                              <th className="p-2 border-b border-r" style={{ borderColor: '#e2e8f0' }}>Category</th>
-                              <th className="p-2 border-b border-r" style={{ borderColor: '#e2e8f0' }}>Paid By</th>
-                              <th className="p-2 border-b text-right" style={{ borderColor: '#e2e8f0' }}>Amount</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y font-medium text-[11px]" style={{ borderColor: '#e2e8f0' }}>
-                            {expenses.slice(0, 20).map((e, idx) => (
-                              <tr key={e.id} style={{ backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}>
-                                <td className="p-2 border-r" style={{ borderColor: '#e2e8f0', color: '#475569' }}>{e.date}</td>
-                                <td className="p-2 border-r font-bold" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>{e.title}</td>
-                                <td className="p-2 border-r uppercase text-[10px]" style={{ borderColor: '#e2e8f0', color: '#475569' }}>{e.category || 'Mess'}</td>
-                                <td className="p-2 border-r font-semibold" style={{ borderColor: '#e2e8f0', color: '#1e293b' }}>{e.paidByName || 'Member'}</td>
-                                <td className="p-2 text-right font-black" style={{ color: '#0f172a' }}>{e.amount.toFixed(2)} {group.currency}</td>
+                  {includeCategories.expensesSummary && (
+                    <div className="space-y-2 pt-2">
+                      <h3 className="text-xs font-black uppercase tracking-wider pb-1.5 border-b flex items-center justify-between" style={{ color: '#1e293b', borderColor: '#e2e8f0' }}>
+                        <span>4. Current Cycle Expenses Summary</span>
+                        <span className="font-normal text-[11px]" style={{ color: '#64748b' }}>
+                          Total: {settlementResult.totalMessExpenses.toFixed(2)} {group.currency}
+                        </span>
+                      </h3>
+                      {expenses && expenses.length > 0 ? (
+                        <div className="w-full rounded-xl border shadow-xs overflow-hidden" style={{ borderColor: '#e2e8f0', backgroundColor: '#ffffff' }}>
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="uppercase font-bold text-[10px] tracking-wider" style={{ backgroundColor: '#f1f5f9', color: '#334155' }}>
+                                <th className="p-2 border-b border-r" style={{ borderColor: '#e2e8f0' }}>Date</th>
+                                <th className="p-2 border-b border-r" style={{ borderColor: '#e2e8f0' }}>Title</th>
+                                <th className="p-2 border-b border-r" style={{ borderColor: '#e2e8f0' }}>Category</th>
+                                <th className="p-2 border-b border-r" style={{ borderColor: '#e2e8f0' }}>Paid By</th>
+                                <th className="p-2 border-b text-right" style={{ borderColor: '#e2e8f0' }}>Amount</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                        {expenses.length > 20 && (
-                          <p className="text-[10px] italic p-1.5 text-center" style={{ backgroundColor: '#f8fafc', color: '#64748b' }}>
-                            Showing 20 of {expenses.length} expenses in statement report.
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-[11px] italic p-2 rounded-lg border" style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#64748b' }}>
-                        No individual expenses recorded for this period.
-                      </p>
-                    )}
-                  </div>
+                            </thead>
+                            <tbody className="divide-y font-medium text-[11px]" style={{ borderColor: '#e2e8f0' }}>
+                              {expenses.slice(0, 20).map((e, idx) => (
+                                <tr key={e.id} style={{ backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}>
+                                  <td className="p-2 border-r" style={{ borderColor: '#e2e8f0', color: '#475569' }}>{e.date}</td>
+                                  <td className="p-2 border-r font-bold" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>{e.title}</td>
+                                  <td className="p-2 border-r uppercase text-[10px]" style={{ borderColor: '#e2e8f0', color: '#475569' }}>{e.category || 'Mess'}</td>
+                                  <td className="p-2 border-r font-semibold" style={{ borderColor: '#e2e8f0', color: '#1e293b' }}>{e.paidByName || 'Member'}</td>
+                                  <td className="p-2 text-right font-black" style={{ color: '#0f172a' }}>{e.amount.toFixed(2)} {group.currency}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {expenses.length > 20 && (
+                            <p className="text-[10px] italic p-1.5 text-center" style={{ backgroundColor: '#f8fafc', color: '#64748b' }}>
+                              Showing 20 of {expenses.length} expenses in statement report.
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] italic p-2 rounded-lg border" style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#64748b' }}>
+                          No individual expenses recorded for this period.
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Document Signatures & Stamp */}
                   <div className="pt-5 border-t flex items-end justify-between gap-4 text-xs" style={{ borderColor: '#e2e8f0', color: '#475569' }}>

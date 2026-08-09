@@ -17,11 +17,12 @@ export function calculateSettlement(
   expenses: Expense[],
   utilities: UtilityBill[],
   rent: RentContribution | null,
-  includeCategories: { mess: boolean; general: boolean; utilities: boolean; rent: boolean } = {
+  includeCategories: { mess: boolean; general: boolean; utilities: boolean; rent: boolean; expensesSummary?: boolean } = {
     mess: true,
     general: true,
     utilities: true,
     rent: true,
+    expensesSummary: true,
   }
 ): SettlementCalculationResult {
   const activeMembers = members.filter((m) => m.active);

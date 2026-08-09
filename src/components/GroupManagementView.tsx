@@ -59,6 +59,7 @@ export const ALL_EXPENSE_OPTIONS = [
   { id: 'gas', label: 'Gas Bill (গ্যাস বিল)', desc: 'LPG / Central gas supply' },
   { id: 'cleaner', label: 'House Cleaner (ক্লিনার বিল)', desc: 'Maid & housekeeping fee' },
   { id: 'rent', label: 'Room Rent / Landlord (রুম ভাড়া)', desc: 'Monthly landlord flat rent' },
+  { id: 'expenses_summary', label: 'Expenses Summary (খরচ সারাংশ)', desc: 'Current Cycle Expenses Summary Report' },
 ];
 
 export const GroupManagementView: React.FC<GroupManagementViewProps> = ({

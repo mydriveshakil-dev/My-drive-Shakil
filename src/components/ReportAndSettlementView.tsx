@@ -950,48 +950,51 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                   </div>
 
                   {/* Utility Bills Breakdown Section */}
-                  <div className="space-y-2 pt-2">
-                    <h3 className="text-xs font-black uppercase tracking-wider pb-1.5 border-b flex items-center justify-between" style={{ color: '#1e293b', borderColor: '#e2e8f0' }}>
-                      <span>3. Utility Bills Breakdown (DEWA & WiFi)</span>
-                      <span className="font-normal text-[11px]" style={{ color: '#64748b' }}>
-                        Total: {settlementResult.totalUtilities.toFixed(2)} {group.currency}
-                      </span>
-                    </h3>
-                    {utilities && utilities.length > 0 ? (
-                      <div className="w-full rounded-xl border shadow-xs overflow-hidden" style={{ borderColor: '#e2e8f0', backgroundColor: '#ffffff' }}>
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="uppercase font-bold text-[10px] tracking-wider" style={{ backgroundColor: '#f1f5f9', color: '#334155' }}>
-                              <th className="p-2 border-b border-r" style={{ borderColor: '#e2e8f0' }}>Utility Name</th>
-                              <th className="p-2 border-b border-r" style={{ borderColor: '#e2e8f0' }}>Category</th>
-                              <th className="p-2 border-b border-r" style={{ borderColor: '#e2e8f0' }}>Date / Cycle</th>
-                              <th className="p-2 border-b border-r text-right" style={{ borderColor: '#e2e8f0' }}>Amount</th>
-                              <th className="p-2 border-b text-center" style={{ borderColor: '#e2e8f0' }}>Status</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y font-medium text-[11px]" style={{ borderColor: '#e2e8f0' }}>
-                            {utilities.map((u, idx) => (
-                              <tr key={u.id} style={{ backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}>
-                                <td className="p-2 border-r font-bold" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>{u.title || u.type}</td>
-                                <td className="p-2 border-r uppercase text-[10px]" style={{ borderColor: '#e2e8f0', color: '#475569' }}>{u.category || u.type}</td>
-                                <td className="p-2 border-r" style={{ borderColor: '#e2e8f0', color: '#475569' }}>{u.date || u.cycle || 'Current'}</td>
-                                <td className="p-2 border-r text-right font-black" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>{u.amount.toFixed(2)} {group.currency}</td>
-                                <td className="p-2 text-center font-bold">
-                                  <span className="px-1.5 py-0.5 rounded text-[10px]" style={u.isPaid ? { backgroundColor: '#d1fae5', color: '#065f46' } : { backgroundColor: '#fef3c7', color: '#92400e' }}>
-                                    {u.isPaid ? 'PAID' : 'PENDING'}
-                                  </span>
-                                </td>
+                  {includeCategories.utilities && (
+                    <div className="space-y-2 pt-2">
+                      <h3 className="text-xs font-black uppercase tracking-wider pb-1.5 border-b flex items-center justify-between" style={{ color: '#1e293b', borderColor: '#e2e8f0' }}>
+                        <span>3. Utility Bills Breakdown (DEWA & WiFi)</span>
+                        <span className="font-normal text-[11px]" style={{ color: '#64748b' }}>
+                          Total: {settlementResult.totalUtilities.toFixed(2)} {group.currency}
+                        </span>
+                      </h3>
+                      {utilities && utilities.length > 0 ? (
+                        <div className="w-full rounded-xl border shadow-xs overflow-hidden" style={{ borderColor: '#e2e8f0', backgroundColor: '#ffffff' }}>
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="uppercase font-bold text-[10px] tracking-wider" style={{ backgroundColor: '#f1f5f9', color: '#334155' }}>
+                                <th className="p-2 border-b border-r" style={{ borderColor: '#e2e8f0' }}>Utility Name</th>
+                                <th className="p-2 border-b border-r" style={{ borderColor: '#e2e8f0' }}>Date / Cycle</th>
+                                <th className="p-2 border-b border-r text-right" style={{ borderColor: '#e2e8f0' }}>Amount</th>
+                                <th className="p-2 border-b text-center" style={{ borderColor: '#e2e8f0' }}>Status</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <p className="text-[11px] italic p-2 rounded-lg border" style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#64748b' }}>
-                        No utility bills recorded for this period.
-                      </p>
-                    )}
-                  </div>
+                            </thead>
+                            <tbody className="divide-y font-medium text-[11px]" style={{ borderColor: '#e2e8f0' }}>
+                              {utilities.map((u, idx) => {
+                                const isPaid = u.status === 'paid';
+                                return (
+                                  <tr key={u.id} style={{ backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}>
+                                    <td className="p-2 border-r font-bold" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>{u.name || u.category || 'Utility'}</td>
+                                    <td className="p-2 border-r" style={{ borderColor: '#e2e8f0', color: '#475569' }}>{u.dueDate || u.cycle || 'Current'}</td>
+                                    <td className="p-2 border-r text-right font-black" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>{u.amount.toFixed(2)} {group.currency}</td>
+                                    <td className="p-2 text-center font-bold">
+                                      <span className="px-1.5 py-0.5 rounded text-[10px]" style={isPaid ? { backgroundColor: '#d1fae5', color: '#065f46' } : { backgroundColor: '#fef3c7', color: '#92400e' }}>
+                                        {isPaid ? 'PAID' : 'PENDING'}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <p className="text-[11px] italic p-2 rounded-lg border" style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#64748b' }}>
+                          No utility bills recorded for this period.
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Itemized Billing Cycle Expenses Breakdown */}
                   {includeCategories.expensesSummary && (

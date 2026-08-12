@@ -662,6 +662,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                             <Calendar className="w-3.5 h-3.5 text-slate-800" />
                             Date: {exp.date}
                           </span>
+                          {exp.sharedWithIds && exp.sharedWithIds.length > 0 && exp.sharedWithIds.length < group.members.length && (
+                            <>
+                              <span>•</span>
+                              <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-blue-50 text-blue-900 border border-blue-200">
+                                Shared: {exp.sharedWithIds.length}/{group.members.length} members
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>

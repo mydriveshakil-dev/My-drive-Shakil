@@ -61,15 +61,27 @@ export function calculateSettlement(
 
   // 4. Per member summaries
   const memberSummaries: MemberSummary[] = activeMembers.map((member) => {
-    // Mess Share split equally (0 if member is excluded from mess)
-    const isMessIncluded = isCategoryIncluded(member, 'mess');
-    const messExpenseShare = includeCategories.mess && isMessIncluded ? messExpensePerMember : 0;
+    // Mess Expense Share (split only among members checked in sharedWithIds)
+    let messExpenseShare = 0;
+    if (includeCategories.mess && isCategoryIncluded(member, 'mess')) {
+      messExpenses.forEach((exp) => {
+        const sharedWith = exp.sharedWithIds && exp.sharedWithIds.length > 0 ? exp.sharedWithIds : messMembers.map((m) => m.id);
+        const validSharedWith = sharedWith.filter((id) => {
+          const targetM = activeMembers.find((m) => m.id === id);
+          return targetM ? isCategoryIncluded(targetM, 'mess') : true;
+        });
+        const count = validSharedWith.length || 1;
+        if (validSharedWith.includes(member.id)) {
+          messExpenseShare += exp.amount / count;
+        }
+      });
+    }
 
-    // General Expense Share
+    // General Expense Share (split only among members checked in sharedWithIds)
     let generalExpenseShare = 0;
     if (includeCategories.general && isCategoryIncluded(member, 'general')) {
       generalExpenses.forEach((exp) => {
-        const sharedWith = exp.sharedWithIds.length > 0 ? exp.sharedWithIds : activeMembers.map((m) => m.id);
+        const sharedWith = exp.sharedWithIds && exp.sharedWithIds.length > 0 ? exp.sharedWithIds : activeMembers.map((m) => m.id);
         const validSharedWith = sharedWith.filter((id) => {
           const targetM = activeMembers.find((m) => m.id === id);
           return targetM ? isCategoryIncluded(targetM, 'general') : true;

@@ -635,11 +635,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       </span>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                           <h4 className="text-xs sm:text-sm font-black text-[#07193F] truncate">{cleanExpenseTitle(exp.title)}</h4>
                           <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md border border-slate-200 bg-slate-50 text-slate-600 shrink-0">
                             {isMess ? 'Mess' : 'Gen'}
                           </span>
+                          {exp.sharedWithIds && exp.sharedWithIds.length > 0 && exp.sharedWithIds.length < group.members.length && (
+                            <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md border border-blue-200 bg-blue-50 text-blue-700 shrink-0">
+                              Shared: {exp.sharedWithIds.length}/{group.members.length}
+                            </span>
+                          )}
                         </div>
                         <span className="text-[10px] text-slate-500 font-medium block truncate">
                           {exp.date}

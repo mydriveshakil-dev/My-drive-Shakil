@@ -628,7 +628,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             );
           }
 
-          const visibleItems = showAllExpenses ? displayedList : displayedList.slice(0, 8);
+          const reversedList = [...displayedList].reverse();
+          const visibleItems = showAllExpenses ? reversedList : reversedList.slice(0, 8);
 
           return (
             <div className="space-y-3">

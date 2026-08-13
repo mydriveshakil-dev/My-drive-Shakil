@@ -14,7 +14,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
-import { getMessageTimestampMs, isPhoneMatch } from '../lib/firebase';
+import { getMessageTimestampMs, getStartOfCurrentMonthMs, isPhoneMatch } from '../lib/firebase';
 
 interface GroupChatModalProps {
   isOpen: boolean;
@@ -190,19 +190,19 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
 
         {/* Chat Messages Body */}
         <div className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50">
-          {/* 1-Month Retention Notice Badge */}
+          {/* Monthly Auto-Reset Notice Badge */}
           <div className="flex justify-center my-1">
             <span className="text-[10px] font-bold bg-amber-100 text-amber-950 border border-amber-300 px-3 py-1 rounded-full flex items-center gap-1 shadow-xs">
               <Clock className="w-3 h-3 text-amber-800 shrink-0" />
-              <span>Chat history saved for 1 month (30 days)</span>
+              <span>Previous chats auto-cleared • Fresh chat starts on 1st of each month</span>
             </span>
           </div>
 
           {messages
             .filter((msg) => {
-              const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+              const startOfMonthMs = getStartOfCurrentMonthMs();
               const msgTime = getMessageTimestampMs(msg);
-              if (Date.now() - msgTime > ONE_MONTH_MS) return false;
+              if (msgTime < startOfMonthMs) return false;
               if (msg.type === 'expense_added' || msg.type === 'settlement_update') return false;
               if (msg.text && (msg.text.includes('Logged in') || msg.text.includes('Added new') || msg.text.includes('expense:'))) return false;
               return true;

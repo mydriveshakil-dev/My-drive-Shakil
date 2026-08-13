@@ -34,6 +34,7 @@ import {
   subscribeToUserPresences,
   updateUserPresenceInFirestore,
   getMessageTimestampMs,
+  getStartOfCurrentMonthMs,
   auth,
   onAuthStateChanged,
   isPhoneMatch,
@@ -150,15 +151,18 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
     const key = `room_chat_messages_${group.id}`;
     const saved = localStorage.getItem(key);
+    const startOfMonthMs = getStartOfCurrentMonthMs();
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((m: ChatMessage) => getMessageTimestampMs(m) >= startOfMonthMs);
+        }
       } catch (e) {
         // Fallback
       }
     }
-    return group.id === 'group-room-3' ? INITIAL_CHAT_MESSAGES : [];
+    return group.id === 'group-room-3' ? INITIAL_CHAT_MESSAGES.filter((m: ChatMessage) => getMessageTimestampMs(m) >= startOfMonthMs) : [];
   });
 
   const [payToTransactions, setPayToTransactions] = useState<PayToTransaction[]>(() => {
@@ -236,15 +240,16 @@ export default function App() {
 
     const chatKey = `room_chat_messages_${group.id}`;
     const savedChat = localStorage.getItem(chatKey);
+    const startOfMonthMs = getStartOfCurrentMonthMs();
     if (savedChat) {
       try {
         const parsed = JSON.parse(savedChat);
-        setChatMessages(Array.isArray(parsed) ? parsed : []);
+        setChatMessages(Array.isArray(parsed) ? parsed.filter((m: ChatMessage) => getMessageTimestampMs(m) >= startOfMonthMs) : []);
       } catch (e) {
         setChatMessages([]);
       }
     } else {
-      setChatMessages(group.id === 'group-room-3' ? INITIAL_CHAT_MESSAGES : []);
+      setChatMessages(group.id === 'group-room-3' ? INITIAL_CHAT_MESSAGES.filter((m: ChatMessage) => getMessageTimestampMs(m) >= startOfMonthMs) : []);
     }
 
     const payToKey = `room_payto_${group.id}`;
@@ -429,11 +434,14 @@ export default function App() {
         localStorage.setItem(`room_chat_messages_${group.id}`, JSON.stringify(remoteMsgs));
       } else if (remoteMsgs && remoteMsgs.length === 0) {
         const saved = localStorage.getItem(`room_chat_messages_${group.id}`);
+        const startOfMonthMs = getStartOfCurrentMonthMs();
         let localMsgs: ChatMessage[] = [];
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) localMsgs = parsed;
+            if (Array.isArray(parsed)) {
+              localMsgs = parsed.filter((m: ChatMessage) => getMessageTimestampMs(m) >= startOfMonthMs);
+            }
           } catch (e) {}
         }
         if (localMsgs.length > 0) {
@@ -820,9 +828,10 @@ export default function App() {
     }
   }, [isChatOpen, group?.id]);
 
-  // Calculate unread messages count (only messages sent by others after lastReadTimestamp)
+  // Calculate unread messages count (only messages sent by others after lastReadTimestamp in current month)
   const unreadCount = useMemo(() => {
     if (!chatMessages || chatMessages.length === 0 || isChatOpen) return 0;
+    const startOfMonthMs = getStartOfCurrentMonthMs();
 
     return chatMessages.filter((msg) => {
       const isMe =
@@ -833,6 +842,7 @@ export default function App() {
       if (isMe) return false;
 
       const msgTime = getMessageTimestampMs(msg);
+      if (msgTime < startOfMonthMs) return false;
       return msgTime > lastReadTimestamp;
     }).length;
   }, [chatMessages, isChatOpen, lastReadTimestamp, userAuth.id, userAuth.linkedGroupId, userAuth.name]);

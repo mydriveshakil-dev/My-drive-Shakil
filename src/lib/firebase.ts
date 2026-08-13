@@ -584,9 +584,13 @@ export function getMessageTimestampMs(msg: ChatMessage): number {
   return Date.now();
 }
 
-const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000; // 1 month (30 days) retention threshold
+// Helper to get start timestamp (ms) of the current month (1st day 00:00:00)
+export function getStartOfCurrentMonthMs(): number {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0).getTime();
+}
 
-// 5. Sync Chat Messages
+// 5. Sync Chat Messages (Auto-clears previous months; starts fresh on the 1st of every month)
 export function subscribeToChatMessages(
   groupId: string,
   onUpdate: (messages: ChatMessage[]) => void
@@ -598,14 +602,14 @@ export function subscribeToChatMessages(
     q,
     (snapshot) => {
       const items: ChatMessage[] = [];
-      const now = Date.now();
+      const startOfMonthMs = getStartOfCurrentMonthMs();
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
         const msg = { ...data, id: docSnap.id } as ChatMessage;
         const msgTime = getMessageTimestampMs(msg);
 
-        // Keep messages created within the last 1 month (30 days) in view
-        if (now - msgTime <= ONE_MONTH_MS) {
+        // Keep only messages created in the current month (1st of the month onwards)
+        if (msgTime >= startOfMonthMs) {
           items.push(msg);
         }
       });

@@ -25,6 +25,7 @@ import {
   HandCoins,
   KeyRound,
   Phone,
+  StickyNote,
 } from 'lucide-react';
 
 interface GroupManagementViewProps {
@@ -48,6 +49,7 @@ interface GroupManagementViewProps {
   onChangeBaseCurrency?: (newCurrency: string) => void;
   onUpdateSpreadsheetConfig?: (spreadsheetId: string, webAppUrl?: string) => void;
   onOpenPayTo?: () => void;
+  onOpenGroupNote?: () => void;
 }
 
 export const ALL_EXPENSE_OPTIONS = [
@@ -83,6 +85,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   onChangeBaseCurrency,
   onUpdateSpreadsheetConfig,
   onOpenPayTo,
+  onOpenGroupNote,
 }) => {
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
@@ -286,6 +289,25 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       >
         <HandCoins className="w-5 h-5 stroke-[2.5]" />
         <span>Transaction with Group Member</span>
+      </button>
+
+      {/* 2nd Sub-Component / GROUP NOTES Button */}
+      <button
+        type="button"
+        id="btn-group-note-open"
+        onClick={() => {
+          triggerHaptic(hapticPatterns.click);
+          if (onOpenGroupNote) onOpenGroupNote();
+        }}
+        className="w-full bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black px-6 py-4 rounded-[24px] text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-blue-950/30 active:scale-95 transition-all cursor-pointer border border-blue-400/30 uppercase tracking-wider relative overflow-hidden"
+      >
+        <StickyNote className="w-5 h-5 stroke-[2.5] text-blue-300" />
+        <span>Group Notes</span>
+        {group.notice && group.notice.expiresAtMs && Date.now() < group.notice.expiresAtMs && (
+          <span className="ml-1 bg-blue-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full lowercase tracking-normal border border-blue-400 shadow-xs">
+            Active Notice
+          </span>
+        )}
       </button>
 
       {/* ADMIN PERMISSION CONTROL SECTION (Visible ONLY to App Admin) */}

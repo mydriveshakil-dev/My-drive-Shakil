@@ -57,6 +57,19 @@ export interface RentContribution {
   isLocked?: boolean;
 }
 
+export interface GroupNotice {
+  id: string;
+  groupId: string;
+  authorId: string;
+  authorName: string;
+  title?: string;
+  content: string;
+  durationDays: 1 | 3 | 7 | 15 | 30 | number;
+  publishedAt: string; // ISO string
+  publishedAtMs: number;
+  expiresAtMs: number;
+}
+
 export interface Group {
   id: string;
   name: string;
@@ -68,6 +81,7 @@ export interface Group {
   spreadsheetId?: string;
   createdAt: string;
   members: Member[];
+  notice?: GroupNotice | null;
 }
 
 export interface MemberSummary {

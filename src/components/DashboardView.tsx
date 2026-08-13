@@ -189,31 +189,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Total Expenses Section */}
-          <div className="flex items-center justify-between gap-4 pt-1">
-            <div>
-              <span className="text-[11px] font-extrabold text-[#1E3A8A] uppercase tracking-wider block">
-                TOTAL EXPENSES
-              </span>
-              <div className="mt-1 flex items-baseline gap-2">
-                <DualCurrencyDisplay
-                  amount={totalGroupExpenses}
-                  baseCurrency={group.currency}
-                  preferredCurrency={preferredCurrency}
-                  customRates={customRates}
-                  layout="hero"
-                  baseClassName="text-4xl sm:text-5xl font-extrabold tracking-tight text-[#07193F]"
-                />
-              </div>
+          <div className="pt-1">
+            <span className="text-[11px] font-extrabold text-[#1E3A8A] uppercase tracking-wider block">
+              TOTAL EXPENSES
+            </span>
+            <div className="mt-1 flex items-baseline gap-2">
+              <DualCurrencyDisplay
+                amount={totalGroupExpenses}
+                baseCurrency={group.currency}
+                preferredCurrency={preferredCurrency}
+                customRates={customRates}
+                layout="hero"
+                baseClassName="text-4xl sm:text-5xl font-extrabold tracking-tight text-[#07193F]"
+              />
             </div>
-
-            {/* View Details Right Card */}
-            <button
-              onClick={() => onNavigateTab('expenses')}
-              className="bg-[#EFF6FF] hover:bg-blue-100/70 border border-blue-100 rounded-2xl p-3.5 flex flex-col items-center justify-center text-center cursor-pointer min-w-[100px] transition-all shadow-2xs active:scale-95"
-            >
-              <Receipt className="w-6 h-6 text-[#0052FF]" />
-              <span className="text-xs font-bold text-[#0052FF] mt-1">View Details</span>
-            </button>
           </div>
 
           {/* Divider */}

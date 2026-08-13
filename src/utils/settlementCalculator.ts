@@ -22,7 +22,7 @@ export function calculateSettlement(
     general: true,
     utilities: true,
     rent: true,
-    expensesSummary: true,
+    expensesSummary: false,
   }
 ): SettlementCalculationResult {
   const activeMembers = members.filter((m) => m.active);

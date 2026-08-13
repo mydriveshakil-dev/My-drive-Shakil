@@ -14,3 +14,5 @@ export * from './UaeLoginModal';
 export * from './GlassContainer';
 export * from './DualCurrencyDisplay';
 export * from './InstallPwaModal';
+export * from './GroupNoteModal';
+export * from './GroupNoticePopupModal';

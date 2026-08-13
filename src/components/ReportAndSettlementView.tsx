@@ -64,7 +64,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     general: false,
     utilities: false,
     rent: false,
-    expensesSummary: true,
+    expensesSummary: false,
   });
 
   const settlementResult = calculateSettlement(

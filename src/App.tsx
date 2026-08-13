@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Group, Expense, UtilityBill, RentContribution, GoogleSheetsConfig, BillingCycleType, Member, ChatMessage, UserAuthProfile, PayToTransaction } from './types';
+import { Group, Expense, UtilityBill, RentContribution, GoogleSheetsConfig, BillingCycleType, Member, ChatMessage, UserAuthProfile, PayToTransaction, GroupNotice } from './types';
 import { getCurrentCycleId, getBillingCycleLabel, getPreviousCycleOptions } from './utils/cycleUtils';
 import {
   INITIAL_GROUP,
@@ -55,6 +55,8 @@ import { CurrencySettingsModal } from './components/CurrencySettingsModal';
 import { GroupChatModal } from './components/GroupChatModal';
 import { UaeLoginModal } from './components/UaeLoginModal';
 import { InstallPwaModal } from './components/InstallPwaModal';
+import { GroupNoteModal } from './components/GroupNoteModal';
+import { GroupNoticePopupModal } from './components/GroupNoticePopupModal';
 import { GlassContainer } from './components/GlassContainer';
 import { BottomNavBar, AppTabType } from './components/BottomNavBar';
 import { CheckCircle2, MessageCircle, Plus, AlertCircle } from 'lucide-react';
@@ -522,6 +524,10 @@ export default function App() {
     return !!userAuth.isLoggedIn;
   });
 
+  const [isGroupNoteModalOpen, setIsGroupNoteModalOpen] = useState<boolean>(false);
+  const [activePopupNotice, setActivePopupNotice] = useState<GroupNotice | null>(null);
+  const [isNoticePopupOpen, setIsNoticePopupOpen] = useState<boolean>(false);
+
   // Trigger logo zoom animation on every app open / reload for logged-in users
   useEffect(() => {
     if (userAuth.isLoggedIn) {
@@ -532,6 +538,40 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // Trigger daily Group Notice popup once per day per active notice for group members after animation
+  // and auto-clean if notice has expired
+  useEffect(() => {
+    if (group?.notice) {
+      const notice = group.notice;
+      const now = Date.now();
+      if (notice.expiresAtMs && now >= notice.expiresAtMs) {
+        // Auto-delete expired notice
+        handleSaveGroupNotice(null);
+        return;
+      }
+
+      if (!isLoginSuccessAnimActive && userAuth.isLoggedIn && notice.expiresAtMs && now < notice.expiresAtMs) {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const seenKey = `group_notice_seen_${group.id}_${notice.id}`;
+        const lastSeen = localStorage.getItem(seenKey);
+        if (lastSeen !== todayStr) {
+          setActivePopupNotice(notice);
+          setIsNoticePopupOpen(true);
+        }
+      }
+    }
+  }, [isLoginSuccessAnimActive, userAuth.isLoggedIn, group?.notice, group?.id]);
+
+  const handleCloseNoticePopup = () => {
+    if (activePopupNotice && group?.id) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const seenKey = `group_notice_seen_${group.id}_${activePopupNotice.id}`;
+      localStorage.setItem(seenKey, todayStr);
+    }
+    setIsNoticePopupOpen(false);
+    setActivePopupNotice(null);
+  };
 
   const [activeTab, setActiveTab] = useState<AppTabType>(() => {
     const saved = localStorage.getItem('uae_user_auth');
@@ -1607,6 +1647,29 @@ export default function App() {
     triggerHaptic(hapticPatterns.error);
   };
 
+  const handleSaveGroupNotice = async (notice: GroupNotice | null) => {
+    const updatedGroup: Group = {
+      ...group,
+      notice,
+    };
+    setGroup(updatedGroup);
+    const updatedAll = allGroups.map((g) => (g.id === group.id ? updatedGroup : g));
+    setAllGroups(updatedAll);
+    localStorage.setItem(`room_group_${group.id}`, JSON.stringify(updatedGroup));
+    localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
+    await saveGroupToFirestore(updatedGroup);
+
+    if (notice) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      localStorage.setItem(`group_notice_seen_${group.id}_${notice.id}`, todayStr);
+      setSyncNotification('Group notice broadcasted to all room members!');
+      setTimeout(() => setSyncNotification(null), 3000);
+    } else {
+      setSyncNotification('Group notice cleared.');
+      setTimeout(() => setSyncNotification(null), 3000);
+    }
+  };
+
   return (
     <div
       className="min-h-screen relative flex flex-col font-sans text-slate-900 selection:bg-[#0F3DFF] selection:text-white antialiased max-w-full overflow-x-hidden bg-[#F6F8FC]"
@@ -1816,6 +1879,7 @@ export default function App() {
                   onChangeBaseCurrency={handleChangeBaseCurrency}
                   onUpdateSpreadsheetConfig={handleUpdateSpreadsheetConfig}
                   onOpenPayTo={() => setActiveTab('payto')}
+                  onOpenGroupNote={() => setIsGroupNoteModalOpen(true)}
                   onRestoreExpenses={handleRestoreExpenses}
                 />
               )}
@@ -1896,6 +1960,23 @@ export default function App() {
       <InstallPwaModal
         isOpen={isInstallPwaOpen}
         onClose={() => setIsInstallPwaOpen(false)}
+      />
+
+      {/* Group Note / Notice Modal */}
+      <GroupNoteModal
+        isOpen={isGroupNoteModalOpen}
+        onClose={() => setIsGroupNoteModalOpen(false)}
+        group={group}
+        currentUser={userAuth}
+        onSaveNotice={handleSaveGroupNotice}
+      />
+
+      {/* Daily Group Notice Popup Modal */}
+      <GroupNoticePopupModal
+        isOpen={isNoticePopupOpen}
+        notice={activePopupNotice}
+        groupName={group?.name}
+        onClose={handleCloseNoticePopup}
       />
 
       {/* Floating Action Button (FAB) for Room Group Chat */}

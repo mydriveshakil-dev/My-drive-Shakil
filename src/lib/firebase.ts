@@ -584,7 +584,7 @@ export function getMessageTimestampMs(msg: ChatMessage): number {
   return Date.now();
 }
 
-const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000; // 3 days auto-deletion retention threshold
+const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000; // 1 month (30 days) retention threshold
 
 // 5. Sync Chat Messages
 export function subscribeToChatMessages(
@@ -604,8 +604,8 @@ export function subscribeToChatMessages(
         const msg = { ...data, id: docSnap.id } as ChatMessage;
         const msgTime = getMessageTimestampMs(msg);
 
-        // Keep messages created within the last 3 days (72 hours) in view
-        if (now - msgTime <= THREE_DAYS_MS) {
+        // Keep messages created within the last 1 month (30 days) in view
+        if (now - msgTime <= ONE_MONTH_MS) {
           items.push(msg);
         }
       });

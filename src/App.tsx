@@ -510,7 +510,20 @@ export default function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(() => {
     return !userAuth.isLoggedIn;
   });
-  const [isLoginSuccessAnimActive, setIsLoginSuccessAnimActive] = useState<boolean>(false);
+  const [isLoginSuccessAnimActive, setIsLoginSuccessAnimActive] = useState<boolean>(() => {
+    return !!userAuth.isLoggedIn;
+  });
+
+  // Trigger logo zoom animation on every app open / reload for logged-in users
+  useEffect(() => {
+    if (userAuth.isLoggedIn) {
+      setIsLoginSuccessAnimActive(true);
+      const timer = setTimeout(() => {
+        setIsLoginSuccessAnimActive(false);
+      }, 4200);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const [activeTab, setActiveTab] = useState<AppTabType>(() => {
     const saved = localStorage.getItem('uae_user_auth');
@@ -1983,10 +1996,10 @@ export default function App() {
                   </span>
                 </div>
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-950 tracking-tight leading-tight">
-                  Login Successful!
+                  Welcome to Mess Portal
                 </h2>
                 <p className="text-base sm:text-lg md:text-xl font-extrabold text-slate-800 max-w-sm mx-auto">
-                  Welcome back, <span className="text-emerald-600 font-black underline decoration-emerald-500/40">{userAuth.name}</span>
+                  Welcome back, <span className="text-emerald-600 font-black underline decoration-emerald-500/40">{userAuth.name || 'Member'}</span>
                 </p>
               </motion.div>
             </div>

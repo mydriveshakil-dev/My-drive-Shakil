@@ -1736,8 +1736,8 @@ export default function App() {
 
       {/* Main Container with Screen Transitions */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 md:px-8 pt-4 pb-12">
-        {/* Header Bar (Visible ONLY when logged in on Dashboard View) */}
-        {activeTab === 'dashboard' && !isLoginModalOpen && userAuth.isLoggedIn && (
+        {/* Header Bar (Visible ONLY when logged in on Dashboard View and not adding expense) */}
+        {activeTab === 'dashboard' && !isAddExpenseOpen && !isLoginModalOpen && userAuth.isLoggedIn && (
           <HeaderBar
             group={displayedGroup}
             allGroups={allGroups}
@@ -2001,10 +2001,18 @@ export default function App() {
             isOpen={true}
             defaultEmail={userAuth.email || 'mydriveshakil@gmail.com'}
             allGroups={allGroups}
+            currentGroup={group}
             onLoginSuccess={handleLoginSuccess}
             onOpenInstallPwa={() => setIsInstallPwaOpen(true)}
             isLoggedIn={userAuth.isLoggedIn}
             onClose={() => setIsLoginModalOpen(false)}
+            onUpdateGroup={(updatedGrp) => {
+              setGroup(updatedGrp);
+            }}
+            onUpdateAllGroups={(updatedAll) => {
+              setAllGroups(updatedAll);
+              localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
+            }}
           />
         </div>
       )}

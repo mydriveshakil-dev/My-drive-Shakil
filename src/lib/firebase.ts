@@ -422,6 +422,108 @@ export async function deleteGroupFromFirestore(groupId: string) {
   }
 }
 
+// 1.1 Update Member Password Across Firestore Groups & Users
+export async function updateMemberPasswordAcrossFirestore(
+  mobileOrPhone: string,
+  newPassword: string
+): Promise<{
+  success: boolean;
+  memberName?: string;
+  groupName?: string;
+  groupId?: string;
+  error?: string;
+}> {
+  if (!mobileOrPhone || !mobileOrPhone.trim()) {
+    return { success: false, error: 'Please provide a valid mobile number.' };
+  }
+  if (!newPassword || !newPassword.trim()) {
+    return { success: false, error: 'Please enter a valid new password.' };
+  }
+
+  const trimmedMobile = mobileOrPhone.trim();
+  const trimmedPass = newPassword.trim();
+  let foundMemberName = '';
+  let foundGroupName = '';
+  let foundGroupId = '';
+
+  try {
+    // 1. Update in Firestore 'groups' collection
+    const groupsRef = collection(db, 'groups');
+    const groupsSnap = await getDocs(groupsRef);
+
+    if (!groupsSnap.empty) {
+      for (const gDoc of groupsSnap.docs) {
+        const gData = gDoc.data() as Group;
+        if (gData.members && Array.isArray(gData.members)) {
+          let groupModified = false;
+          const updatedMembers = gData.members.map((m) => {
+            if (
+              isPhoneMatch(m.mobileNumber, trimmedMobile) ||
+              isPhoneMatch(m.phone, trimmedMobile) ||
+              isPhoneMatch(m.email, trimmedMobile)
+            ) {
+              groupModified = true;
+              foundMemberName = m.name;
+              foundGroupName = gData.name;
+              foundGroupId = gData.id;
+              return { ...m, password: trimmedPass };
+            }
+            return m;
+          });
+
+          if (groupModified) {
+            const updatedGroup: Group = {
+              ...gData,
+              members: updatedMembers,
+            };
+            await setDoc(doc(db, 'groups', gDoc.id), removeUndefinedFields(updatedGroup), { merge: true });
+          }
+        }
+      }
+    }
+
+    // 2. Update / Save in Firestore 'users' collection
+    const cleanDigits = cleanPhoneDigits(trimmedMobile);
+    const cleanDocId = trimmedMobile.replace(/[^a-zA-Z0-9_\-]/g, '_');
+
+    const existingProfile = await getUserProfileFromFirestore(trimmedMobile);
+    const updatedProfile: UserAuthProfile = {
+      name: foundMemberName || existingProfile?.name || 'Mess Member',
+      email: existingProfile?.email || `${cleanDigits || 'user'}@mess.com`,
+      mobileNumber: trimmedMobile,
+      password: trimmedPass,
+      idNumber: existingProfile?.idNumber || '',
+      identity: null,
+      isLoggedIn: true,
+      role: existingProfile?.role || 'user',
+      linkedGroupId: foundGroupId || existingProfile?.linkedGroupId,
+    };
+
+    await saveUserProfileToFirestore(updatedProfile);
+
+    // Also update any other possible doc ID variations
+    if (cleanDigits && cleanDigits !== cleanDocId) {
+      try {
+        const altRef = doc(db, 'users', cleanDigits);
+        await setDoc(altRef, removeUndefinedFields(updatedProfile), { merge: true });
+      } catch (e) {}
+    }
+
+    return {
+      success: true,
+      memberName: foundMemberName || existingProfile?.name || 'Member',
+      groupName: foundGroupName,
+      groupId: foundGroupId,
+    };
+  } catch (err: any) {
+    console.error('Error updating member password in Firestore:', err);
+    return {
+      success: false,
+      error: err.message || 'Failed to update password in cloud database.',
+    };
+  }
+}
+
 // 2. Sync Expenses
 export function subscribeToExpenses(
   groupId: string,

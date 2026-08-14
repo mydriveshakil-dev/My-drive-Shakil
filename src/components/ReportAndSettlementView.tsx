@@ -41,6 +41,17 @@ interface ReportAndSettlementViewProps {
   customRates?: Record<string, number>;
 }
 
+// Helper to get current month first and last date in YYYY-MM-DD format
+const getCurrentMonthDateRange = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const firstDay = `${year}-${month}-01`;
+  const lastDayNumber = new Date(year, now.getMonth() + 1, 0).getDate();
+  const lastDay = `${year}-${month}-${String(lastDayNumber).padStart(2, '0')}`;
+  return { fromDate: firstDay, toDate: lastDay };
+};
+
 export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = ({
   group,
   expenses,
@@ -50,8 +61,8 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   preferredCurrency = 'USD',
   customRates,
 }) => {
-  const [fromDate, setFromDate] = useState('2026-07-01');
-  const [toDate, setToDate] = useState('2026-07-31');
+  const [fromDate, setFromDate] = useState(() => getCurrentMonthDateRange().fromDate);
+  const [toDate, setToDate] = useState(() => getCurrentMonthDateRange().toDate);
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -67,10 +78,23 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     expensesSummary: false,
   });
 
+  // Filter expenses and utilities by selected date range
+  const filteredExpensesByDate = expenses.filter((e) => {
+    if (fromDate && e.date < fromDate) return false;
+    if (toDate && e.date > toDate) return false;
+    return true;
+  });
+
+  const filteredUtilitiesByDate = utilities.filter((u) => {
+    if (fromDate && u.date && u.date < fromDate) return false;
+    if (toDate && u.date && u.date > toDate) return false;
+    return true;
+  });
+
   const settlementResult = calculateSettlement(
     group.members,
-    expenses,
-    utilities,
+    filteredExpensesByDate,
+    filteredUtilitiesByDate,
     rent,
     includeCategories
   );
@@ -503,35 +527,11 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => {
-              setIsPdfPreviewOpen(true);
-              setTimeout(() => {
-                window.print();
-              }, 300);
-            }}
-            className="bg-[#0052FF] hover:bg-blue-600 text-white font-extrabold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2 border border-blue-400/40 transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30"
-            title="Print-Ready PDF Statement"
-          >
-            <Printer className="w-4 h-4 text-blue-100" />
-            <span>Print-Ready PDF</span>
-          </button>
-
-          <button
-            type="button"
             onClick={() => setIsPdfPreviewOpen(true)}
             className="bg-white/10 hover:bg-white/20 text-white font-extrabold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 border border-white/20 transition-all active:scale-95 cursor-pointer shadow-md"
           >
             <FileText className="w-4 h-4 text-blue-300" />
             <span>Export PDF</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onSaveSettlement}
-            className="bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black px-5 py-3 rounded-[24px] text-xs flex items-center gap-1.5 shadow-md shadow-blue-950/30 active:scale-95 border border-blue-400/30 cursor-pointer uppercase tracking-wider"
-          >
-            <CheckCircle className="w-4 h-4 stroke-[3]" />
-            <span>Finalize Settlement</span>
           </button>
         </div>
       </GlassContainer>
@@ -674,56 +674,12 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               </div>
 
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                {/* Print Ready Button */}
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-extrabold px-2.5 sm:px-3.5 py-1.5 sm:py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
-                  title="Print Report"
-                >
-                  <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                  <span className="hidden sm:inline">Print</span>
-                </button>
-
-                {/* Save / Download PDF Button */}
-                <button
-                  type="button"
-                  onClick={handlePrintPdf}
-                  disabled={isGeneratingPdf}
-                  className="bg-[#F9A826] hover:bg-[#e59819] text-[#0B4A3F] font-black px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-60"
-                >
-                  {isGeneratingPdf ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-                      <span className="hidden sm:inline">Downloading PDF...</span>
-                      <span className="sm:hidden text-[11px]">Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
-                      <span className="hidden sm:inline">Download PDF</span>
-                      <span className="sm:hidden text-[11px]">PDF</span>
-                    </>
-                  )}
-                </button>
-
-                {/* WhatsApp Share Button */}
-                <button
-                  type="button"
-                  onClick={handleShareWhatsApp}
-                  className="bg-[#25D366] hover:bg-[#20bd5a] text-white font-extrabold px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-xl text-xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-md"
-                  title="Share via WhatsApp"
-                >
-                  <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                  <span className="hidden sm:inline">WhatsApp</span>
-                </button>
-
                 {/* Share Button */}
                 <button
                   type="button"
                   onClick={handleShareReport}
                   disabled={isSharingPdf || isGeneratingPdf}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-2.5 sm:px-3.5 py-1.5 sm:py-2.5 rounded-xl text-xs flex items-center gap-1 border border-emerald-700 transition-all active:scale-95 cursor-pointer disabled:opacity-60 shadow-md"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs flex items-center gap-1.5 border border-emerald-700 transition-all active:scale-95 cursor-pointer disabled:opacity-60 shadow-md"
                 >
                   {isSharingPdf ? (
                     <>
@@ -740,7 +696,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                   ) : (
                     <>
                       <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                      <span className="text-[11px] sm:text-xs">Share</span>
+                      <span className="text-xs font-black">Share</span>
                     </>
                   )}
                 </button>
@@ -958,7 +914,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                           Total: {settlementResult.totalUtilities.toFixed(2)} {group.currency}
                         </span>
                       </h3>
-                      {utilities && utilities.length > 0 ? (
+                      {filteredUtilitiesByDate && filteredUtilitiesByDate.length > 0 ? (
                         <div className="w-full rounded-xl border shadow-xs overflow-hidden" style={{ borderColor: '#e2e8f0', backgroundColor: '#ffffff' }}>
                           <table className="w-full text-left border-collapse">
                             <thead>
@@ -970,7 +926,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                               </tr>
                             </thead>
                             <tbody className="divide-y font-medium text-[11px]" style={{ borderColor: '#e2e8f0' }}>
-                              {utilities.map((u, idx) => {
+                              {filteredUtilitiesByDate.map((u, idx) => {
                                 const isPaid = u.status === 'paid';
                                 return (
                                   <tr key={u.id} style={{ backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}>
@@ -1005,7 +961,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                           Total: {settlementResult.totalMessExpenses.toFixed(2)} {group.currency}
                         </span>
                       </h3>
-                      {expenses && expenses.length > 0 ? (
+                      {filteredExpensesByDate && filteredExpensesByDate.length > 0 ? (
                         <div className="w-full rounded-xl border shadow-xs overflow-hidden" style={{ borderColor: '#e2e8f0', backgroundColor: '#ffffff' }}>
                           <table className="w-full text-left border-collapse">
                             <thead>
@@ -1018,7 +974,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                               </tr>
                             </thead>
                             <tbody className="divide-y font-medium text-[11px]" style={{ borderColor: '#e2e8f0' }}>
-                              {expenses.slice(0, 20).map((e, idx) => (
+                              {filteredExpensesByDate.slice(0, 20).map((e, idx) => (
                                 <tr key={e.id} style={{ backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}>
                                   <td className="p-2 border-r" style={{ borderColor: '#e2e8f0', color: '#475569' }}>{e.date}</td>
                                   <td className="p-2 border-r font-bold" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>{e.title}</td>
@@ -1029,9 +985,9 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                               ))}
                             </tbody>
                           </table>
-                          {expenses.length > 20 && (
+                          {filteredExpensesByDate.length > 20 && (
                             <p className="text-[10px] italic p-1.5 text-center" style={{ backgroundColor: '#f8fafc', color: '#64748b' }}>
-                              Showing 20 of {expenses.length} expenses in statement report.
+                              Showing 20 of {filteredExpensesByDate.length} expenses in statement report.
                             </p>
                           )}
                         </div>

@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { UserAuthProfile, Group, Member } from '../types';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
-import { loginWithGoogleAuth, getUserProfileFromFirestore, isPhoneMatch } from '../lib/firebase';
+import {
+  loginWithGoogleAuth,
+  getUserProfileFromFirestore,
+  isPhoneMatch,
+  updateMemberPasswordAcrossFirestore,
+} from '../lib/firebase';
 import {
   ShieldCheck,
   Smartphone,
   User,
   ArrowRight,
+  ArrowLeft,
   Lock,
   AlertTriangle,
   Info,
@@ -15,6 +21,9 @@ import {
   Globe,
   X,
   MessageCircle,
+  KeyRound,
+  CheckCircle2,
+  RefreshCw,
 } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
 import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
@@ -23,10 +32,13 @@ interface UaeLoginModalProps {
   isOpen: boolean;
   defaultEmail: string;
   allGroups?: Group[];
+  currentGroup?: Group;
   onLoginSuccess: (authData: UserAuthProfile) => void;
   onOpenInstallPwa?: () => void;
   onClose?: () => void;
   isLoggedIn?: boolean;
+  onUpdateGroup?: (updatedGroup: Group) => void;
+  onUpdateAllGroups?: (allGroups: Group[]) => void;
 }
 
 const SAVED_CREDENTIALS_KEY = 'uae_saved_login_credentials';
@@ -60,12 +72,18 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
   isOpen,
   defaultEmail,
   allGroups,
+  currentGroup,
   onLoginSuccess,
   onOpenInstallPwa,
   onClose,
   isLoggedIn,
+  onUpdateGroup,
+  onUpdateAllGroups,
 }) => {
-  // Form State
+  // Mode: 'login' | 'forgot_password'
+  const [viewMode, setViewMode] = useState<'login' | 'forgot_password'>('login');
+
+  // Form State - Login
   const [mobileNumber, setMobileNumber] = useState('');
   const [userPassword, setUserPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
@@ -74,13 +92,25 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
   const [isSearchingCloud, setIsSearchingCloud] = useState(false);
 
+  // Form State - Forget / Reset Password
+  const [resetMobile, setResetMobile] = useState('');
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+
   // Load saved credentials on mount / open
   useEffect(() => {
     try {
       const saved = localStorage.getItem(SAVED_CREDENTIALS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.mobileNumber) setMobileNumber(parsed.mobileNumber);
+        if (parsed.mobileNumber) {
+          setMobileNumber(parsed.mobileNumber);
+          setResetMobile(parsed.mobileNumber);
+        }
         if (parsed.password) setUserPassword(parsed.password);
         if (typeof parsed.rememberMe === 'boolean') setRememberMe(parsed.rememberMe);
       }
@@ -132,6 +162,164 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
       setLoginError(err.message || 'Google Sign-In failed. Please try again.');
     } finally {
       setIsLoadingGoogle(false);
+    }
+  };
+
+  // Handle Reset / Change Password
+  const handleResetPassword = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
+    const trimmedMobile = resetMobile.trim();
+    const trimmedNewPass = newPasswordInput.trim();
+    const trimmedConfirmPass = confirmPasswordInput.trim();
+
+    if (!trimmedMobile) {
+      triggerHaptic(hapticPatterns.error);
+      setResetError('Please enter your registered mobile number.');
+      return;
+    }
+
+    if (!trimmedNewPass) {
+      triggerHaptic(hapticPatterns.error);
+      setResetError('Please enter your new password.');
+      return;
+    }
+
+    if (trimmedNewPass.length < 3) {
+      triggerHaptic(hapticPatterns.error);
+      setResetError('Password must be at least 3 characters long.');
+      return;
+    }
+
+    if (trimmedNewPass !== trimmedConfirmPass) {
+      triggerHaptic(hapticPatterns.error);
+      setResetError('New password and confirm password do not match.');
+      return;
+    }
+
+    try {
+      setIsResetting(true);
+      setResetError(null);
+      setResetSuccess(null);
+
+      // Check if user is Admin mobile number
+      const cleanDigits = trimmedMobile.replace(/\D/g, '');
+      const isAdminMobile =
+        cleanDigits === '971544874028' ||
+        cleanDigits === '0544874028' ||
+        cleanDigits.endsWith('544874028');
+
+      if (isAdminMobile) {
+        triggerHaptic(hapticPatterns.error);
+        setResetError('Admin Master password is fixed by system. Please use UAE@@2024 to login.');
+        setIsResetting(false);
+        return;
+      }
+
+      // Check if mobile number exists across groups or cloud users
+      let foundMemberInAnyGroup = false;
+      let matchedMemberName = '';
+      let matchedGroupName = '';
+
+      if (allGroups && allGroups.length > 0) {
+        for (const g of allGroups) {
+          if (g.members) {
+            const match = g.members.find(
+              (m) =>
+                isPhoneMatch(m.mobileNumber, trimmedMobile) ||
+                isPhoneMatch(m.phone, trimmedMobile) ||
+                isPhoneMatch(m.email, trimmedMobile)
+            );
+            if (match) {
+              foundMemberInAnyGroup = true;
+              matchedMemberName = match.name;
+              matchedGroupName = g.name;
+              break;
+            }
+          }
+        }
+      }
+
+      // 1. Update in Firestore Cloud Database (both 'groups' and 'users' collections)
+      const firestoreResult = await updateMemberPasswordAcrossFirestore(trimmedMobile, trimmedNewPass);
+
+      if (!firestoreResult.success && !foundMemberInAnyGroup) {
+        triggerHaptic(hapticPatterns.error);
+        setResetError(firestoreResult.error || `Mobile number (${trimmedMobile}) is not registered in any room group.`);
+        setIsResetting(false);
+        return;
+      }
+
+      // 2. Update local state for allGroups so Admin group page immediately shows the updated password
+      if (allGroups && allGroups.length > 0) {
+        const updatedGroups = allGroups.map((g) => {
+          let hasChange = false;
+          const updatedMembers = (g.members || []).map((m) => {
+            if (
+              isPhoneMatch(m.mobileNumber, trimmedMobile) ||
+              isPhoneMatch(m.phone, trimmedMobile) ||
+              isPhoneMatch(m.email, trimmedMobile)
+            ) {
+              hasChange = true;
+              matchedMemberName = m.name;
+              matchedGroupName = g.name;
+              return { ...m, password: trimmedNewPass };
+            }
+            return m;
+          });
+
+          if (hasChange) {
+            return { ...g, members: updatedMembers };
+          }
+          return g;
+        });
+
+        if (onUpdateAllGroups) {
+          onUpdateAllGroups(updatedGroups);
+        }
+
+        if (currentGroup && onUpdateGroup) {
+          const currentMatch = updatedGroups.find((g) => g.id === currentGroup.id);
+          if (currentMatch) {
+            onUpdateGroup(currentMatch);
+          }
+        }
+
+        localStorage.setItem('all_room_groups', JSON.stringify(updatedGroups));
+      }
+
+      // 3. Update login credentials in form & localStorage
+      setMobileNumber(trimmedMobile);
+      setUserPassword(trimmedNewPass);
+      if (rememberMe) {
+        localStorage.setItem(
+          SAVED_CREDENTIALS_KEY,
+          JSON.stringify({
+            mobileNumber: trimmedMobile,
+            password: trimmedNewPass,
+            rememberMe: true,
+          })
+        );
+      }
+
+      triggerHaptic(hapticPatterns.success);
+      const dispName = matchedMemberName || firestoreResult.memberName || 'Member';
+      const dispGroup = matchedGroupName || firestoreResult.groupName || '';
+      setResetSuccess(
+        `Password changed successfully for ${dispName}${dispGroup ? ` (${dispGroup})` : ''}! You can now login with your new password.`
+      );
+
+      // Auto switch back to login mode after 2.5 seconds
+      setTimeout(() => {
+        setViewMode('login');
+        setResetSuccess(null);
+      }, 2500);
+    } catch (err: any) {
+      console.error('Password reset error:', err);
+      triggerHaptic(hapticPatterns.error);
+      setResetError(err.message || 'Failed to update password. Please try again.');
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -269,31 +457,49 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
         {/* Header Banner - Dark Navy Theme */}
         <div className="p-4 sm:p-5 border-b border-blue-900/40 bg-gradient-to-r from-[#07193F] to-[#041029] text-white flex items-center justify-between shrink-0 gap-3 overflow-hidden">
           <div className="flex items-center gap-3 min-w-0">
-            <img
-              src={uaeMessLogo}
-              alt="UAE MESS SYSTEM Logo"
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover border border-blue-400/30 shadow-md shrink-0"
-            />
+            {viewMode === 'forgot_password' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic(hapticPatterns.click);
+                  setViewMode('login');
+                  setResetError(null);
+                  setResetSuccess(null);
+                }}
+                className="w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all border border-white/20 cursor-pointer shrink-0"
+                title="Back to Login"
+              >
+                <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
+              </button>
+            ) : (
+              <img
+                src={uaeMessLogo}
+                alt="UAE MESS SYSTEM Logo"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover border border-blue-400/30 shadow-md shrink-0"
+              />
+            )}
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs sm:text-sm font-black tracking-wider text-white uppercase">
                   UAE MESS SYSTEM
                 </span>
                 <span className="bg-[#0052FF] text-white border border-blue-400/30 text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase whitespace-nowrap shadow-xs">
-                  Portal Login
+                  {viewMode === 'forgot_password' ? 'Reset Password' : 'Portal Login'}
                 </span>
               </div>
               <h2 className="text-sm sm:text-base font-black text-white truncate mt-0.5">
-                Member & Admin Portal Access
+                {viewMode === 'forgot_password' ? 'Set New Password' : 'Member & Admin Portal Access'}
               </h2>
               <p className="text-[11px] sm:text-xs text-blue-200/80 font-medium truncate">
-                Log in using Mobile Number & Password
+                {viewMode === 'forgot_password'
+                  ? 'Update your password for login & room member list'
+                  : 'Log in using Mobile Number & Password'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {onOpenInstallPwa && (
+            {onOpenInstallPwa && viewMode === 'login' && (
               <button
                 type="button"
                 onClick={onOpenInstallPwa}
@@ -317,121 +523,282 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
           </div>
         </div>
 
-        {/* Form Body */}
-        <form
-          onSubmit={(e) => {
-            if (loginError) {
-              e.preventDefault();
-              window.open('https://wa.me/message/Z4DT5UO7MABQL1', '_blank');
-            } else {
-              handleLogin(e);
-            }
-          }}
-          className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-slate-900 max-w-full"
-        >
-          {/* 1. Mobile Number */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <Smartphone className="w-3.5 h-3.5 text-[#0052FF]" />
-              Mobile Number *
-            </label>
-            <input
-              type="tel"
-              placeholder="e.g. +971501234567"
-              value={mobileNumber}
-              onChange={(e) => {
-                setMobileNumber(e.target.value);
-                setLoginError(null);
-              }}
-              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20"
-            />
-          </div>
+        {/* View Mode: FORGOT PASSWORD */}
+        {viewMode === 'forgot_password' ? (
+          <>
+            <form onSubmit={handleResetPassword} className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-slate-900 max-w-full">
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3 sm:p-3.5 text-xs text-blue-900 font-medium flex items-start gap-2.5">
+                <Info className="w-4 h-4 text-[#0052FF] shrink-0 mt-0.5" />
+                <span>
+                  আপনার রেজিস্টার্ড মোবাইল নম্বর দিন এবং নতুন পাসওয়ার্ড সেট করুন। এটি সাথে সাথে অ্যাডমিনের সক্রিয় মেম্বার লিস্টেও আপডেট হয়ে যাবে।
+                </span>
+              </div>
 
-          {/* 2. Password */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-[#0052FF]" />
-                Password *
-              </span>
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Enter your password"
-                value={userPassword}
-                onChange={(e) => {
-                  setUserPassword(e.target.value);
-                  setLoginError(null);
-                }}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20 pr-16"
-              />
+              {/* 1. Mobile Number */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Smartphone className="w-3.5 h-3.5 text-[#0052FF]" />
+                  Registered Mobile Number *
+                </label>
+                <input
+                  type="tel"
+                  placeholder="e.g. +971501234567"
+                  value={resetMobile}
+                  onChange={(e) => {
+                    setResetMobile(e.target.value);
+                    setResetError(null);
+                  }}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20"
+                />
+              </div>
+
+              {/* 2. New Password */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-[#0052FF]" />
+                    New Password *
+                  </span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showResetPassword ? 'text' : 'password'}
+                    placeholder="Enter your new password"
+                    value={newPasswordInput}
+                    onChange={(e) => {
+                      setNewPasswordInput(e.target.value);
+                      setResetError(null);
+                    }}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20 pr-16"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResetPassword(!showResetPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#0052FF] hover:text-blue-700 cursor-pointer"
+                  >
+                    {showResetPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Confirm New Password */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <KeyRound className="w-3.5 h-3.5 text-[#0052FF]" />
+                    Confirm New Password *
+                  </span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showResetPassword ? 'text' : 'password'}
+                    placeholder="Re-enter your new password"
+                    value={confirmPasswordInput}
+                    onChange={(e) => {
+                      setConfirmPasswordInput(e.target.value);
+                      setResetError(null);
+                    }}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20"
+                  />
+                </div>
+              </div>
+
+              {/* Reset Error Alert */}
+              {resetError && (
+                <div className="bg-rose-50 text-rose-900 border border-rose-200 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
+                  <AlertTriangle className="w-4.5 h-4.5 text-rose-600 shrink-0" />
+                  <span>{resetError}</span>
+                </div>
+              )}
+
+              {/* Reset Success Alert */}
+              {resetSuccess && (
+                <div className="bg-emerald-50 text-emerald-900 border border-emerald-300 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
+                  <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
+                  <span>{resetSuccess}</span>
+                </div>
+              )}
+
+              <button type="submit" className="hidden" />
+            </form>
+
+            {/* Footer For Reset Password */}
+            <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200/80 shrink-0 space-y-2.5">
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#0052FF] hover:text-blue-700 cursor-pointer"
+                onClick={() => handleResetPassword()}
+                disabled={isResetting}
+                className="w-full bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black py-4 rounded-[24px] shadow-lg shadow-blue-950/30 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer disabled:opacity-50 border border-blue-400/30 uppercase tracking-wider"
               >
-                {showPassword ? 'Hide' : 'Show'}
+                {isResetting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                    <span>Updating Password...</span>
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="w-5 h-5 stroke-[2.5] text-white" />
+                    <span>Set New Password</span>
+                    <ArrowRight className="w-5 h-5 stroke-[3] text-white" />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic(hapticPatterns.click);
+                  setViewMode('login');
+                  setResetError(null);
+                  setResetSuccess(null);
+                }}
+                className="w-full bg-white hover:bg-slate-100 text-slate-700 font-bold py-3 rounded-2xl border border-slate-200 transition-all text-xs flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Login</span>
               </button>
             </div>
-          </div>
-
-          {/* 4. Remember Me Checkbox */}
-          <div className="flex items-center justify-between pt-1">
-            <button
-              type="button"
-              onClick={() => {
-                setRememberMe(!rememberMe);
-                triggerHaptic(hapticPatterns.click);
+          </>
+        ) : (
+          /* View Mode: LOGIN */
+          <>
+            {/* Form Body */}
+            <form
+              onSubmit={(e) => {
+                if (loginError) {
+                  e.preventDefault();
+                  window.open('https://wa.me/message/Z4DT5UO7MABQL1', '_blank');
+                } else {
+                  handleLogin(e);
+                }
               }}
-              className="flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-slate-900 cursor-pointer select-none"
+              className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-slate-900 max-w-full"
             >
-              {rememberMe ? (
-                <CheckSquare className="w-4 h-4 text-[#0052FF]" />
-              ) : (
-                <Square className="w-4 h-4 text-slate-400" />
+              {/* 1. Mobile Number */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Smartphone className="w-3.5 h-3.5 text-[#0052FF]" />
+                  Mobile Number *
+                </label>
+                <input
+                  type="tel"
+                  placeholder="e.g. +971501234567"
+                  value={mobileNumber}
+                  onChange={(e) => {
+                    setMobileNumber(e.target.value);
+                    setLoginError(null);
+                  }}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20"
+                />
+              </div>
+
+              {/* 2. Password */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-[#0052FF]" />
+                    Password *
+                  </span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    value={userPassword}
+                    onChange={(e) => {
+                      setUserPassword(e.target.value);
+                      setLoginError(null);
+                    }}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20 pr-16"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#0052FF] hover:text-blue-700 cursor-pointer"
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+
+              {/* 4. Remember Me Checkbox */}
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRememberMe(!rememberMe);
+                    triggerHaptic(hapticPatterns.click);
+                  }}
+                  className="flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-slate-900 cursor-pointer select-none"
+                >
+                  {rememberMe ? (
+                    <CheckSquare className="w-4 h-4 text-[#0052FF]" />
+                  ) : (
+                    <Square className="w-4 h-4 text-slate-400" />
+                  )}
+                  <span>Remember my credentials on this device</span>
+                </button>
+              </div>
+
+              {/* Error Alert */}
+              {loginError && (
+                <div className="bg-rose-50 text-rose-900 border border-rose-200 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
+                  <AlertTriangle className="w-4.5 h-4.5 text-rose-600 shrink-0" />
+                  <span>{loginError}</span>
+                </div>
               )}
-              <span>Remember my credentials on this device</span>
-            </button>
-          </div>
 
-          {/* Error Alert */}
-          {loginError && (
-            <div className="bg-rose-50 text-rose-900 border border-rose-200 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
-              <AlertTriangle className="w-4.5 h-4.5 text-rose-600 shrink-0" />
-              <span>{loginError}</span>
+              {/* Submit Button inside form for Enter key support */}
+              <button type="submit" className="hidden" />
+            </form>
+
+            {/* Footer Login Button & Forget Password Link */}
+            <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200/80 shrink-0">
+              {loginError ? (
+                <button
+                  type="button"
+                  onClick={() => window.open('https://wa.me/message/Z4DT5UO7MABQL1', '_blank')}
+                  className="w-full bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-800 hover:from-emerald-700 hover:to-emerald-900 text-white font-black py-4 rounded-[24px] shadow-lg shadow-emerald-950/20 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer border border-emerald-400/30 uppercase tracking-wider"
+                >
+                  <MessageCircle className="w-5 h-5 stroke-[2.5] text-white" />
+                  <span>Contact with Admin</span>
+                  <ArrowRight className="w-5 h-5 stroke-[3] text-white" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleLogin()}
+                  disabled={isSearchingCloud}
+                  className="w-full bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black py-4 rounded-[24px] shadow-lg shadow-blue-950/30 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer disabled:opacity-50 border border-blue-400/30 uppercase tracking-wider"
+                >
+                  <ShieldCheck className="w-5 h-5 stroke-[2.5] text-white" />
+                  <span>{isSearchingCloud ? 'Connecting Cloud...' : 'LOGIN'}</span>
+                  <ArrowRight className="w-5 h-5 stroke-[3] text-white" />
+                </button>
+              )}
+
+              {/* Forget Password link below the Login button */}
+              <div className="pt-3 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic(hapticPatterns.click);
+                    setResetMobile(mobileNumber);
+                    setNewPasswordInput('');
+                    setConfirmPasswordInput('');
+                    setResetError(null);
+                    setResetSuccess(null);
+                    setViewMode('forgot_password');
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-black text-[#0052FF] hover:text-blue-800 hover:underline cursor-pointer transition-all py-1.5 px-3 rounded-xl hover:bg-blue-50/80 active:scale-95"
+                >
+                  <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                  <span>Forget password? Click to change password</span>
+                </button>
+              </div>
             </div>
-          )}
-
-          {/* Submit Button inside form for Enter key support */}
-          <button type="submit" className="hidden" />
-        </form>
-
-        {/* Footer Login Button */}
-        <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200/80 shrink-0">
-          {loginError ? (
-            <button
-              type="button"
-              onClick={() => window.open('https://wa.me/message/Z4DT5UO7MABQL1', '_blank')}
-              className="w-full bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-800 hover:from-emerald-700 hover:to-emerald-900 text-white font-black py-4 rounded-[24px] shadow-lg shadow-emerald-950/20 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer border border-emerald-400/30 uppercase tracking-wider"
-            >
-              <MessageCircle className="w-5 h-5 stroke-[2.5] text-white" />
-              <span>Contact with Admin</span>
-              <ArrowRight className="w-5 h-5 stroke-[3] text-white" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => handleLogin()}
-              disabled={isSearchingCloud}
-              className="w-full bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black py-4 rounded-[24px] shadow-lg shadow-blue-950/30 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer disabled:opacity-50 border border-blue-400/30 uppercase tracking-wider"
-            >
-              <ShieldCheck className="w-5 h-5 stroke-[2.5] text-white" />
-              <span>{isSearchingCloud ? 'Connecting Cloud...' : 'LOGIN'}</span>
-              <ArrowRight className="w-5 h-5 stroke-[3] text-white" />
-            </button>
-          )}
-        </div>
+          </>
+        )}
       </GlassContainer>
     </div>
   );

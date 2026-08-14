@@ -101,6 +101,13 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
   const [resetSuccess, setResetSuccess] = useState<string | null>(null);
   const [isResetting, setIsResetting] = useState(false);
 
+  // Check if current mobile input is Admin mobile number
+  const cleanMobileDigits = mobileNumber.replace(/\D/g, '');
+  const isAdminMobile =
+    cleanMobileDigits === '971544874028' ||
+    cleanMobileDigits === '0544874028' ||
+    (cleanMobileDigits.length >= 9 && cleanMobileDigits.endsWith('544874028'));
+
   // Load saved credentials on mount / open
   useEffect(() => {
     try {
@@ -777,25 +784,27 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                 </button>
               )}
 
-              {/* Forget Password link below the Login button */}
-              <div className="pt-3 text-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerHaptic(hapticPatterns.click);
-                    setResetMobile(mobileNumber);
-                    setNewPasswordInput('');
-                    setConfirmPasswordInput('');
-                    setResetError(null);
-                    setResetSuccess(null);
-                    setViewMode('forgot_password');
-                  }}
-                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-black text-[#0052FF] hover:text-blue-800 hover:underline cursor-pointer transition-all py-1.5 px-3 rounded-xl hover:bg-blue-50/80 active:scale-95"
-                >
-                  <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
-                  <span>Forget password? Click to change password</span>
-                </button>
-              </div>
+              {/* Forget Password link below the Login button (Hidden if Admin mobile number is matched) */}
+              {!isAdminMobile && (
+                <div className="pt-3 text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic(hapticPatterns.click);
+                      setResetMobile(mobileNumber);
+                      setNewPasswordInput('');
+                      setConfirmPasswordInput('');
+                      setResetError(null);
+                      setResetSuccess(null);
+                      setViewMode('forgot_password');
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-black text-[#0052FF] hover:text-blue-800 hover:underline cursor-pointer transition-all py-1.5 px-3 rounded-xl hover:bg-blue-50/80 active:scale-95"
+                  >
+                    <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                    <span>Forget password?</span>
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}

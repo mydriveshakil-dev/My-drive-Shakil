@@ -9,6 +9,7 @@ interface BottomNavBarProps {
   onSelectTab: (tab: AppTabType) => void;
   onOpenAddExpense: () => void;
   isAddExpenseOpen?: boolean;
+  isHidden?: boolean;
 }
 
 export const BottomNavBar: React.FC<BottomNavBarProps> = ({
@@ -16,6 +17,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   onSelectTab,
   onOpenAddExpense,
   isAddExpenseOpen = false,
+  isHidden = false,
 }) => {
   const handleTabClick = (tabId: AppTabType) => {
     triggerHaptic(hapticPatterns.click);
@@ -28,12 +30,16 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   const isGroupActive = activeTab === 'group' || activeTab === 'payto';
 
   return (
-    <div className="fixed bottom-3 sm:bottom-5 left-0 right-0 z-[120] px-2 sm:px-4 flex flex-col items-center pointer-events-none select-none">
+    <div
+      className={`fixed bottom-3 sm:bottom-5 left-0 right-0 z-[120] px-2 sm:px-4 flex flex-col items-center pointer-events-none select-none transition-all duration-300 ease-in-out ${
+        isHidden ? 'translate-y-36 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'
+      }`}
+    >
       {/* Ambient soft blue background glow */}
       <div className="absolute inset-x-0 -bottom-6 h-28 bg-[#0052FF]/20 blur-3xl rounded-full pointer-events-none -z-10" />
 
       {/* Main floating container with exact curved notch SVG background */}
-      <div className="pointer-events-auto relative w-full max-w-lg h-[68px] filter drop-shadow-[0_12px_28px_rgba(0,0,0,0.6)]">
+      <div className={`relative w-full max-w-lg h-[68px] filter drop-shadow-[0_12px_28px_rgba(0,0,0,0.6)] ${isHidden ? 'pointer-events-none' : 'pointer-events-auto'}`}>
         
         {/* SVG Curved Bar Frame */}
         <svg

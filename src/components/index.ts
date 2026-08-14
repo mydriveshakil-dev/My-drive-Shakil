@@ -3,6 +3,7 @@ export * from './BottomNavBar';
 export * from './DashboardView';
 export * from './HomeDashboard';
 export * from './AddExpenseModal';
+export * from './AddExpenseView';
 export * from './UtilitiesAndRentView';
 export * from './ReportAndSettlementView';
 export * from './GroupManagementView';

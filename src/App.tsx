@@ -45,7 +45,7 @@ import { HeaderBar } from './components/HeaderBar';
 import uaeMessLogo from './assets/images/uae_mess_logo_1785022712689.jpg';
 import { DashboardView } from './components/DashboardView';
 import { HomeDashboard } from './components/HomeDashboard';
-import { AddExpenseModal } from './components/AddExpenseModal';
+import { AddExpenseView } from './components/AddExpenseView';
 import { UtilitiesAndRentView } from './components/UtilitiesAndRentView';
 import { ReportAndSettlementView } from './components/ReportAndSettlementView';
 import { GroupManagementView } from './components/GroupManagementView';
@@ -767,6 +767,53 @@ export default function App() {
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isInstallPwaOpen, setIsInstallPwaOpen] = useState(false);
+
+  // Auto-hide navigation bar and group chat button when typing in any input/textarea
+  const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        const inputType = (target as HTMLInputElement).type?.toLowerCase();
+        if (['checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'image'].includes(inputType)) {
+          return;
+        }
+        setIsTyping(true);
+      }
+    };
+
+    const handleFocusOut = () => {
+      setTimeout(() => {
+        const activeEl = document.activeElement as HTMLElement | null;
+        if (
+          activeEl &&
+          (activeEl.tagName === 'INPUT' ||
+            activeEl.tagName === 'TEXTAREA' ||
+            activeEl.isContentEditable)
+        ) {
+          const inputType = (activeEl as HTMLInputElement).type?.toLowerCase();
+          if (!['checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'image'].includes(inputType)) {
+            return;
+          }
+        }
+        setIsTyping(false);
+      }, 80);
+    };
+
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('focusout', handleFocusOut);
+
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
+    };
+  }, []);
 
   // Swipe Gesture Handler for Navigation Bar Tabs
   const touchStartXRef = useRef<number | null>(null);
@@ -1755,6 +1802,21 @@ export default function App() {
               </div>
             </GlassContainer>
           </div>
+        ) : isAddExpenseOpen ? (
+          <motion.div
+            key="add-expense-page"
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -16, scale: 0.98 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <AddExpenseView
+              group={displayedGroup}
+              onClose={() => setIsAddExpenseOpen(false)}
+              currentUser={userAuth}
+              onSaveExpense={handleSaveExpense}
+            />
+          </motion.div>
         ) : (
           <AnimatePresence mode="wait">
             <motion.div
@@ -1903,15 +1965,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Add Expense Modal */}
-      <AddExpenseModal
-        group={group}
-        isOpen={isAddExpenseOpen}
-        onClose={() => setIsAddExpenseOpen(false)}
-        currentUser={userAuth}
-        onSaveExpense={handleSaveExpense}
-      />
-
       {/* Architecture & Flutter Code Guide Modal */}
       <ArchitectureGuideModal
         isOpen={isArchGuideOpen}
@@ -1979,13 +2032,17 @@ export default function App() {
         onClose={handleCloseNoticePopup}
       />
 
-      {/* Floating Action Button (FAB) for Room Group Chat */}
-      {!isChatOpen && !isLoginModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && activeTab === 'dashboard' && (
+      {/* Floating Action Button (FAB) for Room Group Chat - Shown across all main tabs (Bill/rent, report, group, dashboard) and hides when typing */}
+      {!isChatOpen && !isLoginModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && (
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.92 }}
           onClick={() => setIsChatOpen(true)}
-          className="fixed bottom-[88px] sm:bottom-[94px] right-4 sm:right-6 z-50 w-12 h-12 sm:w-13 sm:h-13 bg-[#07193F] hover:bg-[#0B2556] text-white rounded-full shadow-xl border border-slate-700/80 flex items-center justify-center cursor-pointer transition-all ring-2 ring-white/50"
+          className={`fixed bottom-[88px] sm:bottom-[94px] right-4 sm:right-6 z-50 w-12 h-12 sm:w-13 sm:h-13 bg-[#07193F] hover:bg-[#0B2556] text-white rounded-full shadow-xl border border-slate-700/80 flex items-center justify-center cursor-pointer transition-all duration-300 ring-2 ring-white/50 ${
+            isChatOpen || isAddExpenseOpen || isTyping
+              ? 'translate-y-36 opacity-0 pointer-events-none'
+              : 'translate-y-0 opacity-100'
+          }`}
           title="Open Room Group Chat"
         >
           <div className="relative flex items-center justify-center">
@@ -2013,6 +2070,7 @@ export default function App() {
           }}
           onOpenAddExpense={() => setIsAddExpenseOpen(true)}
           isAddExpenseOpen={isAddExpenseOpen}
+          isHidden={isChatOpen || isAddExpenseOpen || isTyping}
         />
       )}
 

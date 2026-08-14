@@ -807,25 +807,61 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
         {/* Total Rent Input Field & Per-Member Share Calculation */}
         <div className="bg-slate-50 p-4 rounded-2xl border border-black space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <label className="block text-xs font-black text-slate-900 uppercase tracking-wider">
-                  Total Rent Amount (AED)
-                </label>
-                {isRentInputLocked ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-900 bg-amber-100 border border-amber-400 px-2.5 py-0.5 rounded-full shadow-xs">
-                    <Lock className="w-3 h-3 text-amber-800" />
-                    Locked for {rent.cycle || currentMonthCycle}
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-white border border-black/30 px-2 py-0.5 rounded-full">
-                    Type amount and click LOCK
-                  </span>
-                )}
-              </div>
+          {/* Top Row: Label, Lock/Unlock Button on right side of text & Status Badge */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <label className="block text-xs font-black text-slate-900 uppercase tracking-wider">
+                Total Rent Amount ({group.currency || 'AED'})
+              </label>
 
-              <div className="flex items-center gap-2">
+              {/* Lock / Unlock Toggle Button placed on the right side of Total Rent Amount text */}
+              {isRentInputLocked ? (
+                <button
+                  type="button"
+                  onClick={handleUnlockRent}
+                  disabled={!isAdmin}
+                  className={`px-2.5 py-1 rounded-lg border border-black text-xs font-black flex items-center gap-1 shrink-0 ${
+                    isAdmin
+                      ? 'bg-amber-400 text-slate-950 hover:bg-amber-500 cursor-pointer shadow-2xs active:scale-95'
+                      : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                  }`}
+                  title={isAdmin ? 'Click to Unlock Rent' : 'Only Admin can unlock'}
+                >
+                  <Unlock className="w-3.5 h-3.5" />
+                  <span>{isAdmin ? 'Unlock' : 'Locked'}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleLockRent}
+                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-lg border border-black flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs active:scale-95 transition-all"
+                  title="Lock Rent Amount for this Month"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>LOCK</span>
+                </button>
+              )}
+
+              {isRentInputLocked ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-900 bg-amber-100 border border-amber-400 px-2 py-0.5 rounded-full shadow-2xs">
+                  Locked for {rent.cycle || currentMonthCycle}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-white border border-slate-300 px-2 py-0.5 rounded-full">
+                  Type amount and click LOCK
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Row: Room rent amount box and Each member share box side-by-side in 1 line */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+            {/* Box 1: Room rent amount box */}
+            <div className="p-3 bg-white rounded-xl border border-black flex flex-col justify-between shadow-2xs">
+              <span className="text-[10px] text-slate-600 font-extrabold uppercase block mb-1">
+                Room Rent Amount
+              </span>
+              <div className="flex items-center">
                 <input
                   type="text"
                   inputMode="decimal"
@@ -833,60 +869,34 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   onChange={handleRentInputChange}
                   disabled={isRentInputLocked}
                   placeholder="e.g. 3500"
-                  className={`w-full bg-white border border-black rounded-xl px-3 py-2 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-black ${
-                    isRentInputLocked ? 'bg-slate-100 text-slate-500 cursor-not-allowed opacity-80' : ''
+                  className={`w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-sm sm:text-base font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-black ${
+                    isRentInputLocked ? 'bg-slate-100 text-slate-700 cursor-not-allowed opacity-90' : 'bg-white'
                   }`}
                 />
-
-                {/* Lock / Unlock Toggle Button */}
-                {isRentInputLocked ? (
-                  <button
-                    type="button"
-                    onClick={handleUnlockRent}
-                    disabled={!isAdmin}
-                    className={`px-3 py-2 rounded-xl border border-black text-xs font-black flex items-center gap-1 shrink-0 ${
-                      isAdmin
-                        ? 'bg-amber-400 text-slate-950 hover:bg-amber-500 cursor-pointer'
-                        : 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                    }`}
-                    title={isAdmin ? 'Click to Unlock Rent' : 'Only Admin can unlock'}
-                  >
-                    <Unlock className="w-3.5 h-3.5" />
-                    <span>{isAdmin ? 'Unlock' : 'Locked'}</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleLockRent}
-                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl border border-black flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
-                    title="Lock Rent Amount for this Month"
-                  >
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>LOCK</span>
-                  </button>
-                )}
+                <span className="ml-2 text-xs font-black text-slate-700 shrink-0">AED</span>
               </div>
             </div>
 
-            <div className="p-3 bg-white rounded-xl border border-black text-right shrink-0 min-w-[140px]">
-              <span className="text-[10px] text-slate-600 font-extrabold uppercase block">
+            {/* Box 2: Each member share box */}
+            <div className="p-3 bg-white rounded-xl border border-black flex flex-col justify-between text-right shadow-2xs">
+              <span className="text-[10px] text-slate-600 font-extrabold uppercase block mb-1">
                 Each Member Share
               </span>
-              <span className="text-base font-black text-slate-950 block">
+              <span className="text-sm sm:text-base font-black text-slate-950 block">
                 {currentMemberRentShare.toFixed(2)} AED
               </span>
-              <span className="text-[10px] text-slate-500 font-semibold block">
+              <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
                 ({rentParticipatingCount} members {tempMembersCount > 0 ? `+ ${tempMembersCount} temp` : ''})
               </span>
             </div>
           </div>
         </div>
 
-        {/* Temporary Rent Splitters / Guest Roommates Box */}
+        {/* Temporary Member Box */}
         <div className="p-3 bg-slate-50 rounded-2xl border border-black/30 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
-              Temporary Rent Splitters / Guests ({tempMembers.length})
+              Temporary Member ({tempMembers.length})
             </span>
             {isAdmin && (
               <button
@@ -895,7 +905,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 className="px-2.5 py-1 bg-black text-white rounded-xl text-xs font-bold border border-black hover:bg-slate-800 transition-all cursor-pointer flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>+ Add Temporary Member</span>
+                <span>+ Add Temp. Member</span>
               </button>
             )}
           </div>
@@ -952,7 +962,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                       type="button"
                       onClick={() => handleRemoveTempMember(idx)}
                       className="text-slate-400 hover:text-rose-600 transition-colors p-0.5 ml-1 cursor-pointer"
-                      title="Remove temporary rent splitter"
+                      title="Remove temporary member"
                     >
                       <X className="w-3.5 h-3.5 stroke-[3]" />
                     </button>
@@ -961,7 +971,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               ))}
             </div>
           ) : (
-            <p className="text-[11px] text-slate-500 italic">No temporary rent splitters added for this cycle.</p>
+            <p className="text-[11px] text-slate-500 italic">No temporary members added for this cycle.</p>
           )}
         </div>
 

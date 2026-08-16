@@ -22,7 +22,9 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 import { GlassContainer } from './GlassContainer';
+import { MemberAvatar } from './MemberAvatar';
 import { cleanExpenseTitle } from '../utils/textCleaner';
+import { getLoggedInMember } from '../utils/permissionUtils';
 
 interface HomeDashboardProps {
   group: Group;
@@ -429,9 +431,12 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               Logged in as: <strong className="text-slate-900">{myMember.name}</strong>
             </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-black text-white border border-black flex items-center justify-center font-bold text-lg shadow-md">
-            {myMember.avatar}
-          </div>
+          <MemberAvatar
+            name={myMember.name}
+            avatar={myMember.avatar}
+            size="lg"
+            className="rounded-2xl border border-black shadow-md shrink-0"
+          />
         </GlassContainer>
 
         <GlassContainer variant="card" className="p-4 border border-black shadow-md bg-white text-slate-900 flex items-center justify-between">
@@ -594,7 +599,12 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                       : 'bg-white hover:bg-slate-100 text-slate-900 border-black'
                   }`}
                 >
-                  <span>{member.avatar}</span>
+                  <MemberAvatar
+                    name={member.name}
+                    avatar={member.avatar}
+                    size="xs"
+                    className="border border-slate-300"
+                  />
                   <span>{member.name}</span>
                   <span className="text-[10px] opacity-80">({userCount} • {userTotal.toFixed(0)} {group.currency})</span>
                 </button>
@@ -644,9 +654,12 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                   >
                     <div className="flex items-start sm:items-center gap-3">
                       {/* User Avatar */}
-                      <div className="w-11 h-11 rounded-2xl font-black bg-black text-white flex items-center justify-center shrink-0 border border-black shadow-xs text-sm">
-                        {payer?.avatar || 'M'}
-                      </div>
+                      <MemberAvatar
+                        name={payer?.name || exp.paidById}
+                        avatar={payer?.avatar}
+                        size="custom"
+                        className="w-11 h-11 rounded-2xl border border-black shadow-xs text-sm shrink-0"
+                      />
 
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2 flex-wrap">

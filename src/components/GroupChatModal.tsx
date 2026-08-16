@@ -14,6 +14,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
+import { MemberAvatar } from './MemberAvatar';
 import { getMessageTimestampMs, getStartOfCurrentMonthMs, isPhoneMatch } from '../lib/firebase';
 
 interface GroupChatModalProps {
@@ -163,9 +164,12 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
                     key={m.id}
                     className="flex items-center gap-1.5 bg-white text-slate-900 px-2.5 py-1 rounded-full border border-black text-[11px] font-bold whitespace-nowrap shadow-xs"
                   >
-                    <span className="w-5 h-5 rounded-full bg-black text-white text-[9px] font-black flex items-center justify-center shrink-0">
-                      {m.avatar}
-                    </span>
+                    <MemberAvatar
+                      name={m.name}
+                      avatar={m.avatar}
+                      size="xs"
+                      className="w-5 h-5 text-[9px] shrink-0"
+                    />
                     <span>{m.name.split(' ')[0]}</span>
                     {isOnline ? (
                       <span
@@ -234,9 +238,12 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
                 className={`flex items-start gap-2 w-full ${isMe ? 'justify-end' : 'justify-start'}`}
               >
                 {!isMe && (
-                  <div className="w-8 h-8 rounded-2xl bg-white text-slate-900 font-black text-[10px] flex items-center justify-center shrink-0 border border-black shadow-sm mt-0.5">
-                    {msg.senderAvatar || 'U'}
-                  </div>
+                  <MemberAvatar
+                    name={msg.senderName || 'User'}
+                    avatar={msg.senderAvatar}
+                    size="sm"
+                    className="w-8 h-8 rounded-2xl border border-black shadow-sm mt-0.5 shrink-0"
+                  />
                 )}
 
                 {/* Message Bubble */}

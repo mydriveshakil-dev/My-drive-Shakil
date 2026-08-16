@@ -143,6 +143,7 @@ export interface UserAuthProfile {
   isLoggedIn: boolean;
   role: 'admin' | 'user';
   linkedGroupId?: string | null;
+  avatar?: string;
 }
 
 export interface ChatMessage {

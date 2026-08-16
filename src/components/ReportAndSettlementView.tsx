@@ -5,6 +5,7 @@ import { jsPDF } from 'jspdf';
 import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
 import { Group, Expense, UtilityBill, RentContribution } from '../types';
 import { calculateSettlement } from '../utils/settlementCalculator';
+import { sanitizeDocumentForHtml2Canvas } from '../utils/pdfColorSanitizer';
 import { GlassContainer } from './GlassContainer';
 import {
   PieChart as ChartIcon,
@@ -30,6 +31,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
+import { MemberAvatar } from './MemberAvatar';
 
 interface ReportAndSettlementViewProps {
   group: Group;
@@ -196,199 +198,6 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       ...includeCategories,
       [key]: !includeCategories[key],
     });
-  };
-
-  // Helper to convert oklch color string to rgb/rgba format for html2canvas compatibility
-  const oklchToRgb = (oklchStr: string): string => {
-    if (!oklchStr || typeof oklchStr !== 'string') return oklchStr;
-
-    return oklchStr.replace(/oklch\(\s*([\d.%]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.%]+))?\s*\)/gi, (_, p1, p2, p3, p4) => {
-      let L = parseFloat(p1);
-      if (p1.endsWith('%')) L /= 100;
-
-      const C = parseFloat(p2);
-      const H_deg = parseFloat(p3);
-      let alpha = 1;
-      if (p4) {
-        alpha = parseFloat(p4);
-        if (p4.endsWith('%')) alpha /= 100;
-      }
-
-      const H_rad = (H_deg * Math.PI) / 180;
-      const a = C * Math.cos(H_rad);
-      const b = C * Math.sin(H_rad);
-
-      const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
-      const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
-      const s_ = L - 0.0894841775 * a - 1.291485548 * b;
-
-      const l3 = l_ * l_ * l_;
-      const m3 = m_ * m_ * m_;
-      const s3 = s_ * s_ * s_;
-
-      const r_lin = +4.0767416621 * l3 - 3.3077115913 * m3 + 0.2309699292 * s3;
-      const g_lin = -1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3;
-      const b_lin = -0.0041960863 * l3 - 0.7034186147 * m3 + 1.707614701 * s3;
-
-      const toSrgb = (c: number) => {
-        if (c <= 0) return 0;
-        if (c >= 1) return 255;
-        const abs = Math.abs(c);
-        const compressed = abs <= 0.0031308 ? 12.92 * abs : 1.055 * Math.pow(abs, 1 / 2.4) - 0.055;
-        return Math.min(255, Math.max(0, Math.round(compressed * 255)));
-      };
-
-      const r = toSrgb(r_lin);
-      const g = toSrgb(g_lin);
-      const b_val = toSrgb(b_lin);
-
-      if (alpha < 1) {
-        return `rgba(${r}, ${g}, ${b_val}, ${alpha})`;
-      }
-      return `rgb(${r}, ${g}, ${b_val})`;
-    });
-  };
-
-  const sanitizeCssText = (text: string): string => {
-    if (!text) return text;
-    let css = text;
-
-    css = css.replace(/\bin\s+(oklab|oklch)\b/gi, 'in srgb');
-    css = oklchToRgb(css);
-
-    // Fallback for remaining color-mix or light-dark if any
-    css = css.replace(/color-mix\([^)]+\)/gi, 'inherit');
-    css = css.replace(/light-dark\(([^,]+),[^)]+\)/gi, '$1');
-
-    return css;
-  };
-
-  const sanitizeDocumentForHtml2Canvas = (clonedDoc: Document) => {
-    try {
-      const origReport = document.getElementById('pdf-report-document');
-      const clonedReport = clonedDoc.getElementById('pdf-report-document');
-
-      const sanitizeColor = (colorStr: string): string => {
-        if (!colorStr) return colorStr;
-        if (colorStr === 'transparent' || colorStr === 'rgba(0, 0, 0, 0)') return 'transparent';
-        if (colorStr.includes('oklch')) {
-          return oklchToRgb(colorStr);
-        }
-        if (colorStr.includes('color-mix') || colorStr.includes('light-dark')) {
-          return sanitizeCssText(colorStr);
-        }
-        return colorStr;
-      };
-
-      if (origReport && clonedReport) {
-        // Set fixed width and container styling for A4 canvas rendering
-        clonedReport.style.width = '794px';
-        clonedReport.style.maxWidth = '794px';
-        clonedReport.style.margin = '0 auto';
-        clonedReport.style.backgroundColor = '#ffffff';
-        clonedReport.style.boxSizing = 'border-box';
-
-        const origElements = [origReport, ...Array.from(origReport.querySelectorAll('*'))];
-        const clonedElements = [clonedReport, ...Array.from(clonedReport.querySelectorAll('*'))];
-
-        for (let i = 0; i < origElements.length; i++) {
-          const orig = origElements[i] as HTMLElement;
-          const clone = clonedElements[i] as HTMLElement;
-          if (!orig || !clone) continue;
-
-          try {
-            const comp = window.getComputedStyle(orig);
-
-            // Copy essential layout & display properties
-            clone.style.display = comp.display;
-            if (comp.display === 'flex' || comp.display === 'inline-flex') {
-              clone.style.flexDirection = comp.flexDirection;
-              clone.style.alignItems = comp.alignItems;
-              clone.style.justifyContent = comp.justifyContent;
-              clone.style.flexWrap = comp.flexWrap;
-              clone.style.flexShrink = comp.flexShrink;
-              clone.style.flexGrow = comp.flexGrow;
-              clone.style.gap = comp.gap;
-            } else if (comp.display === 'grid' || comp.display === 'inline-grid') {
-              clone.style.gridTemplateColumns = comp.gridTemplateColumns;
-              clone.style.gap = comp.gap;
-            }
-
-            // Colors & Backgrounds
-            clone.style.backgroundColor = sanitizeColor(comp.backgroundColor);
-            clone.style.color = sanitizeColor(comp.color);
-
-            // Typography
-            clone.style.fontFamily = 'Arial, Helvetica, sans-serif';
-            clone.style.fontSize = comp.fontSize;
-            clone.style.fontWeight = comp.fontWeight;
-            clone.style.lineHeight = comp.lineHeight;
-            clone.style.textAlign = comp.textAlign;
-            clone.style.textTransform = comp.textTransform;
-
-            // Padding & Margin
-            clone.style.paddingTop = comp.paddingTop;
-            clone.style.paddingRight = comp.paddingRight;
-            clone.style.paddingBottom = comp.paddingBottom;
-            clone.style.paddingLeft = comp.paddingLeft;
-
-            clone.style.marginTop = comp.marginTop;
-            clone.style.marginRight = comp.marginRight;
-            clone.style.marginBottom = comp.marginBottom;
-            clone.style.marginLeft = comp.marginLeft;
-
-            // Borders
-            clone.style.borderTopWidth = comp.borderTopWidth;
-            clone.style.borderTopStyle = comp.borderTopStyle;
-            clone.style.borderTopColor = sanitizeColor(comp.borderTopColor);
-
-            clone.style.borderRightWidth = comp.borderRightWidth;
-            clone.style.borderRightStyle = comp.borderRightStyle;
-            clone.style.borderRightColor = sanitizeColor(comp.borderRightColor);
-
-            clone.style.borderBottomWidth = comp.borderBottomWidth;
-            clone.style.borderBottomStyle = comp.borderBottomStyle;
-            clone.style.borderBottomColor = sanitizeColor(comp.borderBottomColor);
-
-            clone.style.borderLeftWidth = comp.borderLeftWidth;
-            clone.style.borderLeftStyle = comp.borderLeftStyle;
-            clone.style.borderLeftColor = sanitizeColor(comp.borderLeftColor);
-
-            clone.style.borderRadius = comp.borderRadius;
-            clone.style.boxSizing = 'border-box';
-          } catch (e) {
-            // Ignore individual node compute style errors
-          }
-        }
-      }
-
-      // Sanitize all style tags in the cloned document
-      const styles = clonedDoc.querySelectorAll('style');
-      styles.forEach((s) => {
-        if (s.textContent) {
-          s.textContent = sanitizeCssText(s.textContent);
-        }
-      });
-
-      // Also check inline style attributes on cloned elements
-      const allCloned = clonedDoc.querySelectorAll('*');
-      allCloned.forEach((el) => {
-        if (el instanceof HTMLElement && el.hasAttribute('style')) {
-          const styleAttr = el.getAttribute('style');
-          if (
-            styleAttr &&
-            (styleAttr.includes('oklch') ||
-              styleAttr.includes('oklab') ||
-              styleAttr.includes('color-mix') ||
-              styleAttr.includes('light-dark'))
-          ) {
-            el.setAttribute('style', sanitizeCssText(styleAttr));
-          }
-        }
-      });
-    } catch (e) {
-      console.warn('Sanitize document for html2canvas failed:', e);
-    }
   };
 
   const handlePrintPdf = async () => {
@@ -609,13 +418,21 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         <div className="space-y-2">
           {settlementResult.memberSummaries.map((ms) => {
             const isOverpaid = ms.balance >= 0;
+            const memberObj = group.members.find(
+              (m) => m.id === ms.memberId || m.name.toLowerCase() === ms.memberName.toLowerCase()
+            );
             return (
               <div
                 key={ms.memberId}
                 className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200 space-y-2 text-xs text-slate-900"
               >
-                <div className="font-extrabold text-xs sm:text-sm text-[#07193F] flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-[#0052FF]" />
+                <div className="font-extrabold text-xs sm:text-sm text-[#07193F] flex items-center gap-2">
+                  <MemberAvatar
+                    name={ms.memberName}
+                    avatar={memberObj?.avatar}
+                    size="xs"
+                    className="w-5 h-5 text-[8px] shrink-0 ring-1 ring-blue-500/20"
+                  />
                   <span>{ms.memberName}</span>
                 </div>
 
@@ -834,10 +651,21 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                         <tbody className="divide-y font-medium text-xs" style={{ borderColor: '#e2e8f0' }}>
                           {settlementResult.memberSummaries.map((ms, idx) => {
                             const isOverpaid = ms.balance >= 0;
+                            const memberObj = group.members.find(
+                              (m) => m.id === ms.memberId || m.name.toLowerCase() === ms.memberName.toLowerCase()
+                            );
                             return (
                               <tr key={ms.memberId} style={{ backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}>
                                 <td className="p-2.5 border-r font-bold leading-normal" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>
-                                  {ms.memberName}
+                                  <div className="flex items-center gap-1.5">
+                                    <MemberAvatar
+                                      name={ms.memberName}
+                                      avatar={memberObj?.avatar}
+                                      size="xs"
+                                      className="w-4 h-4 text-[7px] shrink-0"
+                                    />
+                                    <span>{ms.memberName}</span>
+                                  </div>
                                 </td>
                                 <td className="p-2.5 border-r text-right leading-normal" style={{ borderColor: '#e2e8f0', color: '#334155' }}>
                                   {ms.totalActualExpense.toFixed(2)} {group.currency}

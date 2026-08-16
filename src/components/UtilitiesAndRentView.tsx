@@ -3,6 +3,7 @@ import { Group, UtilityBill, RentContribution, UserAuthProfile } from '../types'
 import { Zap, Home as HomeIcon, Plus, CheckCircle2, Clock, Edit2, AlertCircle, DollarSign, Calculator, Trash2, Lock, Unlock, X, Users, CheckSquare, Square } from 'lucide-react';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 import { GlassContainer } from './GlassContainer';
+import { MemberAvatar } from './MemberAvatar';
 import { evaluateMathExpression } from '../utils/mathEvaluator';
 import { isCategoryPermittedForUser } from '../utils/permissionUtils';
 import { isPhoneMatch } from '../lib/firebase';
@@ -609,9 +610,12 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                         }}
                         className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
                       />
-                      <span className="w-5 h-5 rounded-full bg-slate-800 text-white text-[9px] font-bold flex items-center justify-center shrink-0">
-                        {m.avatar}
-                      </span>
+                      <MemberAvatar
+                        name={m.name}
+                        avatar={m.avatar}
+                        size="xs"
+                        className="w-5 h-5 text-[9px] shrink-0"
+                      />
                       <span className="truncate">{m.name}</span>
                     </label>
                   );
@@ -1015,13 +1019,12 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                           : 'Click to mark rent paid'
                       }
                     />
-                    <span
-                      className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
-                        isPaid ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-white'
-                      }`}
-                    >
-                      {member.avatar}
-                    </span>
+                    <MemberAvatar
+                      name={member.name}
+                      avatar={member.avatar}
+                      size="xs"
+                      className="w-6 h-6 text-[10px] shrink-0"
+                    />
                     <span className="truncate max-w-[90px]">{member.name}</span>
                   </div>
 

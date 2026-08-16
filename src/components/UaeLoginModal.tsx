@@ -455,65 +455,39 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
   };
 
   return (
-    <div className="w-full min-h-[85vh] sm:min-h-screen py-4 sm:py-8 px-3 sm:px-6 md:px-8 flex items-center justify-center bg-slate-100/90 max-w-full selection:bg-blue-500/20 my-auto">
-      <GlassContainer
-        variant="card"
-        blur="3xl"
-        className="w-full max-w-lg rounded-3xl border border-slate-200/80 shadow-2xl flex flex-col overflow-hidden relative my-auto box-border text-slate-900 bg-white"
-      >
-        {/* Header Banner - Dark Navy Theme */}
-        <div className="p-4 sm:p-5 border-b border-blue-900/40 bg-gradient-to-r from-[#07193F] to-[#041029] text-white flex items-center justify-between shrink-0 gap-3 overflow-hidden">
-          <div className="flex items-center gap-3 min-w-0">
-            {viewMode === 'forgot_password' ? (
-              <button
-                type="button"
-                onClick={() => {
-                  triggerHaptic(hapticPatterns.click);
-                  setViewMode('login');
-                  setResetError(null);
-                  setResetSuccess(null);
-                }}
-                className="w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all border border-white/20 cursor-pointer shrink-0"
-                title="Back to Login"
-              >
-                <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
-              </button>
-            ) : (
-              <img
-                src={uaeMessLogo}
-                alt="UAE MESS SYSTEM Logo"
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover border border-blue-400/30 shadow-md shrink-0"
-              />
-            )}
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs sm:text-sm font-black tracking-wider text-white uppercase">
-                  UAE MESS SYSTEM
-                </span>
-                <span className="bg-[#0052FF] text-white border border-blue-400/30 text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase whitespace-nowrap shadow-xs">
-                  {viewMode === 'forgot_password' ? 'Reset Password' : 'Portal Login'}
-                </span>
-              </div>
-              <h2 className="text-sm sm:text-base font-black text-white truncate mt-0.5">
-                {viewMode === 'forgot_password' ? 'Set New Password' : 'Member & Admin Portal Access'}
-              </h2>
-              <p className="text-[11px] sm:text-xs text-blue-200/80 font-medium truncate">
-                {viewMode === 'forgot_password'
-                  ? 'Update your password for login & room member list'
-                  : 'Log in using Mobile Number & Password'}
-              </p>
-            </div>
-          </div>
+    <div className="w-full min-h-[85vh] sm:min-h-screen py-6 sm:py-10 px-3 sm:px-6 md:px-8 flex items-center justify-center bg-[#ebf0f7] max-w-full selection:bg-sky-500/20 my-auto">
+      {/* Neumorphic Soft UI Card */}
+      <div className="neu-card w-full max-w-[420px] rounded-[36px] sm:rounded-[42px] border border-white/70 flex flex-col overflow-hidden relative my-auto box-border text-slate-800 p-6 sm:p-8 transition-all">
+        
+        {/* Top Header Actions (Install App / Back / Close) */}
+        <div className="flex items-center justify-between w-full mb-3">
+          {viewMode === 'forgot_password' ? (
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(hapticPatterns.click);
+                setViewMode('login');
+                setResetError(null);
+                setResetSuccess(null);
+              }}
+              className="neu-flat-sm w-9 h-9 rounded-2xl flex items-center justify-center text-slate-600 hover:text-slate-900 transition-all active:scale-95 cursor-pointer border border-white/80"
+              title="Back to Login"
+            >
+              <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          ) : (
+            <div className="w-9 h-9" />
+          )}
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2">
             {onOpenInstallPwa && viewMode === 'login' && (
               <button
                 type="button"
                 onClick={onOpenInstallPwa}
-                className="inline-flex items-center gap-1.5 bg-[#0052FF] hover:bg-[#0047E0] active:scale-95 text-white text-xs font-bold px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-2xl transition-all shadow-md shadow-blue-600/30 border border-blue-400/30 cursor-pointer shrink-0"
+                className="neu-flat-sm inline-flex items-center gap-1.5 text-sky-600 hover:text-sky-700 active:scale-95 text-xs font-bold px-3 py-1.5 rounded-full transition-all border border-white/80 cursor-pointer"
                 title="Install Mobile App / Add to Home Screen"
               >
-                <Smartphone className="w-4 h-4 stroke-[2.5]" />
+                <Smartphone className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>Install App</span>
               </button>
             )}
@@ -521,21 +495,55 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-9 h-9 rounded-2xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all border border-white/20 cursor-pointer shrink-0"
+                className="neu-flat-sm w-9 h-9 rounded-2xl flex items-center justify-center text-slate-600 hover:text-slate-900 transition-all active:scale-95 border border-white/80 cursor-pointer"
                 title="Close"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
 
+        {/* Center Logo Section in Neumorphic Embossed Frame */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="neu-flat w-20 h-20 sm:w-24 sm:h-24 rounded-full p-2.5 flex items-center justify-center border border-white/80 mb-3.5 relative">
+            <img
+              src={uaeMessLogo}
+              alt="UAE MESS SYSTEM Logo"
+              className="w-full h-full rounded-full object-cover shadow-inner"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 justify-center">
+            <h1 className="text-base sm:text-lg font-black text-slate-800 tracking-wide uppercase">
+              UAE MESS SYSTEM
+            </h1>
+          </div>
+
+          {viewMode === 'forgot_password' ? (
+            <>
+              <div className="mt-1 flex items-center gap-1.5">
+                <span className="bg-sky-500/15 text-sky-700 border border-sky-400/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                  Reset Password
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-500 font-medium mt-1">
+                Update your password for login & room member list
+              </p>
+            </>
+          ) : (
+            /* Blank space placeholder to preserve exact layout spacing without text */
+            <div className="h-[44px] w-full" aria-hidden="true" />
+          )}
+        </div>
+
         {/* View Mode: FORGOT PASSWORD */}
         {viewMode === 'forgot_password' ? (
           <>
-            <form onSubmit={handleResetPassword} className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-slate-900 max-w-full">
-              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3 sm:p-3.5 text-xs text-blue-900 font-medium flex items-start gap-2.5">
-                <Info className="w-4 h-4 text-[#0052FF] shrink-0 mt-0.5" />
+            <form onSubmit={handleResetPassword} className="space-y-4 flex-1 text-slate-800">
+              <div className="neu-flat-sm border border-sky-200/60 rounded-2xl p-3 text-xs text-slate-700 font-medium flex items-start gap-2.5">
+                <Info className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
                 <span>
                   আপনার রেজিস্টার্ড মোবাইল নম্বর দিন এবং নতুন পাসওয়ার্ড সেট করুন। এটি সাথে সাথে অ্যাডমিনের সক্রিয় মেম্বার লিস্টেও আপডেট হয়ে যাবে।
                 </span>
@@ -543,31 +551,31 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
 
               {/* 1. Mobile Number */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                  <Smartphone className="w-3.5 h-3.5 text-[#0052FF]" />
+                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 px-1">
                   Registered Mobile Number *
                 </label>
-                <input
-                  type="tel"
-                  placeholder="e.g. +971501234567"
-                  value={resetMobile}
-                  onChange={(e) => {
-                    setResetMobile(e.target.value);
-                    setResetError(null);
-                  }}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20"
-                />
+                <div className="neu-inset rounded-[22px] px-4 py-3.5 flex items-center gap-3 border border-white/60 transition-all">
+                  <Smartphone className="w-4 h-4 text-slate-400 shrink-0" />
+                  <input
+                    type="tel"
+                    placeholder="0501234567"
+                    value={resetMobile}
+                    onChange={(e) => {
+                      setResetMobile(e.target.value);
+                      setResetError(null);
+                    }}
+                    className="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400"
+                  />
+                </div>
               </div>
 
               {/* 2. New Password */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-[#0052FF]" />
-                    New Password *
-                  </span>
+                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 px-1">
+                  New Password *
                 </label>
-                <div className="relative">
+                <div className="neu-inset rounded-[22px] px-4 py-3.5 flex items-center gap-3 border border-white/60 transition-all relative">
+                  <Lock className="w-4 h-4 text-slate-400 shrink-0" />
                   <input
                     type={showResetPassword ? 'text' : 'password'}
                     placeholder="Enter your new password"
@@ -576,12 +584,12 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                       setNewPasswordInput(e.target.value);
                       setResetError(null);
                     }}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20 pr-16"
+                    className="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 pr-12"
                   />
                   <button
                     type="button"
                     onClick={() => setShowResetPassword(!showResetPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#0052FF] hover:text-blue-700 cursor-pointer"
+                    className="absolute right-3.5 text-xs font-bold text-sky-600 hover:text-sky-800 cursor-pointer select-none"
                   >
                     {showResetPassword ? 'Hide' : 'Show'}
                   </button>
@@ -590,13 +598,11 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
 
               {/* 3. Confirm New Password */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <KeyRound className="w-3.5 h-3.5 text-[#0052FF]" />
-                    Confirm New Password *
-                  </span>
+                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 px-1">
+                  Confirm New Password *
                 </label>
-                <div className="relative">
+                <div className="neu-inset rounded-[22px] px-4 py-3.5 flex items-center gap-3 border border-white/60 transition-all">
+                  <KeyRound className="w-4 h-4 text-slate-400 shrink-0" />
                   <input
                     type={showResetPassword ? 'text' : 'password'}
                     placeholder="Re-enter your new password"
@@ -605,71 +611,69 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                       setConfirmPasswordInput(e.target.value);
                       setResetError(null);
                     }}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20"
+                    className="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
               </div>
 
               {/* Reset Error Alert */}
               {resetError && (
-                <div className="bg-rose-50 text-rose-900 border border-rose-200 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
-                  <AlertTriangle className="w-4.5 h-4.5 text-rose-600 shrink-0" />
+                <div className="neu-flat-sm bg-rose-50/80 text-rose-900 border border-rose-300/80 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                   <span>{resetError}</span>
                 </div>
               )}
 
               {/* Reset Success Alert */}
               {resetSuccess && (
-                <div className="bg-emerald-50 text-emerald-900 border border-emerald-300 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
-                  <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
+                <div className="neu-flat-sm bg-emerald-50/80 text-emerald-900 border border-emerald-300/80 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>{resetSuccess}</span>
                 </div>
               )}
 
               <button type="submit" className="hidden" />
+
+              {/* Set New Password Button */}
+              <div className="pt-2 space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => handleResetPassword()}
+                  disabled={isResetting}
+                  className="neu-btn-cyan w-full py-4 rounded-[22px] text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 active:scale-98 cursor-pointer disabled:opacity-50 border border-white/40 transition-all"
+                >
+                  {isResetting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                      <span>Updating Password...</span>
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound className="w-4.5 h-4.5 text-white" />
+                      <span>Set New Password</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic(hapticPatterns.click);
+                    setViewMode('login');
+                    setResetError(null);
+                    setResetSuccess(null);
+                  }}
+                  className="neu-flat-sm w-full py-3 rounded-[20px] text-slate-700 font-bold text-xs flex items-center justify-center gap-2 hover:text-slate-900 cursor-pointer border border-white/80 transition-all"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back to Login</span>
+                </button>
+              </div>
             </form>
-
-            {/* Footer For Reset Password */}
-            <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200/80 shrink-0 space-y-2.5">
-              <button
-                type="button"
-                onClick={() => handleResetPassword()}
-                disabled={isResetting}
-                className="w-full bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black py-4 rounded-[24px] shadow-lg shadow-blue-950/30 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer disabled:opacity-50 border border-blue-400/30 uppercase tracking-wider"
-              >
-                {isResetting ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                    <span>Updating Password...</span>
-                  </>
-                ) : (
-                  <>
-                    <KeyRound className="w-5 h-5 stroke-[2.5] text-white" />
-                    <span>Set New Password</span>
-                    <ArrowRight className="w-5 h-5 stroke-[3] text-white" />
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  triggerHaptic(hapticPatterns.click);
-                  setViewMode('login');
-                  setResetError(null);
-                  setResetSuccess(null);
-                }}
-                className="w-full bg-white hover:bg-slate-100 text-slate-700 font-bold py-3 rounded-2xl border border-slate-200 transition-all text-xs flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Login</span>
-              </button>
-            </div>
           </>
         ) : (
           /* View Mode: LOGIN */
           <>
-            {/* Form Body */}
             <form
               onSubmit={(e) => {
                 if (loginError) {
@@ -679,35 +683,35 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                   handleLogin(e);
                 }
               }}
-              className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-slate-900 max-w-full"
+              className="space-y-4 flex-1 text-slate-800"
             >
-              {/* 1. Mobile Number */}
+              {/* 1. Mobile Number / Username */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                  <Smartphone className="w-3.5 h-3.5 text-[#0052FF]" />
+                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 px-1">
                   Mobile Number *
                 </label>
-                <input
-                  type="tel"
-                  placeholder="e.g. +971501234567"
-                  value={mobileNumber}
-                  onChange={(e) => {
-                    setMobileNumber(e.target.value);
-                    setLoginError(null);
-                  }}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20"
-                />
+                <div className="neu-inset rounded-[22px] px-4 py-3.5 sm:py-4 flex items-center gap-3 border border-white/60 transition-all">
+                  <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 shrink-0" />
+                  <input
+                    type="tel"
+                    placeholder="0501234567"
+                    value={mobileNumber}
+                    onChange={(e) => {
+                      setMobileNumber(e.target.value);
+                      setLoginError(null);
+                    }}
+                    className="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400"
+                  />
+                </div>
               </div>
 
               {/* 2. Password */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-[#0052FF]" />
-                    Password *
-                  </span>
+                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5 px-1">
+                  Password *
                 </label>
-                <div className="relative">
+                <div className="neu-inset rounded-[22px] px-4 py-3.5 sm:py-4 flex items-center gap-3 border border-white/60 transition-all relative">
+                  <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 shrink-0" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
@@ -716,77 +720,79 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                       setUserPassword(e.target.value);
                       setLoginError(null);
                     }}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0052FF] focus:ring-2 focus:ring-[#0052FF]/20 pr-16"
+                    className="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 pr-12"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#0052FF] hover:text-blue-700 cursor-pointer"
+                    className="absolute right-3.5 text-xs font-bold text-sky-600 hover:text-sky-800 cursor-pointer select-none"
                   >
                     {showPassword ? 'Hide' : 'Show'}
                   </button>
                 </div>
               </div>
 
-              {/* 4. Remember Me Checkbox */}
-              <div className="flex items-center justify-between pt-1">
+              {/* 3. Remember Me Checkbox */}
+              <div className="flex items-center justify-between pt-1 px-1">
                 <button
                   type="button"
                   onClick={() => {
                     setRememberMe(!rememberMe);
                     triggerHaptic(hapticPatterns.click);
                   }}
-                  className="flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-slate-900 cursor-pointer select-none"
+                  className="flex items-center gap-2.5 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer select-none"
                 >
-                  {rememberMe ? (
-                    <CheckSquare className="w-4 h-4 text-[#0052FF]" />
-                  ) : (
-                    <Square className="w-4 h-4 text-slate-400" />
-                  )}
-                  <span>Remember my credentials on this device</span>
+                  <div
+                    className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${
+                      rememberMe
+                        ? 'bg-sky-500 text-white shadow-xs'
+                        : 'neu-flat-sm text-transparent border border-white/80'
+                    }`}
+                  >
+                    <CheckSquare className="w-3.5 h-3.5" />
+                  </div>
+                  <span>Remember my credentials</span>
                 </button>
               </div>
 
               {/* Error Alert */}
               {loginError && (
-                <div className="bg-rose-50 text-rose-900 border border-rose-200 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
-                  <AlertTriangle className="w-4.5 h-4.5 text-rose-600 shrink-0" />
+                <div className="neu-flat-sm bg-rose-50/80 text-rose-900 border border-rose-300/80 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                   <span>{loginError}</span>
                 </div>
               )}
 
               {/* Submit Button inside form for Enter key support */}
               <button type="submit" className="hidden" />
-            </form>
 
-            {/* Footer Login Button & Forget Password Link */}
-            <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200/80 shrink-0">
-              {loginError ? (
-                <button
-                  type="button"
-                  onClick={() => window.open('https://wa.me/message/Z4DT5UO7MABQL1', '_blank')}
-                  className="w-full bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-800 hover:from-emerald-700 hover:to-emerald-900 text-white font-black py-4 rounded-[24px] shadow-lg shadow-emerald-950/20 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer border border-emerald-400/30 uppercase tracking-wider"
-                >
-                  <MessageCircle className="w-5 h-5 stroke-[2.5] text-white" />
-                  <span>Contact with Admin</span>
-                  <ArrowRight className="w-5 h-5 stroke-[3] text-white" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleLogin()}
-                  disabled={isSearchingCloud}
-                  className="w-full bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black py-4 rounded-[24px] shadow-lg shadow-blue-950/30 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer disabled:opacity-50 border border-blue-400/30 uppercase tracking-wider"
-                >
-                  <ShieldCheck className="w-5 h-5 stroke-[2.5] text-white" />
-                  <span>{isSearchingCloud ? 'Connecting Cloud...' : 'LOGIN'}</span>
-                  <ArrowRight className="w-5 h-5 stroke-[3] text-white" />
-                </button>
-              )}
+              {/* Primary Action Button (Login or Contact Admin) */}
+              <div className="pt-2">
+                {loginError ? (
+                  <button
+                    type="button"
+                    onClick={() => window.open('https://wa.me/message/Z4DT5UO7MABQL1', '_blank')}
+                    className="w-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white font-black py-4 rounded-[22px] shadow-lg shadow-emerald-900/20 transition-all text-sm flex items-center justify-center gap-2 active:scale-98 cursor-pointer border border-emerald-300/40 uppercase tracking-wider"
+                  >
+                    <MessageCircle className="w-4.5 h-4.5 text-white" />
+                    <span>Contact with Admin</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleLogin()}
+                    disabled={isSearchingCloud}
+                    className="neu-btn-cyan w-full py-4 rounded-[22px] text-white font-black text-base shadow-[0_10px_24px_rgba(45,178,212,0.4)] transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer disabled:opacity-50 border border-white/40 uppercase tracking-wider"
+                  >
+                    <ShieldCheck className="w-5 h-5 text-white" />
+                    <span>{isSearchingCloud ? 'Connecting Cloud...' : 'Login'}</span>
+                  </button>
+                )}
+              </div>
 
-              {/* Forget Password link below the Login button (Hidden if Admin mobile number is matched) */}
+              {/* Forget Password Link below the Login button (Hidden if Admin mobile number is matched) */}
               {!isAdminMobile && (
-                <div className="pt-3 text-center">
+                <div className="pt-2 text-center">
                   <button
                     type="button"
                     onClick={() => {
@@ -798,17 +804,17 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                       setResetSuccess(null);
                       setViewMode('forgot_password');
                     }}
-                    className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-black text-[#0052FF] hover:text-blue-800 hover:underline cursor-pointer transition-all py-1.5 px-3 rounded-xl hover:bg-blue-50/80 active:scale-95"
+                    className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-500 hover:text-sky-600 hover:underline cursor-pointer transition-all py-1 px-2.5 rounded-xl active:scale-95"
                   >
-                    <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                    <KeyRound className="w-3.5 h-3.5" />
                     <span>Forget password?</span>
                   </button>
                 </div>
               )}
-            </div>
+            </form>
           </>
         )}
-      </GlassContainer>
+      </div>
     </div>
   );
 };

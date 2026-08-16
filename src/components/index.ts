@@ -17,3 +17,5 @@ export * from './DualCurrencyDisplay';
 export * from './InstallPwaModal';
 export * from './GroupNoteModal';
 export * from './GroupNoticePopupModal';
+export * from './MemberAvatar';
+export * from './UserProfileModal';

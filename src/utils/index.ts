@@ -5,3 +5,4 @@ export * from './mathEvaluator';
 export * from './permissionUtils';
 export * from './settlementCalculator';
 export * from './textCleaner';
+export * from './pdfColorSanitizer';

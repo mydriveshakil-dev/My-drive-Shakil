@@ -1643,10 +1643,61 @@ export default function App() {
         isLoggedIn: true,
         role: 'user',
         linkedGroupId: group.id,
+        avatar: updatedMember.avatar,
       });
     }
 
     triggerSheetsSync(true, expenses, utilities, rent, updatedGroup);
+  };
+
+  const handleSaveUserProfile = async (data: { name: string; avatar: string }) => {
+    const updatedUserAuth: UserAuthProfile = {
+      ...userAuth,
+      name: data.name || userAuth.name,
+      avatar: data.avatar,
+    };
+    setUserAuth(updatedUserAuth);
+    localStorage.setItem('uae_user_auth', JSON.stringify(updatedUserAuth));
+    saveUserProfileToFirestore(updatedUserAuth);
+
+    // Find and update matching member in current group
+    const userMobile = userAuth.mobileNumber;
+    const userEmail = userAuth.email;
+    const memberIndex = group.members.findIndex(
+      (m) =>
+        (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase()) ||
+        (userMobile && (isPhoneMatch(m.phone, userMobile) || isPhoneMatch(m.mobileNumber, userMobile))) ||
+        (userAuth.name && m.name.toLowerCase().includes(userAuth.name.toLowerCase()))
+    );
+
+    let updatedMembers = [...group.members];
+    if (memberIndex >= 0) {
+      updatedMembers[memberIndex] = {
+        ...updatedMembers[memberIndex],
+        name: data.name || updatedMembers[memberIndex].name,
+        avatar: data.avatar || updatedMembers[memberIndex].avatar,
+      };
+    } else if (group.members.length > 0 && userAuth.role === 'admin') {
+      updatedMembers[0] = {
+        ...updatedMembers[0],
+        name: data.name || updatedMembers[0].name,
+        avatar: data.avatar || updatedMembers[0].avatar,
+      };
+    }
+
+    const updatedGroup = {
+      ...group,
+      members: updatedMembers,
+    };
+    setGroup(updatedGroup);
+    saveGroupToFirestore(updatedGroup);
+
+    const updatedAll = allGroups.map((g) => (g.id === group.id ? updatedGroup : g));
+    setAllGroups(updatedAll);
+    localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
+
+    setSyncNotification('Profile photo and details updated across the group!');
+    setTimeout(() => setSyncNotification(null), 3000);
   };
 
   const handleUpdateMemberDays = (id: string, daysPresent: number) => {
@@ -1943,6 +1994,7 @@ export default function App() {
                   onOpenPayTo={() => setActiveTab('payto')}
                   onOpenGroupNote={() => setIsGroupNoteModalOpen(true)}
                   onRestoreExpenses={handleRestoreExpenses}
+                  onSaveUserProfile={handleSaveUserProfile}
                 />
               )}
 
@@ -1996,7 +2048,7 @@ export default function App() {
 
       {/* UAE Residence Visa Login Full Screen Page */}
       {(!userAuth.isLoggedIn || isLoginModalOpen) && (
-        <div className="fixed inset-0 z-[100] bg-slate-100 overflow-y-auto flex flex-col justify-center items-center">
+        <div className="fixed inset-0 z-[100] bg-[#ebf0f7] overflow-y-auto flex flex-col justify-center items-center">
           <UaeLoginModal
             isOpen={true}
             defaultEmail={userAuth.email || 'mydriveshakil@gmail.com'}

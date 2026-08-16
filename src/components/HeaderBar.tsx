@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Group, GoogleSheetsConfig, BillingCycleType, UserAuthProfile, Expense } from '../types';
 import { ChevronDown, RefreshCw, Layers, Plus, Code, CheckCircle2, Coins, ShieldCheck, LogOut, ExternalLink, Smartphone } from 'lucide-react';
 import { GlassContainer } from './GlassContainer';
+import { MemberAvatar } from './MemberAvatar';
 import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
 import { getPreviousCycleOptions } from '../utils/cycleUtils';
+import { getLoggedInMember } from '../utils/permissionUtils';
 
 interface HeaderBarProps {
   group: Group;
@@ -120,12 +122,33 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     </span>
                   )}
                 </h1>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[11px] text-blue-100/70 font-medium">Logged in as:</span>
-                  <span className="inline-flex items-center gap-1 bg-[#0B2A66]/90 border border-blue-400/30 text-blue-200 font-bold text-[11px] px-2.5 py-0.5 rounded-full uppercase tracking-wide shadow-xs">
-                    {currentUser?.name || 'AL AMIN'}
-                  </span>
-                </div>
+                {(() => {
+                  const loggedInMember = getLoggedInMember(group, currentUser);
+                  const userName =
+                    currentUser?.name ||
+                    currentUser?.identity?.fullName ||
+                    loggedInMember?.name ||
+                    'Member';
+                  const userAvatar =
+                    currentUser?.avatar ||
+                    currentUser?.identity?.photoUrl ||
+                    loggedInMember?.avatar ||
+                    '';
+                  return (
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[11px] text-blue-100/70 font-medium">Logged in as:</span>
+                      <span className="inline-flex items-center gap-1.5 bg-[#0B2A66]/90 border border-blue-400/30 text-blue-200 font-bold text-[11px] px-2.5 py-0.5 rounded-full uppercase tracking-wide shadow-xs">
+                        <MemberAvatar
+                          name={userName}
+                          avatar={userAvatar}
+                          size="xs"
+                          className="w-4.5 h-4.5 text-[8px] shrink-0 border border-white/20 shadow-xs"
+                        />
+                        <span>{userName}</span>
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

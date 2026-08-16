@@ -170,4 +170,44 @@
   }
 }
 
+/* Neumorphic Soft UI Theme for Login & Components */
+.neu-bg {
+  background-color: #ebf0f7;
+}
+
+.neu-card {
+  background-color: #ebf0f7;
+  box-shadow: 16px 16px 36px #cbcfd8, -16px -16px 36px #ffffff;
+}
+
+.neu-inset {
+  background-color: #ebf0f7;
+  box-shadow: inset 4px 4px 8px #d0d5df, inset -4px -4px 8px #ffffff;
+}
+
+.neu-inset:focus-within {
+  box-shadow: inset 5px 5px 10px #c5cbd7, inset -5px -5px 10px #ffffff, 0 0 0 2px rgba(56, 189, 248, 0.45);
+}
+
+.neu-flat {
+  background-color: #ebf0f7;
+  box-shadow: 6px 6px 14px #cbcfd8, -6px -6px 14px #ffffff;
+}
+
+.neu-flat-sm {
+  background-color: #ebf0f7;
+  box-shadow: 4px 4px 10px #cbcfd8, -4px -4px 10px #ffffff;
+}
+
+.neu-btn-cyan {
+  background: linear-gradient(135deg, #44c3eb 0%, #36b3d8 50%, #25a1c7 100%);
+  box-shadow: 0 10px 24px rgba(45, 178, 212, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+.neu-btn-cyan:hover {
+  background: linear-gradient(135deg, #4dd0f8 0%, #3bbfe6 50%, #29afd6 100%);
+  box-shadow: 0 12px 28px rgba(45, 178, 212, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+
 

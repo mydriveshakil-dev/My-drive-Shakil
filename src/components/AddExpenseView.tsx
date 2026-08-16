@@ -12,6 +12,7 @@ import { isPhoneMatch } from '../lib/firebase';
 import { evaluateMathExpression } from '../utils/mathEvaluator';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 import { isCategoryPermittedForMember, isCategoryPermittedForUser } from '../utils/permissionUtils';
+import { MemberAvatar } from './MemberAvatar';
 
 export interface AddExpenseViewProps {
   group: Group;
@@ -496,6 +497,12 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                     >
                       {isSelected ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : null}
                     </div>
+                    <MemberAvatar
+                      name={member.name}
+                      avatar={member.avatar}
+                      size="xs"
+                      className="w-4 h-4 text-[7px] shrink-0"
+                    />
                     <span className="truncate">{member.name}</span>
                   </button>
                 );

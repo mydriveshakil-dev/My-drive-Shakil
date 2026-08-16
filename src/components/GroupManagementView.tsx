@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Group, Member, GoogleSheetsConfig, UserAuthProfile } from '../types';
 import { GlassContainer } from './GlassContainer';
+import { MemberAvatar } from './MemberAvatar';
+import { UserProfileModal } from './UserProfileModal';
+import { isPhoneMatch } from '../lib/firebase';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 import {
   Users,
@@ -26,6 +29,8 @@ import {
   KeyRound,
   Phone,
   StickyNote,
+  User,
+  Camera,
 } from 'lucide-react';
 
 interface GroupManagementViewProps {
@@ -50,6 +55,7 @@ interface GroupManagementViewProps {
   onUpdateSpreadsheetConfig?: (spreadsheetId: string, webAppUrl?: string) => void;
   onOpenPayTo?: () => void;
   onOpenGroupNote?: () => void;
+  onSaveUserProfile?: (data: { name: string; avatar: string }) => Promise<void> | void;
 }
 
 export const ALL_EXPENSE_OPTIONS = [
@@ -86,12 +92,23 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   onUpdateSpreadsheetConfig,
   onOpenPayTo,
   onOpenGroupNote,
+  onSaveUserProfile,
 }) => {
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberPhone, setNewMemberPhone] = useState('');
   const [newMemberPassword, setNewMemberPassword] = useState('');
   const [newMemberCategories, setNewMemberCategories] = useState<string[]>(ALL_EXPENSE_OPTIONS.map((o) => o.id));
+
+  const loggedInMember = (group?.members || []).find(
+    (m) =>
+      (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
+      (currentUser?.mobileNumber &&
+        (isPhoneMatch(m.phone, currentUser.mobileNumber) ||
+          isPhoneMatch(m.mobileNumber, currentUser.mobileNumber))) ||
+      (currentUser?.name && m.name.toLowerCase().includes(currentUser.name.toLowerCase()))
+  ) || group.members?.[0];
 
   // Edit Member Scope State
   const [editingMember, setEditingMember] = useState<Member | null>(null);
@@ -236,10 +253,11 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       <GlassContainer
         variant="card"
         blur="3xl"
-        className="p-6 md:p-8 rounded-3xl border border-blue-900/40 shadow-xl bg-gradient-to-r from-[#07193F] to-[#041029] text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+        className="p-5 sm:p-6 md:p-8 rounded-3xl border border-blue-900/40 shadow-xl bg-gradient-to-r from-[#07193F] to-[#041029] text-white flex flex-col gap-4 relative overflow-hidden"
       >
-        <div>
-          <div className="flex items-center gap-2 mb-2 flex-wrap">
+        {/* Top Row: Badges (Member View) on Left & Profile Button in the same alignment on the Right Corner */}
+        <div className="flex items-center justify-between gap-2.5 w-full flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             {isAdmin && (
               <span className="text-xs font-black text-blue-200 uppercase tracking-wider bg-blue-500/20 px-3.5 py-1 rounded-full border border-blue-400/30">
                 Single Master Gmail Account Setup
@@ -257,25 +275,57 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               </span>
             )}
           </div>
-          <h2 className="text-2xl font-black text-white">
-            {isAdmin ? 'Group & Member Settings' : 'Room Members & Group Details'}
-          </h2>
-          <p className="text-xs text-blue-100/80 font-medium mt-1">
-            {isAdmin
-              ? 'Manage room members and administrative controls'
-              : 'View active room members and personal group transactions'}
-          </p>
+
+          {/* Profile Button - Aligned with Member View text on the Right Corner */}
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic(hapticPatterns.click);
+              setShowProfileModal(true);
+            }}
+            className="flex items-center gap-2 p-1.5 pr-3 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/25 text-white transition-all cursor-pointer shadow-md active:scale-95 group hover:border-blue-300/60 shrink-0 ml-auto"
+            title="Click to view your profile details and update photo"
+          >
+            <div className="relative">
+              <MemberAvatar
+                name={currentUser?.name || loggedInMember?.name || 'User'}
+                avatar={currentUser?.avatar || loggedInMember?.avatar}
+                size="xs"
+                className="w-7 h-7 ring-2 ring-blue-400/50 shadow-xs group-hover:scale-105 transition-transform"
+              />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-[#07193F]" />
+            </div>
+            <div className="text-left leading-tight">
+              <span className="text-xs font-black text-white block leading-tight max-w-[120px] sm:max-w-[160px] truncate">
+                {currentUser?.name || loggedInMember?.name || 'My Account'}
+              </span>
+            </div>
+          </button>
         </div>
 
-        {isAdmin && (
-          <button
-            onClick={onOpenArchGuide}
-            className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/30 active:scale-95 border border-blue-400/30 self-start md:self-auto cursor-pointer"
-          >
-            <Code className="w-4 h-4" />
-            <span>Flutter & API Architecture Guide</span>
-          </button>
-        )}
+        {/* Title and Subtitle Row */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black text-white">
+              {isAdmin ? 'Group & Member Settings' : 'Room Members & Group Details'}
+            </h2>
+            <p className="text-xs text-blue-100/80 font-medium mt-1">
+              {isAdmin
+                ? 'Manage room members and administrative controls'
+                : 'View active room members and personal group transactions'}
+            </p>
+          </div>
+
+          {isAdmin && (
+            <button
+              onClick={onOpenArchGuide}
+              className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/30 active:scale-95 border border-blue-400/30 self-start md:self-auto cursor-pointer shrink-0"
+            >
+              <Code className="w-4 h-4" />
+              <span>Flutter & API Guide</span>
+            </button>
+          )}
+        </div>
       </GlassContainer>
 
       {/* 1st Sub-Component / PAY TO Option Button */}
@@ -1151,9 +1201,12 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               >
                 {/* Left Side: Member Name & Avatar */}
                 <div className="flex items-center gap-2.5 shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-[#07193F] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
-                    {member.name.charAt(0).toUpperCase()}
-                  </div>
+                  <MemberAvatar
+                    name={member.name}
+                    avatar={member.avatar}
+                    size="sm"
+                    className="shadow-xs shrink-0 ring-1 ring-slate-200"
+                  />
                   <h4 className="text-xs sm:text-sm font-black text-[#07193F]">{member.name}</h4>
                 </div>
 
@@ -1210,6 +1263,21 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
         </div>
       </GlassContainer>
 
+      {/* User Profile Modal */}
+      {showProfileModal && (
+        <UserProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          currentUser={currentUser}
+          group={group}
+          loggedInMember={loggedInMember}
+          onSaveProfile={async (data) => {
+            if (onSaveUserProfile) {
+              await onSaveUserProfile(data);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

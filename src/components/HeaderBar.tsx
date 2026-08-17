@@ -86,21 +86,95 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   return (
     <header className="mb-4 z-30 relative w-full">
       {/* Combined Single Header Card */}
-      <div className="bg-gradient-to-b from-[#07193F] to-[#041029] text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-800/80 relative overflow-hidden space-y-4">
-        {/* Absolute Top-Right Logout Button */}
-        {onLogout && (
-          <button
-            onClick={onLogout}
-            className="absolute top-3.5 right-3.5 sm:top-5 sm:right-5 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#0A204C]/90 hover:bg-rose-600/90 active:scale-95 text-white flex items-center justify-center transition-all border border-blue-400/30 cursor-pointer shadow-md"
-            title="Logout Session"
-          >
-            <LogOut className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2]" />
-          </button>
-        )}
+      <div className="bg-gradient-to-b from-[#07193F] to-[#041029] text-white rounded-3xl p-4 sm:p-6 shadow-xl border border-slate-800/80 relative overflow-hidden space-y-4">
+        {/* Absolute Top-Right Stack: Logout on top, Ass. Group directly below */}
+        <div className="absolute top-3.5 right-3.5 sm:top-5 sm:right-5 z-20 flex flex-col items-end gap-1.5 sm:gap-2">
+          {/* Top Row: Admin Portal (if admin) + Logout Button */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {isAdmin && onOpenLoginModal && (
+              <button
+                onClick={onOpenLoginModal}
+                className="inline-flex items-center gap-1.5 bg-[#0B2A66]/90 hover:bg-[#0E347E] text-white text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-1.5 rounded-2xl border border-blue-400/30 transition-all cursor-pointer shadow-xs whitespace-nowrap"
+                title="Member & Admin Account Portal"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-300" />
+                <span className="hidden xs:inline sm:inline">{currentUser?.isLoggedIn ? 'Admin Portal' : 'Login'}</span>
+              </button>
+            )}
+
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#0A204C]/90 hover:bg-rose-600/90 active:scale-95 text-white flex items-center justify-center transition-all border border-blue-400/30 cursor-pointer shadow-md shrink-0"
+                title="Logout Session"
+              >
+                <LogOut className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2]" />
+              </button>
+            )}
+          </div>
+
+          {/* Bottom Row: Ass. Group directly below the Logout button */}
+          <div className="flex items-center gap-1.5 bg-[#0B2556]/90 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl border border-blue-400/30 text-[11px] sm:text-xs shadow-sm">
+            <span className="text-blue-200/80 font-medium whitespace-nowrap">Ass. Group:</span>
+            {isAdmin ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowGroupDropdown(!showGroupDropdown)}
+                  className="flex items-center gap-1 font-bold text-white hover:text-blue-200 transition-all cursor-pointer"
+                >
+                  <Layers className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="max-w-[85px] sm:max-w-[140px] truncate">{group.name}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-blue-300 transition-transform ${showGroupDropdown ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showGroupDropdown && (
+                  <div className="absolute right-0 mt-2 w-60 sm:w-64 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 py-2.5 z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="px-3.5 py-1 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                      Active Room Groups
+                    </div>
+                    {allGroups.map((g) => (
+                      <button
+                        key={g.id}
+                        onClick={() => {
+                          if (onSelectGroup) onSelectGroup(g);
+                          setShowGroupDropdown(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-xs font-bold flex items-center justify-between cursor-pointer ${
+                          g.id === group.id ? 'bg-[#0052FF] text-white' : 'hover:bg-slate-50 text-slate-800'
+                        }`}
+                      >
+                        <span className="truncate">{g.name}</span>
+                        {g.id === group.id && (
+                          <span className="text-[10px] bg-white text-[#0052FF] px-2 py-0.5 rounded-full font-extrabold">
+                            Active
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                    <div className="border-t border-slate-100 my-1"></div>
+                    <button
+                      onClick={() => {
+                        setShowGroupDropdown(false);
+                        onOpenAddGroup();
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-slate-50 text-xs font-semibold text-[#0052FF] flex items-center gap-2 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>+ Add New Room / Group</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <span className="text-white font-bold text-[11px] sm:text-xs max-w-[90px] sm:max-w-[140px] truncate">{group.name}</span>
+            )}
+          </div>
+        </div>
 
         <div className="relative z-10 space-y-4">
-          {/* Header Row: Logo + Info + Assigned Group & Admin Portal */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pr-10 sm:pr-12">
+          {/* Header Row: Logo & Info on Left (padded on right for absolute top-right controls) */}
+          <div className="pr-36 xs:pr-44 sm:pr-56">
+            {/* Left: Logo & Title & User Badge */}
             <div className="flex items-center gap-3">
               <div className="p-0.5 bg-white rounded-2xl shadow-md border-2 border-white/80 shrink-0">
                 <img
@@ -115,9 +189,9 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   UAE MESS SYSTEM
                 </span>
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-0.5 flex items-center gap-2">
-                  {group.name}
+                  <span className="truncate max-w-[130px] xs:max-w-[180px] sm:max-w-[280px] md:max-w-none">{group.name}</span>
                   {group.isHeld && (
-                    <span className="inline-flex items-center bg-amber-500 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-xs">
+                    <span className="inline-flex items-center bg-amber-500 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-xs shrink-0">
                       ON HOLD
                     </span>
                   )}
@@ -135,8 +209,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                     loggedInMember?.avatar ||
                     '';
                   return (
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[11px] text-blue-100/70 font-medium">Logged in as:</span>
+                    <div className="flex items-center gap-2 mt-1">
                       <span className="inline-flex items-center gap-1.5 bg-[#0B2A66]/90 border border-blue-400/30 text-blue-200 font-bold text-[11px] px-2.5 py-0.5 rounded-full uppercase tracking-wide shadow-xs">
                         <MemberAvatar
                           name={userName}
@@ -144,84 +217,12 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                           size="xs"
                           className="w-4.5 h-4.5 text-[8px] shrink-0 border border-white/20 shadow-xs"
                         />
-                        <span>{userName}</span>
+                        <span className="truncate max-w-[110px] sm:max-w-[160px]">{userName}</span>
                       </span>
                     </div>
                   );
                 })()}
               </div>
-            </div>
-
-            {/* Top Right Action Area: Assigned Group Selector & Admin Portal */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Assigned Group Selector */}
-              <div className="flex items-center gap-2 bg-[#0B2556]/90 backdrop-blur-md px-3 py-2 rounded-2xl border border-blue-400/30 text-xs">
-                <span className="text-blue-200/80 font-medium whitespace-nowrap">Assigned Group:</span>
-                {isAdmin ? (
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowGroupDropdown(!showGroupDropdown)}
-                      className="flex items-center gap-1.5 font-bold text-white hover:text-blue-200 transition-all cursor-pointer"
-                    >
-                      <Layers className="w-3.5 h-3.5 text-blue-400" />
-                      <span className="max-w-[120px] sm:max-w-[160px] truncate">{group.name}</span>
-                      <ChevronDown className={`w-3.5 h-3.5 text-blue-300 transition-transform ${showGroupDropdown ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {showGroupDropdown && (
-                      <div className="absolute right-0 mt-2 w-64 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 py-2.5 z-50 animate-in fade-in slide-in-from-top-2">
-                        <div className="px-3.5 py-1 text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                          Active Room Groups
-                        </div>
-                        {allGroups.map((g) => (
-                          <button
-                            key={g.id}
-                            onClick={() => {
-                              if (onSelectGroup) onSelectGroup(g);
-                              setShowGroupDropdown(false);
-                            }}
-                            className={`w-full text-left px-4 py-2 text-xs font-bold flex items-center justify-between cursor-pointer ${
-                              g.id === group.id ? 'bg-[#0052FF] text-white' : 'hover:bg-slate-50 text-slate-800'
-                            }`}
-                          >
-                            <span className="truncate">{g.name}</span>
-                            {g.id === group.id && (
-                              <span className="text-[10px] bg-white text-[#0052FF] px-2 py-0.5 rounded-full font-extrabold">
-                                Active
-                              </span>
-                            )}
-                          </button>
-                        ))}
-                        <div className="border-t border-slate-100 my-1"></div>
-                        <button
-                          onClick={() => {
-                            setShowGroupDropdown(false);
-                            onOpenAddGroup();
-                          }}
-                          className="w-full text-left px-4 py-2 hover:bg-slate-50 text-xs font-semibold text-[#0052FF] flex items-center gap-2 cursor-pointer"
-                        >
-                          <Plus className="w-4 h-4" />
-                          <span>+ Add New Room / Group</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <span className="text-white font-bold text-xs">{group.name}</span>
-                )}
-              </div>
-
-              {/* Admin Portal Button */}
-              {isAdmin && onOpenLoginModal && (
-                <button
-                  onClick={onOpenLoginModal}
-                  className="inline-flex items-center gap-1.5 bg-[#0B2A66]/90 hover:bg-[#0E347E] text-white text-xs font-bold px-3 py-2 rounded-2xl border border-blue-400/30 transition-all cursor-pointer shadow-xs"
-                  title="Member & Admin Account Portal"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-blue-300" />
-                  <span>{currentUser?.isLoggedIn ? 'Admin Portal' : 'Login'}</span>
-                </button>
-              )}
             </div>
           </div>
 

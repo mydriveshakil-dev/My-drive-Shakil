@@ -167,7 +167,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-6 pb-28">
       {/* Master Room Dashboard Overview Card */}
-      <div className="rounded-3xl border border-slate-200/80 shadow-md bg-white text-slate-900 overflow-hidden">
+      <div className="rounded-3xl neu-upper text-slate-900 overflow-hidden">
         {/* Top Dark Navy Header Band */}
         <div className="bg-[#07193F] text-white px-5 py-3.5 flex items-center gap-2 font-bold text-xs uppercase tracking-wider">
           <LayoutDashboard className="w-4 h-4 text-white" />
@@ -178,11 +178,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="p-5 sm:p-6 space-y-4">
           {/* Cycle & Members Pill Row */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-white border border-slate-200/90 rounded-2xl px-3 py-2 text-xs text-slate-700 font-semibold flex items-center gap-1.5 justify-center shadow-2xs">
+            <div className="neu-upper-sm rounded-2xl px-3 py-2 text-xs text-slate-700 font-semibold flex items-center gap-1.5 justify-center">
               <Calendar className="w-3.5 h-3.5 text-[#07193F] shrink-0" />
               <span className="truncate">Cycle: {group.billingCycle}</span>
             </div>
-            <div className="bg-white border border-slate-200/90 rounded-2xl px-3 py-2 text-xs text-slate-700 font-semibold flex items-center gap-1.5 justify-center shadow-2xs">
+            <div className="neu-upper-sm rounded-2xl px-3 py-2 text-xs text-slate-700 font-semibold flex items-center gap-1.5 justify-center">
               <Users className="w-3.5 h-3.5 text-[#07193F] shrink-0" />
               <span className="truncate">{group.members.length} Members</span>
             </div>
@@ -206,10 +206,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Divider */}
-          <div className="border-t border-slate-100 my-2" />
+          <div className="border-t border-slate-300/60 my-2" />
 
           {/* Avg per member & Mess per member */}
-          <div className="grid grid-cols-2 divide-x divide-slate-100 text-xs">
+          <div className="grid grid-cols-2 divide-x divide-slate-300/60 text-xs">
             <div className="pr-3">
               <span className="text-[10px] font-extrabold text-[#1E3A8A] uppercase block">
                 AVG PER MEMBER
@@ -254,7 +254,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </button>
         </div>
 
-        <div className="bg-white rounded-[28px] p-4 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.06)] border border-slate-100">
+        <div className="neu-upper rounded-[28px] p-4 sm:p-6">
           {contributorData.length > 0 ? (
             <div className="flex flex-row items-center justify-start sm:justify-center gap-3 sm:gap-8">
               {/* Pie Chart on Left */}
@@ -280,7 +280,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </Pie>
                     <Tooltip
                       formatter={(value: any) => [`${value} AED`, 'Amount Paid']}
-                      contentStyle={{ borderRadius: '12px', background: '#ffffff', border: '1px solid #e2e8f0', color: '#0f172a', fontWeight: 'bold' }}
+                      contentStyle={{ borderRadius: '12px', background: '#E7E7E7', border: 'none', boxShadow: 'inset -5px -5px 12px rgba(255,255,255,0.9), inset 5px 5px 12px rgba(174,174,192,0.8)', color: '#0f172a', fontWeight: 'bold' }}
                     />
                   </RechartsPieChart>
                 </ResponsiveContainer>
@@ -315,15 +315,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* OVERVIEW (MY CONTRIBUTION & AVG PER PERSON) */}
       <div className="space-y-2">
         <h3 className="text-sm font-black text-[#071E55] tracking-wide px-1">Overview</h3>
-        <div className="p-4 md:p-5 border border-slate-200/80 shadow-md bg-white text-slate-900 rounded-2xl">
-          <div className="grid grid-cols-2 divide-x divide-slate-100">
+        <div className="p-4 md:p-5 neu-upper text-slate-900 rounded-2xl">
+          <div className="grid grid-cols-2 divide-x divide-slate-300/60">
             {/* Left Column: My Contribution */}
             <div className="flex flex-col items-center justify-center pr-2 sm:pr-4 text-center space-y-2">
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                   {/* Background Ring */}
                   <path
-                    className="text-slate-100"
+                    className="text-slate-300"
                     strokeWidth="3.2"
                     stroke="currentColor"
                     fill="none"
@@ -356,7 +356,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
             {/* Right Column: Avg. per Person */}
             <div className="flex flex-col items-center justify-center pl-2 sm:pl-4 text-center space-y-2">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-blue-50/70 border border-blue-100 flex flex-col items-center justify-center text-center">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full neu-lower-sm flex flex-col items-center justify-center text-center">
                 <Users className="w-4 h-4 text-[#0F3DFF] mb-0.5" />
                 <span className="text-xs font-black text-[#071E55]">÷ {activeMembersCount}</span>
                 <span className="text-[9px] text-slate-500 font-semibold">members</span>
@@ -374,16 +374,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* 4 Primary Category KPI Glass Cards (Aligned in 1 line: 4 boxes) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         {/* Mess Expense Card */}
         <div
-          className="p-3 border border-slate-200/80 text-slate-900 bg-white shadow-xs hover:shadow-md hover:border-[#0F3DFF]/40 transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
+          className="p-3.5 text-slate-900 neu-upper hover:scale-[1.02] transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
           onClick={() => onNavigateTab('expenses')}
         >
           <div>
             <div className="flex items-center justify-between text-[#0F3DFF] mb-1">
               <Utensils className="w-4 h-4 shrink-0" />
-              <span className="text-[9px] font-bold uppercase bg-blue-50 text-[#0F3DFF] px-2 py-0.5 rounded-full border border-blue-100">
+              <span className="text-[9px] font-bold uppercase bg-blue-100 text-[#0F3DFF] px-2 py-0.5 rounded-full">
                 Mess
               </span>
             </div>
@@ -406,13 +406,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* General Expenses Card */}
         <div
-          className="p-3 border border-slate-200/80 text-slate-900 bg-white shadow-xs hover:shadow-md hover:border-[#0F3DFF]/40 transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
+          className="p-3.5 text-slate-900 neu-upper hover:scale-[1.02] transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
           onClick={() => onNavigateTab('expenses')}
         >
           <div>
             <div className="flex items-center justify-between text-[#0F3DFF] mb-1">
               <ShoppingBag className="w-4 h-4 shrink-0" />
-              <span className="text-[9px] font-bold uppercase bg-blue-50 text-[#0F3DFF] px-2 py-0.5 rounded-full border border-blue-100">
+              <span className="text-[9px] font-bold uppercase bg-blue-100 text-[#0F3DFF] px-2 py-0.5 rounded-full">
                 General
               </span>
             </div>
@@ -435,13 +435,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Utilities Card */}
         <div
-          className="p-3 border border-slate-200/80 text-slate-900 bg-white shadow-xs hover:shadow-md hover:border-[#0F3DFF]/40 transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
+          className="p-3.5 text-slate-900 neu-upper hover:scale-[1.02] transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
           onClick={() => onNavigateTab('utilities')}
         >
           <div>
             <div className="flex items-center justify-between text-[#0F3DFF] mb-1">
               <Zap className="w-4 h-4 shrink-0" />
-              <span className="text-[9px] font-bold uppercase bg-blue-50 text-[#0F3DFF] px-2 py-0.5 rounded-full border border-blue-100">
+              <span className="text-[9px] font-bold uppercase bg-blue-100 text-[#0F3DFF] px-2 py-0.5 rounded-full">
                 Utilities
               </span>
             </div>
@@ -464,13 +464,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Landlord Rent Card */}
         <div
-          className="p-3 border border-slate-200/80 text-slate-900 bg-white shadow-xs hover:shadow-md hover:border-[#0F3DFF]/40 transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
+          className="p-3.5 text-slate-900 neu-upper hover:scale-[1.02] transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
           onClick={() => onNavigateTab('utilities')}
         >
           <div>
             <div className="flex items-center justify-between text-[#0F3DFF] mb-1">
               <HomeIcon className="w-4 h-4 shrink-0" />
-              <span className="text-[9px] font-bold uppercase bg-blue-50 text-[#0F3DFF] px-2 py-0.5 rounded-full border border-blue-100">
+              <span className="text-[9px] font-bold uppercase bg-blue-100 text-[#0F3DFF] px-2 py-0.5 rounded-full">
                 Rent
               </span>
             </div>
@@ -494,10 +494,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Central Google Sheets Integration & Admin Panel Info (Admin Only) */}
       {currentUser?.role === 'admin' && (
-        <div className="p-5 md:p-6 border border-slate-200/80 text-slate-900 bg-white shadow-lg space-y-4 rounded-3xl">
+        <div className="p-5 md:p-6 text-slate-900 neu-upper space-y-4 rounded-3xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0052FF]">
+              <div className="w-9 h-9 rounded-2xl neu-lower-sm flex items-center justify-center text-[#0052FF]">
                 <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
               </div>
               <div>
@@ -509,7 +509,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="bg-blue-50/70 border border-blue-100 text-[#0052FF] font-semibold px-3.5 py-1.5 rounded-2xl text-xs flex items-center gap-1.5 shadow-2xs">
+              <div className="neu-lower-sm text-[#0052FF] font-semibold px-3.5 py-1.5 rounded-2xl text-xs flex items-center gap-1.5">
                 <RefreshCw className={`w-3.5 h-3.5 text-[#0052FF] ${isSyncing ? 'animate-spin' : ''}`} />
                 <span>{isSyncing ? 'Auto-Syncing...' : 'Auto-Synced'}</span>
               </div>
@@ -519,7 +519,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   href={`https://docs.google.com/spreadsheets/d/${group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}/edit`}
                   target="_blank"
                   rel="noreferrer"
-                  className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-bold px-3.5 py-1.5 rounded-2xl text-xs flex items-center gap-1.5 border border-blue-400/20 transition-all cursor-pointer shadow-md"
+                  className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-bold px-3.5 py-1.5 rounded-2xl text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
                 >
                   <ExternalLink className="w-3.5 h-3.5 text-white" />
                   <span>Open Sheet</span>
@@ -531,8 +531,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* RECENT EXPENSES Section */}
-      <div className="p-5 border border-slate-200/80 shadow-xl shadow-blue-950/[0.04] bg-white text-slate-900 rounded-3xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+      <div className="p-5 neu-upper text-slate-900 rounded-3xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-300/60 pb-3">
           <div>
             <div className="flex items-center gap-2">
               <Receipt className="w-5 h-5 text-[#0052FF]" />
@@ -554,15 +554,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Member Filter Pills */}
         <div className="space-y-1.5">
-          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Filter by User:</span>
+          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Filter by User:</span>
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
             <button
               type="button"
               onClick={() => setSelectedUserFilter('all')}
               className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
                 selectedUserFilter === 'all'
-                  ? 'bg-[#0052FF] text-white border-blue-500 shadow-md shadow-blue-500/20'
-                  : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
+                  ? 'bg-[#0052FF] text-white shadow-md'
+                  : 'neu-upper-sm text-slate-700'
               }`}
             >
               All Users ({expenses.length})
@@ -577,8 +577,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   onClick={() => setSelectedUserFilter(member.id)}
                   className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
                     selectedUserFilter === member.id
-                      ? 'bg-[#0052FF] text-white border-blue-500 shadow-md shadow-blue-500/20'
-                      : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
+                      ? 'bg-[#0052FF] text-white shadow-md'
+                      : 'neu-upper-sm text-slate-700'
                   }`}
                 >
                   <span>{member.name}</span>
@@ -598,7 +598,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           if (displayedList.length === 0) {
             return (
-              <div className="py-8 text-center bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl p-4">
+              <div className="py-8 text-center neu-lower-sm rounded-2xl p-4">
                 <p className="text-xs font-bold text-slate-500">No expenses recorded for this user in the running month.</p>
               </div>
             );
@@ -608,7 +608,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           const visibleItems = showAllExpenses ? reversedList : reversedList.slice(0, 8);
 
           return (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {visibleItems.map((exp) => {
                 const payer = group.members.find((m) => m.id === exp.paidById);
                 const isMess = exp.type === 'mess';
@@ -616,7 +616,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 return (
                   <div
                     key={exp.id}
-                    className="bg-white border border-slate-200/80 rounded-2xl p-2.5 sm:p-3 shadow-2xs flex items-center justify-between gap-2 hover:border-blue-200 transition-all text-slate-900"
+                    className="neu-upper-sm rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-2 transition-all text-slate-900"
                   >
                     {/* Left: User Badge, Title, Date */}
                     <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -627,11 +627,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                           <h4 className="text-xs sm:text-sm font-black text-[#07193F] truncate">{cleanExpenseTitle(exp.title)}</h4>
-                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md border border-slate-200 bg-slate-50 text-slate-600 shrink-0">
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-slate-200 text-slate-700 shrink-0">
                             {isMess ? 'Mess' : 'Gen'}
                           </span>
                           {exp.sharedWithIds && exp.sharedWithIds.length > 0 && exp.sharedWithIds.length < group.members.length && (
-                            <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md border border-blue-200 bg-blue-50 text-blue-700 shrink-0">
+                            <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-blue-100 text-blue-800 shrink-0">
                               Shared: {exp.sharedWithIds.length}/{group.members.length}
                             </span>
                           )}

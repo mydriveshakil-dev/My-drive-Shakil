@@ -173,11 +173,9 @@ export const PayToView: React.FC<PayToViewProps> = ({
 
   return (
     <div className="space-y-6 pb-28 pt-2 px-3 sm:px-6 max-w-7xl mx-auto w-full overflow-hidden">
-      {/* Title Header - Navy Theme */}
-      <GlassContainer
-        variant="card"
-        blur="3xl"
-        className="p-4 sm:p-6 rounded-3xl border border-blue-900/40 shadow-xl bg-gradient-to-r from-[#07193F] to-[#041029] text-white"
+      {/* Title Header - Navy Theme with Neumorphic shadow */}
+      <div
+        className="p-4 sm:p-6 rounded-3xl shadow-xl bg-gradient-to-r from-[#07193F] to-[#041029] text-white neu-upper border-none"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -204,15 +202,13 @@ export const PayToView: React.FC<PayToViewProps> = ({
             </span>
           </div>
         </div>
-      </GlassContainer>
+      </div>
 
       {/* 1. Transaction Form */}
-      <GlassContainer
-        variant="card"
-        blur="3xl"
-        className="p-5 sm:p-6 rounded-3xl border-2 border-black shadow-xl bg-white text-slate-900"
+      <div
+        className="p-5 sm:p-6 rounded-3xl neu-upper border-none text-slate-900"
       >
-        <div className="border-b border-black/20 pb-3 mb-4 flex items-center justify-between">
+        <div className="border-b border-slate-300 pb-3 mb-4 flex items-center justify-between">
           <h3 className="text-sm sm:text-base font-black text-slate-900 flex items-center gap-2 uppercase tracking-wide">
             <DollarSign className="w-4 h-4 text-slate-900" />
             Create Loan Entry ("PAY TO")
@@ -229,7 +225,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                     <select
                       value={payById}
                       onChange={(e) => setPayById(e.target.value)}
-                      className="w-full h-[42px] pl-3.5 pr-40 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none appearance-none cursor-pointer"
+                      className="w-full h-[42px] pl-3.5 pr-40 neu-lower rounded-2xl text-xs font-bold text-slate-900 focus:outline-none appearance-none cursor-pointer"
                     >
                       {allMembers.map((m) => (
                         <option key={m.id} value={m.id}>
@@ -249,7 +245,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                       readOnly
                       disabled
                       value={currentMember?.name || currentUser?.name || 'Logged-in User'}
-                      className="w-full h-[42px] pl-3.5 pr-36 bg-slate-100 border border-black rounded-2xl text-xs font-bold text-slate-900 cursor-not-allowed opacity-90"
+                      className="w-full h-[42px] pl-3.5 pr-36 neu-lower rounded-2xl text-xs font-bold text-slate-900 cursor-not-allowed opacity-90"
                     />
                     <span className="absolute right-2.5 pointer-events-none text-[10px] font-black text-slate-700 bg-slate-200/90 px-2 py-0.5 rounded-md uppercase tracking-tight">
                       Paid By (Lender) *
@@ -265,7 +261,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                 <select
                   value={payToId}
                   onChange={(e) => setPayToId(e.target.value)}
-                  className="w-full h-[42px] pl-3.5 pr-44 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none appearance-none cursor-pointer"
+                  className="w-full h-[42px] pl-3.5 pr-44 neu-lower rounded-2xl text-xs font-bold text-slate-900 focus:outline-none appearance-none cursor-pointer"
                 >
                   {allMembers
                     .filter((m) => isAdmin || m.id !== (currentMember?.id || payById))
@@ -290,7 +286,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                   required
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
-                  className="w-full h-[42px] pl-3.5 pr-24 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                  className="w-full h-[42px] pl-3.5 pr-24 neu-lower rounded-2xl text-xs font-bold text-slate-900 focus:outline-none"
                 />
                 <span className="absolute right-2.5 pointer-events-none text-[10px] font-black text-slate-700 bg-slate-200/90 px-2 py-0.5 rounded-md uppercase tracking-tight">
                   Purpose *
@@ -309,7 +305,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                   placeholder="0.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full h-[42px] pl-3.5 pr-28 bg-white border border-black rounded-2xl text-xs font-black text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                  className="w-full h-[42px] pl-3.5 pr-28 neu-lower rounded-2xl text-xs font-black text-slate-900 focus:outline-none"
                 />
                 <span className="absolute right-2.5 pointer-events-none text-[10px] font-black text-slate-700 bg-slate-200/90 px-2 py-0.5 rounded-md uppercase tracking-tight">
                   Amount ({group.currency || preferredCurrency}) *
@@ -324,7 +320,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                   type="text"
                   value={dateStr}
                   onChange={(e) => setDateStr(e.target.value)}
-                  className="w-full h-[42px] pl-3.5 pr-24 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                  className="w-full h-[42px] pl-3.5 pr-24 neu-lower rounded-2xl text-xs font-bold text-slate-900 focus:outline-none"
                 />
                 <span className="absolute right-2.5 pointer-events-none text-[10px] font-black text-slate-700 bg-slate-200/90 px-2 py-0.5 rounded-md uppercase tracking-tight">
                   Date & Time
@@ -336,14 +332,14 @@ export const PayToView: React.FC<PayToViewProps> = ({
           <div className="pt-2 flex justify-end">
             <button
               type="submit"
-              className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black text-xs rounded-[24px] border border-blue-400/30 shadow-lg shadow-blue-950/30 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
+              className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black text-xs rounded-[24px] neu-upper-sm transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
             >
               <Send className="w-4 h-4 stroke-[2.5]" />
               <span>SAVE TRANSACTION</span>
             </button>
           </div>
         </form>
-      </GlassContainer>
+      </div>
 
       {/* 2. Borrower Notices Section ("PAY TO" User Notice Boxes) */}
       {borrowerActiveNotices.length > 0 && (
@@ -359,12 +355,12 @@ export const PayToView: React.FC<PayToViewProps> = ({
             {borrowerActiveNotices.map((tx) => (
               <div
                 key={tx.id}
-                className="bg-[#ffcbd1] border-2 border-rose-500 text-slate-900 rounded-3xl p-4 sm:p-5 shadow-lg relative overflow-hidden"
+                className="bg-[#ffcbd1] border-2 border-rose-400 text-slate-900 rounded-3xl p-4 sm:p-5 shadow-lg neu-upper-sm relative overflow-hidden"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full border border-black uppercase tracking-wider">
+                      <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                         Pending Loan Notice
                       </span>
                       <span className="text-xs font-black text-slate-900">
@@ -383,14 +379,14 @@ export const PayToView: React.FC<PayToViewProps> = ({
                     <div className="flex items-center gap-3 text-[11px] font-medium text-slate-800 flex-wrap pt-1">
                       <span><strong>Date:</strong> {tx.date}</span>
                       {tx.returnDate && (
-                        <span className="bg-white/80 px-2 py-0.5 rounded-md border border-black/30 font-bold">
+                        <span className="bg-white/80 px-2 py-0.5 rounded-md font-bold">
                           <strong>Promised Return:</strong> {tx.returnDate}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-2xl border border-black shrink-0 self-start sm:self-auto">
+                  <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-2xl shrink-0 self-start sm:self-auto neu-upper-sm">
                     <Clock className="w-4 h-4 text-rose-600 animate-spin" />
                     <span className="text-xs font-black text-rose-900">Pending Repayment</span>
                   </div>
@@ -414,7 +410,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
         </div>
 
         {lenderActiveSummaries.length === 0 ? (
-          <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-3xl p-6 text-center text-slate-500 text-xs font-bold">
+          <div className="neu-lower-sm rounded-3xl p-6 text-center text-slate-500 text-xs font-bold">
             No active pending loan summaries currently.
           </div>
         ) : (
@@ -425,7 +421,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
               return (
                 <div
                   key={tx.id}
-                  className="bg-emerald-50 border-2 border-emerald-500 text-slate-900 rounded-3xl p-4 sm:p-5 shadow-lg flex flex-col justify-between space-y-4"
+                  className="bg-emerald-50 text-slate-900 rounded-3xl p-4 sm:p-5 neu-upper-sm flex flex-col justify-between space-y-4"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2 border-b border-emerald-200 pb-2">
@@ -463,7 +459,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                     </div>
 
                     {/* Amount Block (Editable ONLY by Lender & Admin) */}
-                    <div className="bg-white p-3 rounded-2xl border border-black flex items-center justify-between gap-2 shadow-xs">
+                    <div className="bg-white p-3 rounded-2xl flex items-center justify-between gap-2 neu-lower-sm">
                       <span className="text-xs font-extrabold text-slate-800 uppercase">
                         Loan Amount:
                       </span>
@@ -475,7 +471,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                             step="any"
                             value={tempEditAmount}
                             onChange={(e) => setTempEditAmount(e.target.value)}
-                            className="w-24 px-2 py-1 border border-black rounded-xl text-xs font-black text-slate-900 focus:outline-none"
+                            className="w-24 px-2 py-1 neu-lower-sm rounded-xl text-xs font-black text-slate-900 focus:outline-none"
                           />
                           <button
                             onClick={() => {
@@ -486,7 +482,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                               }
                               setEditingAmountTxId(null);
                             }}
-                            className="bg-black text-white text-[10px] font-black px-2.5 py-1 rounded-xl border border-black cursor-pointer"
+                            className="bg-black text-white text-[10px] font-black px-2.5 py-1 rounded-xl cursor-pointer"
                           >
                             Save
                           </button>
@@ -501,7 +497,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                               setEditingAmountTxId(tx.id);
                               setTempEditAmount(String(tx.amount));
                             }}
-                            className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-900 font-extrabold px-2 py-0.5 rounded-lg border border-black cursor-pointer"
+                            className="text-[10px] neu-upper-btn text-slate-900 font-extrabold px-2 py-0.5 rounded-lg cursor-pointer"
                             title="Edit Amount"
                           >
                             Edit
@@ -526,7 +522,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                           onMarkReceived(tx.id);
                         }
                       }}
-                      className="flex-1 bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black text-xs py-2.5 px-3 rounded-[24px] border border-blue-400/30 shadow-md shadow-blue-950/20 transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider"
+                      className="flex-1 bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black text-xs py-2.5 px-3 rounded-[24px] neu-upper-sm transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider"
                     >
                       <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                       <span>Payment Received</span>
@@ -543,7 +539,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                           onDeleteTransaction(tx.id);
                         }
                       }}
-                      className="bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black text-xs py-2.5 px-3 rounded-[24px] border border-blue-400/30 shadow-md shadow-blue-950/20 transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer uppercase tracking-wider"
+                      className="bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black text-xs py-2.5 px-3 rounded-[24px] neu-upper-sm transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer uppercase tracking-wider"
                       title="Delete/Clear Active Transaction"
                     >
                       <Trash2 className="w-4 h-4 text-rose-400" />
@@ -558,12 +554,10 @@ export const PayToView: React.FC<PayToViewProps> = ({
       </div>
 
       {/* 4. PREVIOUS RECORD Table (Frozen History Table) */}
-      <GlassContainer
-        variant="card"
-        blur="3xl"
-        className="p-5 sm:p-6 rounded-3xl border-2 border-black shadow-xl bg-white text-slate-900"
+      <div
+        className="p-5 sm:p-6 rounded-3xl neu-upper border-none text-slate-900"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/20 pb-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-300 pb-4 mb-4">
           <div>
             <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">
               HISTORY & ARCHIVE
@@ -583,7 +577,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
             <select
               value={previousRecordNameFilter}
               onChange={(e) => setPreviousRecordNameFilter(e.target.value)}
-              className="bg-white text-slate-900 font-bold text-xs px-3 py-2 rounded-2xl border border-black focus:outline-none shadow-xs cursor-pointer"
+              className="neu-lower-sm text-slate-900 font-bold text-xs px-3 py-2 rounded-2xl focus:outline-none cursor-pointer"
             >
               <option value="all">Filter: All Names</option>
               {allMembers.map((m) => (
@@ -598,16 +592,16 @@ export const PayToView: React.FC<PayToViewProps> = ({
         {/* PREVIOUS RECORD View - Mobile Stacked Cards (Fits 100% Mobile Screen Width) */}
         <div className="block sm:hidden space-y-3">
           {filteredPreviousRecords.length === 0 ? (
-            <div className="p-6 text-center text-slate-500 font-medium italic border border-black/20 rounded-2xl bg-slate-50 text-xs">
+            <div className="p-6 text-center text-slate-500 font-medium italic rounded-2xl neu-lower-sm text-xs">
               No previous record entries found.
             </div>
           ) : (
             filteredPreviousRecords.map((tx) => (
               <div
                 key={`mob_${tx.id}`}
-                className="bg-slate-50 border-2 border-black rounded-2xl p-3.5 space-y-2 shadow-xs"
+                className="neu-upper-sm rounded-2xl p-3.5 space-y-2"
               >
-                <div className="flex items-center justify-between border-b border-black/10 pb-2">
+                <div className="flex items-center justify-between border-b border-slate-300/60 pb-2">
                   <span className="text-[11px] font-bold text-slate-600">{tx.date}</span>
                   {tx.status === 'pending' ? (
                     <span className="inline-flex items-center gap-1.5 text-rose-600 font-black bg-rose-50 px-2 py-0.5 rounded-full border border-rose-300 text-[10px]">
@@ -639,7 +633,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-1 border-t border-black/10">
+                <div className="flex items-center justify-between pt-1 border-t border-slate-300/60">
                   <div className="pr-2">
                     <span className="text-[10px] font-extrabold text-slate-500 uppercase block">Purpose</span>
                     <span className="text-xs font-bold text-slate-800 break-words">{tx.purpose}</span>
@@ -653,7 +647,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                 </div>
 
                 {isAdmin && (
-                  <div className="pt-2 border-t border-black/10 flex justify-end">
+                  <div className="pt-2 border-t border-slate-300/60 flex justify-end">
                     <button
                       onClick={() => {
                         if (
@@ -665,7 +659,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                           onHardDeletePreviousRecord(tx.id);
                         }
                       }}
-                      className="bg-rose-600 hover:bg-rose-700 text-white font-black text-[10px] px-3 py-1 rounded-xl border border-black shadow-xs active:scale-95 cursor-pointer"
+                      className="bg-rose-600 hover:bg-rose-700 text-white font-black text-[10px] px-3 py-1 rounded-xl shadow-xs active:scale-95 cursor-pointer"
                     >
                       Hard Delete
                     </button>
@@ -676,27 +670,27 @@ export const PayToView: React.FC<PayToViewProps> = ({
           )}
 
           {/* Mobile Grand Total Card */}
-          <div className="bg-slate-100 border-2 border-black rounded-2xl p-3.5 flex items-center justify-between font-black text-xs text-slate-950 shadow-xs">
+          <div className="neu-lower-sm rounded-2xl p-3.5 flex items-center justify-between font-black text-xs text-slate-950">
             <span className="uppercase tracking-wider">Grand Total ({previousRecordNameFilter === 'all' ? 'All' : 'Filtered'}):</span>
             <span className="text-sm underline decoration-2">{previousGrandTotal.toFixed(2)} {group.currency || preferredCurrency}</span>
           </div>
         </div>
 
         {/* PREVIOUS RECORD View - Desktop Full Table (Hidden on Mobile) */}
-        <div className="hidden sm:block overflow-x-auto w-full border border-black rounded-2xl">
+        <div className="hidden sm:block overflow-x-auto w-full neu-lower-sm rounded-2xl p-2">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-black text-white font-black uppercase tracking-wider text-[11px] border-b border-black">
-                <th className="p-3">Date</th>
+              <tr className="bg-slate-800 text-white font-black uppercase tracking-wider text-[11px] rounded-xl overflow-hidden">
+                <th className="p-3 rounded-l-xl">Date</th>
                 <th className="p-3">PAY BY (Lender)</th>
                 <th className="p-3">PAY TO (Borrower)</th>
                 <th className="p-3">Purpose</th>
                 <th className="p-3 text-right">Amount ({group.currency || preferredCurrency})</th>
                 <th className="p-3 text-center">Status</th>
-                {isAdmin && <th className="p-3 text-center">Admin Action</th>}
+                {isAdmin && <th className="p-3 text-center rounded-r-xl">Admin Action</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-black/10 font-bold text-slate-900">
+            <tbody className="divide-y divide-slate-300/60 font-bold text-slate-900">
               {filteredPreviousRecords.length === 0 ? (
                 <tr>
                   <td
@@ -708,7 +702,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                 </tr>
               ) : (
                 filteredPreviousRecords.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={tx.id} className="hover:bg-slate-200/50 transition-colors">
                     <td className="p-3 whitespace-nowrap text-slate-700 font-medium">
                       {tx.date}
                     </td>
@@ -756,7 +750,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                               onHardDeletePreviousRecord(tx.id);
                             }
                           }}
-                          className="bg-rose-600 hover:bg-rose-700 text-white font-black text-[10px] px-2.5 py-1 rounded-xl border border-black shadow-xs cursor-pointer transition-all active:scale-95"
+                          className="bg-rose-600 hover:bg-rose-700 text-white font-black text-[10px] px-2.5 py-1 rounded-xl shadow-xs cursor-pointer transition-all active:scale-95"
                           title="Admin Hard Delete"
                         >
                           Hard Delete
@@ -769,7 +763,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
             </tbody>
             {/* Grand Total Footer */}
             <tfoot>
-              <tr className="bg-slate-100 border-t-2 border-black font-black text-slate-950 text-xs">
+              <tr className="bg-slate-200/80 border-t-2 border-slate-300 font-black text-slate-950 text-xs">
                 <td colSpan={4} className="p-3 text-right uppercase tracking-wider">
                   Grand Total ({previousRecordNameFilter === 'all' ? 'All' : 'Filtered'}):
                 </td>
@@ -781,7 +775,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
             </tfoot>
           </table>
         </div>
-      </GlassContainer>
+      </div>
     </div>
   );
 };

@@ -277,9 +277,9 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
   return (
     <div className="w-full max-w-2xl mx-auto pb-6 animate-in fade-in duration-200">
       {/* Main Form Card */}
-      <div ref={cardRef} className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-lg overflow-hidden flex flex-col">
+      <div ref={cardRef} className="neu-upper rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col">
         {/* Main Page Header Banner */}
-        <div className="bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] text-white px-3.5 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between border-b border-blue-900/40 shrink-0 gap-2">
+        <div className="bg-black text-white px-3.5 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between shrink-0 gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
             <button
               type="button"
@@ -287,7 +287,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                 triggerHaptic(hapticPatterns.click);
                 onClose();
               }}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center transition-all border border-white/20 cursor-pointer shrink-0"
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center transition-all cursor-pointer shrink-0"
               aria-label="Back"
             >
               <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
@@ -296,7 +296,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               <h1 className="text-sm sm:text-base font-black tracking-tight text-white leading-tight truncate">
                 Add New Expense
               </h1>
-              <span className="text-[10px] font-bold text-blue-200 bg-blue-500/25 px-2 py-0.5 rounded-full border border-blue-400/30 inline-block mt-0.5 truncate max-w-[130px]">
+              <span className="text-[10px] font-bold text-slate-300 bg-white/10 px-2 py-0.5 rounded-full inline-block mt-0.5 truncate max-w-[130px]">
                 {group.name}
               </span>
             </div>
@@ -304,8 +304,8 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
 
           {/* Header Right: Paid by (left of Cancel) + Cancel Button */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <div className="flex items-center gap-1 bg-white/10 hover:bg-white/15 border border-white/20 rounded-lg px-2 py-1 text-xs text-white transition-colors">
-              <span className="text-[10px] font-bold text-blue-200 uppercase">Paid by:</span>
+            <div className="flex items-center gap-1 bg-white/10 hover:bg-white/15 rounded-lg px-2 py-1 text-xs text-white transition-colors">
+              <span className="text-[10px] font-bold text-slate-300 uppercase">Paid by:</span>
               {isAdmin ? (
                 <select
                   value={paidById}
@@ -334,7 +334,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                 triggerHaptic(hapticPatterns.click);
                 onClose();
               }}
-              className="text-xs font-bold text-blue-200 hover:text-white px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 transition-all cursor-pointer shrink-0"
+              className="text-xs font-bold text-slate-300 hover:text-white px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 transition-all cursor-pointer shrink-0"
             >
               Cancel
             </button>
@@ -342,7 +342,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
         </div>
 
         {/* Form Body - Engineered to fit screens cleanly */}
-        <form onSubmit={handleSubmit} className="p-3.5 sm:p-5 space-y-3 w-full box-border">
+        <form onSubmit={handleSubmit} className="p-3.5 sm:p-5 space-y-4 w-full box-border">
           {/* 1. Row: Expense Amount (50%) & Expense Date (50%) */}
           <div className="grid grid-cols-2 gap-2 sm:gap-3 items-start">
             {/* Left 50%: Expense Amount */}
@@ -350,13 +350,13 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
                 <span className="uppercase tracking-wider truncate">Amount ({group.currency}) *</span>
                 {mathEval.hasOperator && (
-                  <span className="text-[#07193F] font-black text-[10px]">
+                  <span className="text-slate-950 font-black text-[10px]">
                     = {mathEval.isValid ? `${mathEval.displayValue}` : '...'}
                   </span>
                 )}
               </div>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#07193F] font-black text-xs sm:text-sm pointer-events-none">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-900 font-black text-xs sm:text-sm pointer-events-none">
                   {group.currency}
                 </span>
                 <input
@@ -370,7 +370,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                   onChange={(e) => setAmount(e.target.value)}
                   onKeyDown={handleAmountKeyDown}
                   onBlur={handleAmountBlur}
-                  className="w-full pl-11 pr-2.5 py-2 bg-white border border-slate-300 rounded-xl text-base sm:text-lg font-black text-slate-900 placeholder-slate-400 focus:border-[#07193F] focus:ring-2 focus:ring-[#07193F]/20 focus:outline-none"
+                  className="w-full pl-11 pr-2.5 py-2 neu-lower-sm rounded-xl text-base sm:text-lg font-black text-slate-900 placeholder-slate-400 focus:outline-none"
                 />
               </div>
             </div>
@@ -385,8 +385,8 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className={`w-full px-2.5 py-2 bg-white border rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#07193F]/20 focus:border-[#07193F] focus:outline-none ${
-                    !dateValidation.isAllowed ? 'border-rose-500 bg-rose-50/50' : 'border-slate-300'
+                  className={`w-full px-2.5 py-2 neu-lower-sm rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none ${
+                    !dateValidation.isAllowed ? 'text-rose-600' : ''
                   }`}
                 />
               </div>
@@ -399,7 +399,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleAppendSymbol('+')}
-              className="flex-1 py-1.5 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-lg border border-slate-200 cursor-pointer shadow-2xs"
+              className="flex-1 py-1.5 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-lg cursor-pointer"
             >
               +
             </button>
@@ -407,7 +407,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleAppendSymbol('-')}
-              className="flex-1 py-1.5 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-lg border border-slate-200 cursor-pointer shadow-2xs"
+              className="flex-1 py-1.5 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-lg cursor-pointer"
             >
               -
             </button>
@@ -415,7 +415,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleAppendSymbol('*')}
-              className="flex-1 py-1.5 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-lg border border-slate-200 cursor-pointer shadow-2xs"
+              className="flex-1 py-1.5 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-lg cursor-pointer"
             >
               ×
             </button>
@@ -423,7 +423,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleAppendSymbol('/')}
-              className="flex-1 py-1.5 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-lg border border-slate-200 cursor-pointer shadow-2xs"
+              className="flex-1 py-1.5 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-lg cursor-pointer"
             >
               ÷
             </button>
@@ -431,7 +431,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleApplyCalculation}
-              className="flex-1 py-1.5 bg-[#071E55] hover:bg-[#0B2866] active:scale-95 text-white font-black text-xs sm:text-sm rounded-lg cursor-pointer shadow-2xs"
+              className="flex-1 py-1.5 bg-black hover:bg-slate-800 active:scale-95 text-white font-black text-xs sm:text-sm rounded-lg cursor-pointer shadow-md"
               title="Calculate"
             >
               =
@@ -440,7 +440,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleClearAmount}
-              className="px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 font-bold text-[11px] sm:text-xs rounded-lg border border-slate-200 cursor-pointer shadow-2xs"
+              className="px-2.5 sm:px-3 py-1.5 neu-upper-btn active:scale-95 text-slate-600 font-bold text-[11px] sm:text-xs rounded-lg cursor-pointer"
             >
               Clear
             </button>
@@ -457,7 +457,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               placeholder={category === 'mess' ? 'e.g., Weekly Groceries & Meat' : 'e.g., Dish Soap & Water Refill'}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:border-[#07193F] focus:ring-2 focus:ring-[#07193F]/20 focus:outline-none"
+              className="w-full px-3 py-2 neu-lower-sm rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none"
             />
           </div>
 
@@ -470,13 +470,13 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               <button
                 type="button"
                 onClick={handleSelectAllMembers}
-                className="text-[10px] font-bold text-[#07193F] hover:underline cursor-pointer"
+                className="text-[10px] font-bold text-slate-900 hover:underline cursor-pointer"
               >
                 {selectedMembers.length === eligibleMembers.length ? 'Deselect All' : 'Select All'}
               </button>
             </div>
 
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-28 overflow-y-auto p-0.5">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-28 overflow-y-auto p-1 neu-lower-sm rounded-xl">
               {eligibleMembers.map((member) => {
                 const isSelected = selectedMembers.includes(member.id);
                 return (
@@ -484,15 +484,15 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                     type="button"
                     key={member.id}
                     onClick={() => handleMemberToggle(member.id)}
-                    className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-[11px] font-bold transition-all text-left cursor-pointer truncate ${
+                    className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all text-left cursor-pointer truncate ${
                       isSelected
-                        ? 'bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] text-white border-blue-400/30 shadow-2xs'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                        ? 'bg-black text-white shadow-xs'
+                        : 'neu-upper-sm text-slate-700'
                     }`}
                   >
                     <div
-                      className={`w-3.5 h-3.5 rounded-xs flex items-center justify-center text-[8px] border shrink-0 ${
-                        isSelected ? 'bg-white text-[#071E55] font-black border-white' : 'bg-white text-slate-500 border-slate-300'
+                      className={`w-3.5 h-3.5 rounded-xs flex items-center justify-center text-[8px] shrink-0 ${
+                        isSelected ? 'bg-white text-black font-black' : 'bg-slate-300 text-slate-600'
                       }`}
                     >
                       {isSelected ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : null}
@@ -539,7 +539,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                 onClick={() => triggerHaptic(hapticPatterns.click)}
                 title="Camera (Take Photo)"
                 aria-label="Camera (Take Photo)"
-                className="h-10 bg-slate-50 hover:bg-blue-50/60 active:scale-95 border border-slate-300 hover:border-blue-400 rounded-xl flex items-center justify-center text-[#071E55] transition-all cursor-pointer shadow-2xs group select-none"
+                className="h-10 neu-upper-btn active:scale-95 rounded-xl flex items-center justify-center text-slate-900 transition-all cursor-pointer group select-none"
               >
                 <Camera className="w-5 h-5 group-hover:scale-110 transition-transform pointer-events-none" />
               </label>
@@ -550,7 +550,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                 onClick={() => triggerHaptic(hapticPatterns.click)}
                 title="Gallery (Photo Library)"
                 aria-label="Gallery (Photo Library)"
-                className="h-10 bg-slate-50 hover:bg-blue-50/60 active:scale-95 border border-slate-300 hover:border-blue-400 rounded-xl flex items-center justify-center text-[#071E55] transition-all cursor-pointer shadow-2xs group select-none"
+                className="h-10 neu-upper-btn active:scale-95 rounded-xl flex items-center justify-center text-slate-900 transition-all cursor-pointer group select-none"
               >
                 <ImageIcon className="w-5 h-5 group-hover:scale-110 transition-transform pointer-events-none" />
               </label>
@@ -558,14 +558,14 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
 
             {/* Receipt Preview Strip if Attached */}
             {receiptImage && (
-              <div className="rounded-xl overflow-hidden border border-emerald-300 bg-emerald-50/80 p-1.5 flex items-center justify-between gap-2 shadow-xs">
+              <div className="rounded-xl overflow-hidden neu-upper-sm p-2 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <img
                     src={receiptImage}
                     alt="Receipt Preview"
-                    className="w-8 h-8 rounded-lg object-cover border border-emerald-400 shrink-0"
+                    className="w-8 h-8 rounded-lg object-cover shrink-0"
                   />
-                  <span className="text-[11px] font-bold text-emerald-900 truncate">
+                  <span className="text-[11px] font-bold text-emerald-800 truncate">
                     Receipt image attached
                   </span>
                 </div>
@@ -575,7 +575,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                     triggerHaptic(hapticPatterns.click);
                     setReceiptImage(null);
                   }}
-                  className="p-1 text-rose-600 hover:text-rose-800 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer shrink-0"
+                  className="p-1 text-rose-600 hover:text-rose-800 rounded-lg transition-colors cursor-pointer shrink-0"
                   title="Remove Receipt"
                   aria-label="Remove Receipt"
                 >
@@ -601,10 +601,10 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
             <button
               type="submit"
               disabled={!dateValidation.isAllowed}
-              className={`w-full font-black py-2.5 sm:py-3 rounded-xl sm:rounded-2xl shadow-md transition-all text-xs sm:text-sm flex items-center justify-center gap-2 active:scale-98 border tracking-wider uppercase cursor-pointer ${
+              className={`w-full font-black py-2.5 sm:py-3 rounded-xl sm:rounded-2xl transition-all text-xs sm:text-sm flex items-center justify-center gap-2 active:scale-98 tracking-wider uppercase cursor-pointer ${
                 !dateValidation.isAllowed
-                  ? 'bg-slate-200 text-slate-500 border-slate-300 cursor-not-allowed opacity-70'
-                  : 'bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white shadow-blue-950/40 border-blue-400/30'
+                  ? 'neu-lower-sm text-slate-400 cursor-not-allowed opacity-70'
+                  : 'bg-black hover:bg-slate-800 text-white shadow-md'
               }`}
             >
               <span>{dateValidation.isAllowed ? 'SAVE EXPENSE' : 'ENTRY LOCKED'}</span>

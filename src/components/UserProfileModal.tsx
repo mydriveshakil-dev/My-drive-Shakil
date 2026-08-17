@@ -132,7 +132,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden cursor-default text-slate-900 animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md rounded-3xl neu-upper border-none shadow-2xl overflow-hidden cursor-default text-slate-900 animate-in zoom-in-95 duration-200"
       >
         {/* Header - Navy Theme */}
         <div className="p-5 bg-gradient-to-r from-[#07193F] to-[#041029] text-white flex items-center justify-between border-b border-blue-900/40">
@@ -163,7 +163,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* Avatar Section */}
           <div className="flex flex-col items-center justify-center space-y-3 pb-2">
             <div className="relative group">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full ring-4 ring-blue-500/20 shadow-xl overflow-hidden bg-slate-100 flex items-center justify-center">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full neu-upper shadow-xl overflow-hidden flex items-center justify-center">
                 {isProcessingImage ? (
                   <div className="flex flex-col items-center justify-center gap-1 text-slate-500">
                     <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
@@ -209,9 +209,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   triggerHaptic(hapticPatterns.click);
                   cameraInputRef.current?.click();
                 }}
-                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0052FF] font-bold text-xs rounded-xl border border-blue-200/80 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                className="px-3 py-1.5 neu-upper-btn text-[#071E55] font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
               >
-                <Camera className="w-3.5 h-3.5" />
+                <Camera className="w-3.5 h-3.5 text-blue-600" />
                 <span>Camera</span>
               </button>
 
@@ -221,9 +221,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   triggerHaptic(hapticPatterns.click);
                   galleryInputRef.current?.click();
                 }}
-                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0052FF] font-bold text-xs rounded-xl border border-blue-200/80 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                className="px-3 py-1.5 neu-upper-btn text-[#071E55] font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
               >
-                <ImageIcon className="w-3.5 h-3.5" />
+                <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
                 <span>Gallery</span>
               </button>
 
@@ -231,7 +231,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <button
                   type="button"
                   onClick={handleRemovePhoto}
-                  className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-xl border border-rose-200 flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                  className="px-2.5 py-1.5 neu-upper-btn text-rose-600 font-bold text-xs rounded-xl flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
                   title="Remove profile image"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -246,7 +246,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </div>
 
           {/* Details Fields */}
-          <div className="space-y-3.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <div className="space-y-3.5 neu-lower-sm p-4 rounded-2xl">
             {/* 1. Name Field */}
             <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
@@ -259,7 +259,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your full name"
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#07193F]/20 focus:border-[#07193F] transition-all"
+                className="w-full px-3.5 py-2.5 neu-lower rounded-xl text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none transition-all"
               />
             </div>
 
@@ -269,9 +269,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <Building2 className="w-3.5 h-3.5 text-blue-600" />
                 <span>Group Name</span>
               </label>
-              <div className="w-full px-3.5 py-2.5 bg-slate-100/90 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 flex items-center justify-between">
+              <div className="w-full px-3.5 py-2.5 neu-lower-sm rounded-xl text-xs font-bold text-slate-900 flex items-center justify-between">
                 <span>{group.name}</span>
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 border border-blue-200">
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full neu-upper-sm text-blue-900">
                   {group.currency}
                 </span>
               </div>
@@ -283,7 +283,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <Smartphone className="w-3.5 h-3.5 text-blue-600" />
                 <span>Login Mobile Number</span>
               </label>
-              <div className="w-full px-3.5 py-2.5 bg-slate-100/90 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 flex items-center justify-between">
+              <div className="w-full px-3.5 py-2.5 neu-lower-sm rounded-xl text-xs font-mono font-bold text-slate-900 flex items-center justify-between">
                 <span>{currentMobile}</span>
                 <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
                   <Check className="w-3 h-3 stroke-[3]" />
@@ -299,7 +299,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <span>Role & Permissions</span>
               </label>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-3 py-1 rounded-xl bg-white border border-slate-200 text-slate-800 shadow-2xs flex items-center gap-1.5">
+                <span className="text-xs font-bold px-3 py-1 rounded-xl neu-upper-sm text-slate-800 flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-blue-600" />
                   {isAdmin ? 'Master App Administrator' : 'Active Room Member'}
                 </span>
@@ -315,7 +315,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 triggerHaptic(hapticPatterns.click);
                 onClose();
               }}
-              className="w-1/3 py-3 rounded-2xl border border-slate-300 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 transition-all cursor-pointer"
+              className="w-1/3 py-3 rounded-2xl neu-upper-btn text-xs font-bold text-slate-700 transition-all cursor-pointer"
             >
               Cancel
             </button>
@@ -323,7 +323,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <button
               type="submit"
               disabled={isSaving || isProcessingImage}
-              className="w-2/3 py-3 rounded-2xl bg-gradient-to-r from-[#07193F] to-[#0A255C] hover:from-[#0a2356] hover:to-[#0f347e] text-white text-xs font-black shadow-lg shadow-blue-950/20 active:scale-95 transition-all cursor-pointer border border-blue-400/30 uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-2/3 py-3 rounded-2xl bg-gradient-to-r from-[#07193F] to-[#0A255C] hover:from-[#0a2356] hover:to-[#0f347e] text-white text-xs font-black neu-upper-sm active:scale-95 transition-all cursor-pointer uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isSaving ? (
                 <>

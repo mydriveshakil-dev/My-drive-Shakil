@@ -214,7 +214,7 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
       <div
         id="group-note-modal-card"
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
+        className="w-full max-w-lg rounded-3xl shadow-2xl neu-upper border-none overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
       >
         {/* Modal Header - Main App Navy Gradient Theme */}
         <div className="bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] p-4 sm:p-5 text-white flex items-center justify-between relative shadow-sm border-b border-blue-400/20">
@@ -256,7 +256,7 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
         {/* Modal Body */}
         <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-slate-800 flex-1">
           {successToast && (
-            <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 p-3 rounded-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in">
+            <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 p-3 rounded-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in neu-upper-sm">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>{successMessage || 'Group notice published successfully!'}</span>
             </div>
@@ -264,7 +264,7 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
 
           {/* Active Notice Card if not in editing mode */}
           {isNoticeActive && activeNotice && !isEditing && (
-            <div className="bg-blue-50/70 border-2 border-blue-200/80 rounded-2xl p-4 space-y-3 relative overflow-hidden shadow-xs">
+            <div className="bg-blue-50/70 rounded-2xl p-4 space-y-3 relative overflow-hidden neu-upper-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-blue-950 font-black text-xs">
                   <Bell className="w-4 h-4 text-blue-600 animate-bounce" />
@@ -281,7 +281,7 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                 </span>
               </div>
 
-              <div className="bg-white p-3.5 rounded-xl border border-blue-100 text-sm font-semibold text-slate-900 whitespace-pre-wrap leading-relaxed shadow-inner">
+              <div className="p-3.5 rounded-xl text-sm font-semibold text-slate-900 whitespace-pre-wrap leading-relaxed neu-lower-sm">
                 {activeNotice.content}
               </div>
 
@@ -301,7 +301,7 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
               </div>
 
               {/* Notice View Tracking / Seen by Members section */}
-              <div className="bg-white/90 border border-blue-200/80 rounded-xl p-3 space-y-2.5 mt-2 shadow-2xs">
+              <div className="neu-upper-sm rounded-xl p-3 space-y-2.5 mt-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-black text-slate-900">
                     <Eye className="w-4 h-4 text-blue-600" />
@@ -333,7 +333,7 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                       return (
                         <div
                           key={viewer.userId || idx}
-                          className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 hover:border-blue-300 transition-all"
+                          className="flex items-center justify-between p-2 rounded-xl neu-upper-sm hover:border-blue-300 transition-all"
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <MemberAvatar
@@ -378,7 +378,7 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                     })}
                   </div>
                 ) : (
-                  <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-3 text-center">
+                  <div className="neu-lower-sm rounded-xl p-3 text-center">
                     <p className="text-xs font-bold text-slate-600">
                       No member views recorded yet
                     </p>
@@ -398,7 +398,7 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                       triggerHaptic(hapticPatterns.click);
                       setIsEditing(true);
                     }}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer neu-upper-sm"
                   >
                     <StickyNote className="w-3.5 h-3.5" />
                     <span>Edit / Replace Notice</span>
@@ -406,14 +406,14 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                   <button
                     type="button"
                     onClick={handleDelete}
-                    className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    className="bg-red-50 hover:bg-red-100 text-red-700 font-bold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer neu-upper-sm"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Delete Note</span>
                   </button>
                 </div>
               ) : (
-                <div className="bg-slate-100/90 border border-slate-200 p-2.5 rounded-xl flex items-center gap-2 text-[11px] text-slate-600 font-medium mt-2">
+                <div className="neu-lower-sm p-2.5 rounded-xl flex items-center gap-2 text-[11px] text-slate-600 font-medium mt-2">
                   <ShieldAlert className="w-4 h-4 text-blue-700 shrink-0" />
                   <span>
                     Only the author (<strong className="text-slate-900">{activeNotice.authorName}</strong>) or Group Admin can edit or delete this note.
@@ -428,7 +428,7 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
             <form onSubmit={handlePublish} className="space-y-4">
               {/* Admin Broadcast Scope Selector - Only shown for Admin users */}
               {isAdmin && (
-                <div className="space-y-2 bg-gradient-to-br from-blue-50/90 via-indigo-50/50 to-slate-50 p-3.5 rounded-2xl border-2 border-blue-200/90 shadow-2xs">
+                <div className="space-y-2 neu-upper-sm p-3.5 rounded-2xl">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-black text-slate-900 flex items-center gap-1.5">
                       <Globe className="w-4 h-4 text-blue-700" />
@@ -447,10 +447,10 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                         triggerHaptic(hapticPatterns.click);
                         setPublishScope('selected');
                       }}
-                      className={`p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col gap-1 ${
+                      className={`p-3 rounded-xl text-left transition-all cursor-pointer flex flex-col gap-1 ${
                         publishScope === 'selected'
-                          ? 'bg-white text-slate-900 border-blue-600 ring-2 ring-blue-500/20 shadow-xs'
-                          : 'bg-white/70 hover:bg-white text-slate-700 border-slate-200'
+                          ? 'neu-lower-sm text-slate-900 font-bold'
+                          : 'neu-upper-btn text-slate-700'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -478,10 +478,10 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                         triggerHaptic(hapticPatterns.click);
                         setPublishScope('all');
                       }}
-                      className={`p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col gap-1 ${
+                      className={`p-3 rounded-xl text-left transition-all cursor-pointer flex flex-col gap-1 ${
                         publishScope === 'all'
-                          ? 'bg-gradient-to-r from-blue-900 to-indigo-950 text-white border-blue-700 shadow-md ring-2 ring-blue-500/30'
-                          : 'bg-white/70 hover:bg-white text-slate-700 border-slate-200'
+                          ? 'bg-gradient-to-r from-blue-900 to-indigo-950 text-white neu-upper-sm'
+                          : 'neu-upper-btn text-slate-700'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -524,7 +524,7 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                       <select
                         value={selectedGroupId}
                         onChange={(e) => setSelectedGroupId(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-600"
+                        className="w-full neu-lower-sm rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none cursor-pointer"
                       >
                         {allGroups.map((g) => (
                           <option key={g.id} value={g.id}>
@@ -553,7 +553,7 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                   }}
                   rows={4}
                   placeholder="Type group notice or announcement here (e.g., market schedule, room rules, important notice)..."
-                  className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-3.5 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all resize-none shadow-xs"
+                  className="w-full neu-lower rounded-2xl p-3.5 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-500 focus:outline-none transition-all resize-none"
                 />
               </div>
 
@@ -577,10 +577,10 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                           triggerHaptic(hapticPatterns.click);
                           setSelectedDuration(opt.days);
                         }}
-                        className={`py-2.5 px-1 rounded-xl text-center border transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                        className={`py-2.5 px-1 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
                           isSelected
-                            ? 'bg-[#0F3DFF] text-white border-[#0F3DFF] shadow-sm shadow-blue-500/30 font-black'
-                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 font-semibold'
+                            ? 'bg-[#071E55] text-white neu-upper-sm font-black'
+                            : 'neu-upper-btn text-slate-700 font-semibold'
                         }`}
                       >
                         <span className="text-xs sm:text-sm tracking-tight">{opt.label}</span>
@@ -606,14 +606,14 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                       triggerHaptic(hapticPatterns.click);
                       setIsEditing(false);
                     }}
-                    className="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 rounded-2xl text-xs transition-all cursor-pointer"
+                    className="w-1/3 neu-upper-btn text-slate-700 font-bold py-3.5 rounded-2xl text-xs transition-all cursor-pointer"
                   >
                     Cancel
                   </button>
                 )}
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black py-3.5 px-4 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-950/30 active:scale-95 transition-all cursor-pointer border border-blue-400/30"
+                  className="flex-1 bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black py-3.5 px-4 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 neu-upper-sm active:scale-95 transition-all cursor-pointer"
                 >
                   <Send className="w-4 h-4 stroke-[2.5]" />
                   <span>

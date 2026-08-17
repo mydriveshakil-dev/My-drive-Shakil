@@ -33,6 +33,7 @@ import {
   deletePayToTransactionFromFirestore,
   subscribeToUserPresences,
   updateUserPresenceInFirestore,
+  getIsQuotaExceeded,
   getMessageTimestampMs,
   getStartOfCurrentMonthMs,
   auth,
@@ -334,16 +335,25 @@ export default function App() {
           }
 
           if (matched) {
-            setGroup(matched);
+            setGroup((prev) => {
+              if (prev.id === matched!.id && JSON.stringify(prev) === JSON.stringify(matched)) return prev;
+              return matched!;
+            });
             return;
           }
         }
 
         const matchingCurrent = remoteGroups.find((g) => g.id === group.id);
         if (matchingCurrent) {
-          setGroup(matchingCurrent);
+          setGroup((prev) => {
+            if (prev.id === matchingCurrent.id && JSON.stringify(prev) === JSON.stringify(matchingCurrent)) return prev;
+            return matchingCurrent;
+          });
         } else if (remoteGroups.length > 0) {
-          setGroup(remoteGroups[0]);
+          setGroup((prev) => {
+            if (prev.id === remoteGroups[0].id && JSON.stringify(prev) === JSON.stringify(remoteGroups[0])) return prev;
+            return remoteGroups[0];
+          });
         }
       }
     });
@@ -374,10 +384,10 @@ export default function App() {
     // 1. Group subscription
     const unsubGroup = subscribeToGroup(group.id, (remoteGroup) => {
       if (remoteGroup) {
-        setGroup(remoteGroup);
-      } else {
-        // Initial sync to Firestore if group doesn't exist remotely yet
-        saveGroupToFirestore(group);
+        setGroup((prev) => {
+          if (JSON.stringify(prev) === JSON.stringify(remoteGroup)) return prev;
+          return remoteGroup;
+        });
       }
     });
 
@@ -390,10 +400,8 @@ export default function App() {
         return group.id === 'group-room-3';
       });
 
-      // Strict group data isolation: for custom groups, purge leaked sample sheet expenses from state and Firestore
+      // Strict group data isolation: for custom groups, filter in memory
       if (isCustomGroupWithoutCustomSheet) {
-        const leaked = groupExp.filter((e) => !e.id.startsWith('exp-'));
-        leaked.forEach((e) => deleteExpenseFromFirestore(e.id));
         groupExp = groupExp.filter((e) => e.id.startsWith('exp-'));
       }
 
@@ -410,10 +418,8 @@ export default function App() {
         return group.id === 'group-room-3';
       });
 
-      // Strict group data isolation: for custom groups, purge leaked sample sheet utilities from state and Firestore
+      // Strict group data isolation: for custom groups, filter in memory
       if (isCustomGroupWithoutCustomSheet) {
-        const leaked = groupUtil.filter((u) => !u.id.startsWith('util-'));
-        leaked.forEach((u) => deleteUtilityFromFirestore(u.id));
         groupUtil = groupUtil.filter((u) => u.id.startsWith('util-'));
       }
 
@@ -543,6 +549,11 @@ export default function App() {
   const recordNoticeView = async (targetGroup: Group, noticeId: string, user: UserAuthProfile) => {
     if (!targetGroup?.notice || targetGroup.notice.id !== noticeId) return;
 
+    // Immediately mark as seen today in localStorage to prevent repeat triggers
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const seenKey = `group_notice_seen_${targetGroup.id}_${noticeId}`;
+    localStorage.setItem(seenKey, todayStr);
+
     const now = Date.now();
     const currentMember = targetGroup.members?.find(
       (m) =>
@@ -569,6 +580,11 @@ export default function App() {
     }
 
     const prevRecord = existingSeenBy[userKey];
+    // Throttle duplicate records within 1 minute
+    if (prevRecord && now - (prevRecord.lastViewedAtMs || 0) < 60000) {
+      return;
+    }
+
     const newRecord: NoticeViewerRecord = {
       userId,
       userName,
@@ -591,7 +607,10 @@ export default function App() {
     };
 
     if (targetGroup.id === group.id) {
-      setGroup(updatedGroup);
+      setGroup((prev) => {
+        if (JSON.stringify(prev) === JSON.stringify(updatedGroup)) return prev;
+        return updatedGroup;
+      });
     }
     setAllGroups((prev) => prev.map((g) => (g.id === targetGroup.id ? updatedGroup : g)));
     localStorage.setItem(`room_group_${targetGroup.id}`, JSON.stringify(updatedGroup));
@@ -616,6 +635,7 @@ export default function App() {
         const seenKey = `group_notice_seen_${group.id}_${notice.id}`;
         const lastSeen = localStorage.getItem(seenKey);
         if (lastSeen !== todayStr) {
+          localStorage.setItem(seenKey, todayStr);
           setActivePopupNotice(notice);
           setIsNoticePopupOpen(true);
           // Automatically record view and increment count for this user
@@ -623,7 +643,7 @@ export default function App() {
         }
       }
     }
-  }, [isLoginSuccessAnimActive, userAuth.isLoggedIn, group?.notice, group?.id]);
+  }, [isLoginSuccessAnimActive, userAuth.isLoggedIn, group?.notice?.id, group?.notice?.expiresAtMs, group?.id]);
 
   const handleCloseNoticePopup = () => {
     if (activePopupNotice && group?.id) {
@@ -672,10 +692,14 @@ export default function App() {
     const memberId = matchedMem?.id || userAuth.mobileNumber || userAuth.email || 'user';
     const memberName = matchedMem?.name || userAuth.name || 'Room Member';
 
-    updateUserPresenceInFirestore(group.id, memberId, memberName);
-    const interval = setInterval(() => {
+    if (!getIsQuotaExceeded()) {
       updateUserPresenceInFirestore(group.id, memberId, memberName);
-    }, 60000);
+    }
+    const interval = setInterval(() => {
+      if (!getIsQuotaExceeded()) {
+        updateUserPresenceInFirestore(group.id, memberId, memberName);
+      }
+    }, 180000);
 
     return () => clearInterval(interval);
   }, [group.id, userAuth.isLoggedIn, userAuth.mobileNumber, userAuth.email, userAuth.name]);
@@ -1872,12 +1896,12 @@ export default function App() {
 
   return (
     <div
-      className="min-h-screen relative flex flex-col font-sans text-slate-900 selection:bg-[#0F3DFF] selection:text-white antialiased max-w-full overflow-x-hidden bg-[#F6F8FC]"
+      className="min-h-screen relative flex flex-col font-sans text-slate-900 selection:bg-[#071E55] selection:text-white antialiased max-w-full overflow-x-hidden bg-[#E7E7E7] app-neu-scope"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
       {/* Global Background Theme */}
-      <div className="ios26-wallpaper-bg bg-[#F6F8FC]" />
+      <div className="ios26-wallpaper-bg bg-[#E7E7E7]" />
 
       {/* Toast Sync Notification */}
       {syncNotification && (

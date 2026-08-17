@@ -273,22 +273,20 @@ class GoogleSheetsApiManager {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-2 sm:p-4 animate-in fade-in">
-      <GlassContainer
-        variant="modal"
-        blur="3xl"
-        className="w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border-2 border-black bg-white text-slate-900"
+      <div
+        className="w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col neu-upper text-slate-900 border-none"
       >
         {/* Header */}
-        <div className="bg-white text-slate-900 p-5 flex items-center justify-between border-b-2 border-black">
+        <div className="bg-gradient-to-r from-[#07193F] to-[#041029] text-white p-5 flex items-center justify-between border-b border-blue-900/40">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-black">
+            <div className="w-10 h-10 rounded-2xl bg-[#0052FF] text-white flex items-center justify-center font-black shadow-md">
               <Code className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
+              <span className="text-xs font-black text-blue-200 uppercase tracking-wider">
                 Mobile & Web Architecture Guide
               </span>
-              <h2 className="text-lg md:text-xl font-black tracking-tight text-slate-950">
+              <h2 className="text-lg md:text-xl font-black tracking-tight text-white">
                 Single Shared Google Account & Sheets Integration
               </h2>
             </div>
@@ -296,14 +294,14 @@ class GoogleSheetsApiManager {
 
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-900 flex items-center justify-center transition-all border border-black active:scale-90 cursor-pointer"
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all border border-white/20 active:scale-90 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b-2 border-black bg-slate-50 px-4 overflow-x-auto">
+        <div className="flex neu-upper-sm px-4 overflow-x-auto gap-2 py-2">
           {[
             { id: 'architecture', label: '1. Single Account Architecture' },
             { id: 'sheetsApi', label: '2. Google Sheets API Integration' },
@@ -313,10 +311,10 @@ class GoogleSheetsApiManager {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-3 text-xs font-black whitespace-nowrap border-b-2 transition-all cursor-pointer ${
+              className={`px-4 py-2.5 text-xs font-black whitespace-nowrap rounded-xl transition-all cursor-pointer ${
                 activeTab === tab.id
-                  ? 'border-black text-slate-950 bg-white'
-                  : 'border-transparent text-slate-600 hover:text-black'
+                  ? 'bg-[#071E55] text-white neu-upper-sm'
+                  : 'neu-upper-btn text-slate-700'
               }`}
             >
               {tab.label}
@@ -329,8 +327,8 @@ class GoogleSheetsApiManager {
           {/* TAB 1: Architecture Overview */}
           {activeTab === 'architecture' && (
             <div className="space-y-4">
-              <div className="bg-slate-100 border border-black rounded-2xl p-4 flex items-start gap-3">
-                <ShieldCheck className="w-6 h-6 text-slate-900 shrink-0 mt-0.5" />
+              <div className="neu-upper-sm rounded-2xl p-4 flex items-start gap-3">
+                <ShieldCheck className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-extrabold text-slate-950 text-base">
                     Single Shared Account Architecture Strategy
@@ -342,9 +340,9 @@ class GoogleSheetsApiManager {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="border border-black rounded-2xl p-4 bg-white space-y-2">
+                <div className="neu-upper-sm rounded-2xl p-4 space-y-2">
                   <h4 className="font-extrabold text-slate-950 text-sm flex items-center gap-2">
-                    <Server className="w-4 h-4 text-slate-900" />
+                    <Server className="w-4 h-4 text-blue-600" />
                     Client-Side Flutter / Web Direct Sync
                   </h4>
                   <ul className="list-disc list-inside space-y-1 text-xs text-slate-800">
@@ -354,9 +352,9 @@ class GoogleSheetsApiManager {
                   </ul>
                 </div>
 
-                <div className="border border-black rounded-2xl p-4 bg-white space-y-2">
+                <div className="neu-upper-sm rounded-2xl p-4 space-y-2">
                   <h4 className="font-extrabold text-slate-950 text-sm flex items-center gap-2">
-                    <FileSpreadsheet className="w-4 h-4 text-slate-900" />
+                    <FileSpreadsheet className="w-4 h-4 text-blue-600" />
                     Google Sheets Master Data Schema
                   </h4>
                   <ul className="list-disc list-inside space-y-1 text-xs text-slate-800">
@@ -378,14 +376,14 @@ class GoogleSheetsApiManager {
                 </h3>
                 <button
                   onClick={() => copyCode(flutterGoogleSheetsApiCode, 1)}
-                  className="bg-black text-white px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 hover:bg-slate-800 border border-black cursor-pointer"
+                  className="bg-[#071E55] text-white px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 hover:bg-blue-900 neu-upper-sm cursor-pointer"
                 >
                   {copiedIndex === 1 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedIndex === 1 ? 'Copied!' : 'Copy Dart API Code'}</span>
                 </button>
               </div>
 
-              <pre className="bg-slate-900 border border-black text-emerald-300 p-4 rounded-2xl overflow-x-auto text-xs font-mono leading-relaxed">
+              <pre className="neu-lower text-emerald-900 p-4 rounded-2xl overflow-x-auto text-xs font-mono leading-relaxed bg-[#E7E7E7]">
                 {flutterGoogleSheetsApiCode}
               </pre>
             </div>
@@ -399,13 +397,13 @@ class GoogleSheetsApiManager {
                   <h3 className="font-extrabold text-slate-950 text-base">Flutter Home Dashboard Screen UI</h3>
                   <button
                     onClick={() => copyCode(flutterHomeScreenCode, 2)}
-                    className="bg-black text-white px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 hover:bg-slate-800 border border-black cursor-pointer"
+                    className="bg-[#071E55] text-white px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 hover:bg-blue-900 neu-upper-sm cursor-pointer"
                   >
                     {copiedIndex === 2 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedIndex === 2 ? 'Copied!' : 'Copy Flutter Home UI'}</span>
                   </button>
                 </div>
-                <pre className="bg-slate-900 border border-black text-amber-300 p-4 rounded-2xl overflow-x-auto text-xs font-mono leading-relaxed">
+                <pre className="neu-lower text-blue-950 p-4 rounded-2xl overflow-x-auto text-xs font-mono leading-relaxed bg-[#E7E7E7]">
                   {flutterHomeScreenCode}
                 </pre>
               </div>
@@ -415,13 +413,13 @@ class GoogleSheetsApiManager {
                   <h3 className="font-extrabold text-slate-950 text-base">Flutter Add Expense Screen UI</h3>
                   <button
                     onClick={() => copyCode(flutterAddExpenseCode, 3)}
-                    className="bg-black text-white px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 hover:bg-slate-800 border border-black cursor-pointer"
+                    className="bg-[#071E55] text-white px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 hover:bg-blue-900 neu-upper-sm cursor-pointer"
                   >
                     {copiedIndex === 3 ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedIndex === 3 ? 'Copied!' : 'Copy Add Expense UI'}</span>
                   </button>
                 </div>
-                <pre className="bg-slate-900 border border-black text-blue-300 p-4 rounded-2xl overflow-x-auto text-xs font-mono leading-relaxed">
+                <pre className="neu-lower text-blue-950 p-4 rounded-2xl overflow-x-auto text-xs font-mono leading-relaxed bg-[#E7E7E7]">
                   {flutterAddExpenseCode}
                 </pre>
               </div>
@@ -434,19 +432,19 @@ class GoogleSheetsApiManager {
               <h3 className="font-extrabold text-slate-950 text-base">
                 Exact Mess Meal Rate & Debt Minimization Math
               </h3>
-              <div className="bg-slate-100 border border-black p-4 rounded-2xl space-y-3 text-xs text-slate-900">
+              <div className="neu-upper-sm p-4 rounded-2xl space-y-3 text-xs text-slate-900">
                 <p><strong>1. Mess Expense Per Member Formula:</strong></p>
-                <code className="block bg-white border border-black p-2 rounded text-slate-950 font-mono font-bold">
+                <code className="block neu-lower-sm p-2.5 rounded-xl text-slate-950 font-mono font-bold">
                   Mess Share = Total Mess Expenses / Number of Mess Members
                 </code>
 
                 <p><strong>2. Individual Member Actual Expense:</strong></p>
-                <code className="block bg-white border border-black p-2 rounded text-slate-950 font-mono font-bold">
+                <code className="block neu-lower-sm p-2.5 rounded-xl text-slate-950 font-mono font-bold">
                   Member Share = Mess Share + (General Expenses / 5) + (Utilities / 5) + (Rent / 5)
                 </code>
 
                 <p><strong>3. Member Balance:</strong></p>
-                <code className="block bg-white border border-black p-2 rounded text-slate-950 font-mono font-bold">
+                <code className="block neu-lower-sm p-2.5 rounded-xl text-slate-950 font-mono font-bold">
                   Balance = Total Paid Out of Pocket - Member Actual Expense Share
                 </code>
                 <p className="text-slate-700">
@@ -456,7 +454,7 @@ class GoogleSheetsApiManager {
             </div>
           )}
         </div>
-      </GlassContainer>
+      </div>
     </div>
   );
 };

@@ -78,39 +78,37 @@ export const CurrencySettingsModal: React.FC<CurrencySettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in">
-      <GlassContainer
-        variant="modal"
-        blur="3xl"
-        className="max-w-lg w-full shadow-2xl border-2 border-black bg-white text-slate-900 overflow-hidden flex flex-col max-h-[90vh] rounded-3xl"
+      <div
+        className="max-w-lg w-full shadow-2xl neu-upper text-slate-900 overflow-hidden flex flex-col max-h-[90vh] rounded-3xl border-none"
       >
         {/* Modal Header */}
-        <div className="bg-white text-slate-900 px-6 py-5 flex items-center justify-between border-b-2 border-black">
+        <div className="bg-gradient-to-r from-[#07193F] to-[#041029] text-white px-6 py-5 flex items-center justify-between border-b border-blue-900/40">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-2xl bg-[#0052FF] text-white flex items-center justify-center font-bold shadow-md">
               <ArrowRightLeft className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-950">Currency & Conversion Settings</h2>
-              <p className="text-xs text-slate-700 font-medium">Set preferred display currency & custom rates</p>
+              <h2 className="text-lg font-black text-white">Currency & Conversion Settings</h2>
+              <p className="text-xs text-blue-200 font-medium">Set preferred display currency & custom rates</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-700 hover:text-black p-1.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer border border-black"
+            className="text-white hover:bg-white/20 p-1.5 rounded-full transition-colors cursor-pointer border border-white/20"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Active Currency Summary Banner */}
-        <div className="bg-slate-100 border-b border-black px-6 py-3 flex items-center justify-between">
+        <div className="neu-upper-sm px-6 py-3 flex items-center justify-between border-b border-slate-300/60">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-            <Info className="w-4 h-4 text-slate-900" />
+            <Info className="w-4 h-4 text-blue-600" />
             <span>
               Base Room Currency: <strong className="text-slate-950">{baseCurrency}</strong>
             </span>
           </div>
-          <div className="text-xs font-black text-white bg-black px-3 py-1 rounded-xl shadow-xs border border-black">
+          <div className="text-xs font-black text-white bg-[#071E55] px-3 py-1 rounded-xl shadow-xs">
             Display: {selectedCurrencyInfo.code} ({selectedCurrencyInfo.symbol})
           </div>
         </div>
@@ -118,7 +116,7 @@ export const CurrencySettingsModal: React.FC<CurrencySettingsModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-5 flex-1 text-slate-900">
           {/* Quick Explanation */}
-          <div className="text-xs text-slate-900 bg-slate-50 p-3.5 rounded-2xl border border-black leading-relaxed font-medium">
+          <div className="text-xs text-slate-900 neu-lower-sm p-3.5 rounded-2xl leading-relaxed font-medium">
             Expenses are recorded in <strong className="text-slate-950">{baseCurrency}</strong>.
             Selecting a preferred currency below automatically converts and displays amounts across all dashboards and reports.
           </div>
@@ -130,14 +128,14 @@ export const CurrencySettingsModal: React.FC<CurrencySettingsModalProps> = ({
               placeholder="Search currency (USD, INR, EUR, BDT...)"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 px-4 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black"
+              className="flex-1 px-4 py-2.5 neu-lower rounded-xl text-xs font-bold text-slate-900 placeholder-slate-500 focus:outline-none"
             />
             <button
               onClick={() => {
                 if (onResetRates) onResetRates();
                 triggerHaptic(hapticPatterns.click);
               }}
-              className="px-3 py-2.5 text-xs text-slate-900 hover:text-black font-extrabold flex items-center gap-1 bg-white hover:bg-slate-100 rounded-xl transition-colors border border-black cursor-pointer shadow-xs"
+              className="px-3 py-2.5 text-xs text-slate-900 font-extrabold flex items-center gap-1 neu-upper-btn rounded-xl transition-colors cursor-pointer"
               title="Reset rates to standard defaults"
             >
               <RefreshCw className="w-3.5 h-3.5 text-slate-900" />
@@ -157,16 +155,16 @@ export const CurrencySettingsModal: React.FC<CurrencySettingsModalProps> = ({
                 <div
                   key={curr.code}
                   onClick={() => handleSelect(curr.code)}
-                  className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${
+                  className={`p-3.5 rounded-2xl transition-all flex items-center justify-between cursor-pointer ${
                     isSelected
-                      ? 'bg-slate-900 text-white border-2 border-black shadow-md'
-                      : 'bg-white text-slate-900 border border-black hover:bg-slate-50'
+                      ? 'bg-slate-900 text-white neu-upper-sm shadow-md'
+                      : 'neu-upper-btn text-slate-900'
                   }`}
                 >
                   <div className="flex items-center gap-3 flex-1">
                     <div
-                      className={`w-10 h-10 rounded-xl font-black flex items-center justify-center text-sm border ${
-                        isSelected ? 'bg-white text-slate-950 border-white' : 'bg-slate-100 text-slate-900 border-black'
+                      className={`w-10 h-10 rounded-xl font-black flex items-center justify-center text-sm ${
+                        isSelected ? 'bg-white text-slate-950' : 'neu-lower-sm text-slate-900'
                       }`}
                     >
                       {curr.symbol}
@@ -176,12 +174,12 @@ export const CurrencySettingsModal: React.FC<CurrencySettingsModalProps> = ({
                         <span className={`font-black text-sm ${isSelected ? 'text-white' : 'text-slate-950'}`}>{curr.code}</span>
                         <span className={`text-xs font-medium ${isSelected ? 'text-slate-300' : 'text-slate-600'}`}>— {curr.name}</span>
                         {isBase && (
-                          <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold uppercase border ${isSelected ? 'bg-white/20 text-white border-white/30' : 'bg-slate-200 text-slate-900 border-black'}`}>
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold uppercase ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-300 text-slate-900'}`}>
                             Base
                           </span>
                         )}
                         {isCustom && (
-                          <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold border ${isSelected ? 'bg-amber-400 text-slate-950 border-amber-400' : 'bg-slate-900 text-white border-black'}`}>
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${isSelected ? 'bg-amber-400 text-slate-950' : 'bg-slate-900 text-white'}`}>
                             Custom Rate
                           </span>
                         )}
@@ -202,11 +200,11 @@ export const CurrencySettingsModal: React.FC<CurrencySettingsModalProps> = ({
                               step="0.0001"
                               value={tempRate}
                               onChange={(e) => setTempRate(e.target.value)}
-                              className="w-20 px-2 py-1 border border-black rounded-lg text-xs font-bold bg-white text-slate-900 focus:outline-none"
+                              className="w-20 px-2 py-1 neu-lower-sm rounded-lg text-xs font-bold text-slate-900 focus:outline-none"
                             />
                             <button
                               onClick={() => handleSaveRate(curr.code)}
-                              className="p-1 bg-black text-white rounded-lg text-xs font-black cursor-pointer border border-black"
+                              className="p-1 bg-black text-white rounded-lg text-xs font-black cursor-pointer"
                             >
                               <Check className="w-3.5 h-3.5 stroke-[3]" />
                             </button>
@@ -214,7 +212,7 @@ export const CurrencySettingsModal: React.FC<CurrencySettingsModalProps> = ({
                         ) : (
                           <button
                             onClick={() => handleStartEdit(curr)}
-                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${isSelected ? 'text-slate-300 hover:text-white hover:bg-white/10' : 'text-slate-600 hover:text-black hover:bg-slate-100'}`}
+                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${isSelected ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-black'}`}
                             title="Edit Conversion Rate"
                           >
                             <SlidersHorizontal className="w-4 h-4" />
@@ -227,8 +225,8 @@ export const CurrencySettingsModal: React.FC<CurrencySettingsModalProps> = ({
                       onClick={() => handleSelect(curr.code)}
                       className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-white text-slate-950 shadow-md border border-white'
-                          : 'border border-black text-slate-400 hover:text-slate-900'
+                          ? 'bg-white text-slate-950 shadow-md'
+                          : 'neu-upper-sm text-slate-500 hover:text-slate-900'
                       }`}
                     >
                       <Check className="w-4 h-4 stroke-[3]" />
@@ -241,18 +239,18 @@ export const CurrencySettingsModal: React.FC<CurrencySettingsModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 bg-slate-50 border-t-2 border-black flex items-center justify-between">
+        <div className="p-4 neu-upper border-t border-slate-300/60 flex items-center justify-between">
           <div className="text-xs text-slate-900 font-bold">
             Current Selected: <strong className="text-slate-950 font-black">{preferredCurrency}</strong>
           </div>
           <button
             onClick={onClose}
-            className="px-6 py-2.5 bg-black hover:bg-slate-800 text-white text-xs font-black rounded-xl shadow-md transition-all active:scale-95 border border-black cursor-pointer uppercase tracking-wider"
+            className="px-6 py-2.5 bg-gradient-to-r from-[#07193F] to-[#041029] hover:bg-slate-800 text-white text-xs font-black rounded-xl neu-upper-sm transition-all active:scale-95 cursor-pointer uppercase tracking-wider"
           >
             Apply & Done
           </button>
         </div>
-      </GlassContainer>
+      </div>
     </div>
   );
 };

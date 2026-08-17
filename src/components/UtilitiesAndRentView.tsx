@@ -286,37 +286,35 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
   return (
     <div className="space-y-6 pb-28">
-      {/* Header Banner - Navy Theme */}
-      <GlassContainer
-        variant="card"
-        blur="3xl"
-        className="p-6 md:p-8 rounded-3xl border border-blue-900/40 shadow-xl bg-gradient-to-r from-[#07193F] to-[#041029] text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+      {/* Header Banner - Black/Neumorphic Theme */}
+      <div
+        className="p-6 md:p-8 rounded-3xl neu-upper text-slate-900 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
       >
         <div>
-          <span className="text-xs font-black text-blue-200 uppercase tracking-wider bg-blue-500/20 px-3.5 py-1 rounded-full border border-blue-400/30">
+          <span className="text-xs font-black text-white bg-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-xs">
             Monthly Room Recurring Bills
           </span>
-          <h2 className="text-2xl font-black mt-2 text-white">Utilities & Rent Overview</h2>
-          <p className="text-xs text-blue-100/80 font-medium mt-1">
+          <h2 className="text-2xl font-black mt-2 text-slate-950">Utilities & Rent Overview</h2>
+          <p className="text-xs text-slate-600 font-medium mt-1">
             Track DEWA Electricity, WiFi Internet, LPG Gas & Landlord Rent per member
           </p>
         </div>
 
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black px-5 py-3 rounded-[24px] text-xs flex items-center gap-1.5 shadow-md shadow-blue-950/30 active:scale-95 border border-blue-400/30 self-start md:self-auto cursor-pointer uppercase tracking-wider"
+          className="bg-black hover:bg-slate-800 text-white font-black px-5 py-3 rounded-[24px] text-xs flex items-center gap-1.5 shadow-md active:scale-95 self-start md:self-auto cursor-pointer uppercase tracking-wider"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           <span>{showAddForm ? 'Close Add Bill' : '+ Add Utility Bill'}</span>
         </button>
-      </GlassContainer>
+      </div>
 
       {/* Summary Stat Cards - Compact Side-by-Side Boxes */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="p-3 border border-slate-200/90 bg-white text-slate-900 shadow-2xs rounded-2xl">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="p-4 neu-upper text-slate-900 rounded-2xl">
           <div className="flex items-center justify-between text-slate-800 mb-1">
             <Zap className="w-4 h-4 text-amber-500" />
-            <span className="text-[10px] font-extrabold uppercase bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200">
+            <span className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full">
               Utilities
             </span>
           </div>
@@ -344,10 +342,10 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
           </p>
         </div>
 
-        <div className="p-3 border border-slate-200/90 bg-white text-slate-900 shadow-2xs rounded-2xl">
+        <div className="p-4 neu-upper text-slate-900 rounded-2xl">
           <div className="flex items-center justify-between text-slate-800 mb-1">
             <HomeIcon className="w-4 h-4 text-blue-600" />
-            <span className="text-[10px] font-extrabold uppercase bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-200">
+            <span className="text-[10px] font-extrabold uppercase bg-blue-100 text-blue-900 px-2 py-0.5 rounded-full">
               Rent
             </span>
           </div>
@@ -378,8 +376,8 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
       {/* INLINE ADD UTILITY BILL FORM SECTION (Renders directly on main page) */}
       {showAddForm && (
-        <div className="p-5 sm:p-6 rounded-3xl border-2 border-black bg-white text-slate-900 shadow-xl space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="flex items-center justify-between border-b border-black/10 pb-3">
+        <div className="p-5 sm:p-6 rounded-3xl neu-upper text-slate-900 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center justify-between border-b border-slate-300/60 pb-3">
             <div className="flex items-center gap-2">
               <Zap className="w-5 h-5 text-amber-500 stroke-[2.5]" />
               <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">
@@ -389,7 +387,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
             <button
               type="button"
               onClick={() => setShowAddForm(false)}
-              className="p-1 rounded-full text-slate-400 hover:text-slate-900 hover:bg-slate-100 cursor-pointer transition-colors"
+              className="p-1 rounded-full text-slate-400 hover:text-slate-900 cursor-pointer transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -411,7 +409,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   else if (val === 'Drinking Water') setNewUtilCategory('water');
                   else setNewUtilCategory('other');
                 }}
-                className="w-full px-4 py-2.5 bg-white border border-black rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none cursor-pointer"
+                className="w-full px-4 py-2.5 neu-lower-sm rounded-xl text-sm font-bold text-slate-900 focus:outline-none cursor-pointer"
               >
                 {UTILITY_NAME_OPTIONS.map((opt) => (
                   <option key={opt} value={opt}>
@@ -428,7 +426,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   placeholder="Enter custom bill name..."
                   value={customUtilName}
                   onChange={(e) => setCustomUtilName(e.target.value)}
-                  className="mt-2 w-full px-4 py-2.5 bg-white border border-black rounded-xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
+                  className="mt-2 w-full px-4 py-2.5 neu-lower-sm rounded-xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:outline-none"
                 />
               )}
             </div>
@@ -461,7 +459,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                     setNewUtilAmount(res.displayValue);
                   }
                 }}
-                className="w-full px-4 py-2.5 bg-white border border-black rounded-xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
+                className="w-full px-4 py-2.5 neu-lower-sm rounded-xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:outline-none"
               />
 
               {/* Quick Math Symbols Strip */}
@@ -475,7 +473,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   onMouseDown={(e) => e.preventDefault()}
                   onTouchStart={(e) => e.preventDefault()}
                   onClick={() => setNewUtilAmount((prev) => prev + '+')}
-                  className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
+                  className="px-2.5 py-1 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs rounded-lg cursor-pointer"
                 >
                   +
                 </button>
@@ -484,7 +482,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   onMouseDown={(e) => e.preventDefault()}
                   onTouchStart={(e) => e.preventDefault()}
                   onClick={() => setNewUtilAmount((prev) => prev + '-')}
-                  className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
+                  className="px-2.5 py-1 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs rounded-lg cursor-pointer"
                 >
                   -
                 </button>
@@ -493,7 +491,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   onMouseDown={(e) => e.preventDefault()}
                   onTouchStart={(e) => e.preventDefault()}
                   onClick={() => setNewUtilAmount((prev) => prev + '*')}
-                  className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
+                  className="px-2.5 py-1 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs rounded-lg cursor-pointer"
                 >
                   ×
                 </button>
@@ -502,7 +500,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   onMouseDown={(e) => e.preventDefault()}
                   onTouchStart={(e) => e.preventDefault()}
                   onClick={() => setNewUtilAmount((prev) => prev + '/')}
-                  className="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-900 font-black text-xs rounded-lg border border-black cursor-pointer"
+                  className="px-2.5 py-1 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs rounded-lg cursor-pointer"
                 >
                   ÷
                 </button>
@@ -530,11 +528,11 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   Paid By
                 </label>
                 {isAdmin ? (
-                  <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full">
                     Admin Unlocked
                   </span>
                 ) : (
-                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">
                     Locked
                   </span>
                 )}
@@ -543,7 +541,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 value={newUtilPayer}
                 onChange={(e) => setNewUtilPayer(e.target.value)}
                 disabled={!isAdmin}
-                className="w-full px-4 py-2.5 bg-white border border-black rounded-xl text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none cursor-pointer disabled:bg-slate-100 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2.5 neu-lower-sm rounded-xl text-sm font-semibold text-slate-900 focus:outline-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isAdmin ? (
                   group.members.map((m) => (
@@ -586,16 +584,16 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-50 p-3 rounded-2xl border border-black max-h-48 overflow-y-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 neu-lower-sm p-3 rounded-2xl max-h-48 overflow-y-auto">
                 {group.members.map((m) => {
                   const isSelected = newUtilSharedWith.includes(m.id);
                   return (
                     <label
                       key={m.id}
-                      className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                      className={`flex items-center gap-2 p-2 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
                         isSelected
-                          ? 'bg-emerald-50 text-emerald-950 border-emerald-400 font-bold'
-                          : 'bg-white text-slate-400 border-slate-300 opacity-60'
+                          ? 'neu-upper-sm text-emerald-950 font-bold'
+                          : 'bg-transparent text-slate-400 opacity-60'
                       }`}
                     >
                       <input
@@ -631,13 +629,13 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="w-1/2 py-3 rounded-xl border border-black text-xs font-bold text-slate-900 hover:bg-slate-100 cursor-pointer"
+                className="w-1/2 py-3 rounded-xl neu-upper-btn text-xs font-bold text-slate-900 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="w-1/2 py-3 rounded-[24px] bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white text-xs font-black shadow-md border border-blue-400/30 cursor-pointer uppercase tracking-wider"
+                className="w-1/2 py-3 rounded-[24px] bg-black hover:bg-slate-800 text-white text-xs font-black shadow-md cursor-pointer uppercase tracking-wider"
               >
                 Save Utility Bill
               </button>
@@ -674,7 +672,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
             return (
               <div
                 key={util.id}
-                className="bg-white border border-black rounded-3xl p-4 shadow-md hover:border-black transition-all flex flex-col justify-between text-slate-900"
+                className="neu-upper rounded-3xl p-4 transition-all flex flex-col justify-between text-slate-900"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -694,10 +692,10 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                       }}
                       disabled={!canToggle}
                       title={!canToggle ? 'Only bill creator or App Admin can toggle bill status' : ''}
-                      className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border transition-all ${
+                      className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${
                         isPaid
-                          ? 'bg-black text-white border-black'
-                          : 'bg-white text-slate-900 border-black'
+                          ? 'bg-black text-white'
+                          : 'neu-upper-sm text-slate-900'
                       } ${!canToggle ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {isPaid ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
@@ -705,13 +703,13 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                     </button>
                   </div>
 
-                  <div className="bg-slate-50 rounded-2xl p-3 border border-black flex items-center justify-between mt-3">
+                  <div className="neu-lower-sm rounded-2xl p-3 flex items-center justify-between mt-3">
                     <span className="text-xs font-semibold text-slate-700">Total Bill Amount</span>
                     <span className="text-lg font-black text-slate-950">{util.amount.toFixed(2)} AED</span>
                   </div>
                 </div>
 
-                <div className="mt-3 pt-2 border-t border-black/20 space-y-1.5 text-xs text-slate-700">
+                <div className="mt-3 pt-2 border-t border-slate-300/60 space-y-1.5 text-xs text-slate-700">
                   <div className="flex items-center justify-between">
                     <span>Shared cost per member ({sharedWithIds.length}):</span>
                     <div className="flex items-center gap-3">
@@ -721,7 +719,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                       {onDeleteUtility && canDelete && (
                         <div>
                           {deleteConfirmUtilId === util.id ? (
-                            <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-black shadow-md">
+                            <div className="flex items-center gap-1 p-1 rounded-xl neu-upper-sm shadow-md">
                               <span className="text-[10px] text-slate-900 font-bold px-1">Delete?</span>
                               <button
                                 type="button"
@@ -736,7 +734,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                               <button
                                 type="button"
                                 onClick={() => setDeleteConfirmUtilId(null)}
-                                className="px-1.5 py-0.5 bg-white text-slate-900 border border-black font-bold text-[10px] rounded-lg cursor-pointer"
+                                className="px-1.5 py-0.5 neu-upper-sm text-slate-900 font-bold text-[10px] rounded-lg cursor-pointer"
                               >
                                 No
                               </button>
@@ -745,7 +743,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                             <button
                               type="button"
                               onClick={() => setDeleteConfirmUtilId(util.id)}
-                              className="p-1 text-slate-900 bg-white hover:bg-slate-100 rounded-lg transition-all border border-black flex items-center gap-1 cursor-pointer font-bold text-[10px]"
+                              className="p-1 text-slate-900 neu-upper-sm rounded-lg transition-all flex items-center gap-1 cursor-pointer font-bold text-[10px]"
                               title="Delete utility bill"
                             >
                               <Trash2 className="w-3.5 h-3.5 text-slate-900" />
@@ -761,12 +759,12 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   <div className="text-[11px] font-medium text-slate-600 flex items-center gap-1 flex-wrap">
                     <span className="font-bold text-slate-800">Shared with:</span>
                     {sharedMembers.length === group.members.length ? (
-                      <span className="bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded border border-slate-300">
+                      <span className="neu-upper-sm text-slate-800 font-bold px-2 py-0.5 rounded">
                         All Members
                       </span>
                     ) : (
                       sharedMembers.map((m) => (
-                        <span key={m.id} className="bg-emerald-50 text-emerald-900 font-bold px-2 py-0.5 rounded border border-emerald-300">
+                        <span key={m.id} className="bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded">
                           {m.name}
                         </span>
                       ))
@@ -780,10 +778,10 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
       </div>
 
       {/* SECTION 2: Room Rent Contribution Card */}
-      <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-black/20 pb-3 gap-3">
+      <div className="p-5 neu-upper text-slate-900 rounded-3xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-300/60 pb-3 gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold border border-black shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold shrink-0">
               <HomeIcon className="w-5 h-5" />
             </div>
             <div>
@@ -799,10 +797,10 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
           <button
             onClick={() => onUpdateRentStatus(rent.status === 'paid' ? 'pending' : 'paid')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer shadow-2xs ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer shadow-2xs ${
               rent.status === 'paid'
-                ? 'bg-emerald-100 text-emerald-950 border-emerald-400 hover:bg-emerald-200'
-                : 'bg-rose-100 text-rose-950 border-rose-400 hover:bg-rose-200'
+                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                : 'bg-rose-600 text-white hover:bg-rose-700'
             }`}
           >
             {rent.status === 'paid' ? 'Rent Paid to Landlord' : 'Rent Pending'}
@@ -810,7 +808,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         </div>
 
         {/* Total Rent Input Field & Per-Member Share Calculation */}
-        <div className="bg-slate-50 p-4 rounded-2xl border border-black space-y-3">
+        <div className="neu-lower-sm p-4 rounded-2xl space-y-3">
           {/* Top Row: Label, Lock/Unlock Button on right side of text & Status Badge */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
@@ -824,10 +822,10 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   type="button"
                   onClick={handleUnlockRent}
                   disabled={!isAdmin}
-                  className={`px-2.5 py-1 rounded-lg border border-black text-xs font-black flex items-center gap-1 shrink-0 ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black flex items-center gap-1 shrink-0 ${
                     isAdmin
                       ? 'bg-amber-400 text-slate-950 hover:bg-amber-500 cursor-pointer shadow-2xs active:scale-95'
-                      : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                      : 'neu-lower-sm text-slate-500 cursor-not-allowed'
                   }`}
                   title={isAdmin ? 'Click to Unlock Rent' : 'Only Admin can unlock'}
                 >
@@ -838,7 +836,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 <button
                   type="button"
                   onClick={handleLockRent}
-                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-lg border border-black flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs active:scale-95 transition-all"
+                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-lg flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs active:scale-95 transition-all"
                   title="Lock Rent Amount for this Month"
                 >
                   <Lock className="w-3.5 h-3.5" />
@@ -847,11 +845,11 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               )}
 
               {isRentInputLocked ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-900 bg-amber-100 border border-amber-400 px-2 py-0.5 rounded-full shadow-2xs">
+                <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full shadow-2xs">
                   Locked for {rent.cycle || currentMonthCycle}
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-white border border-slate-300 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-white/80 px-2 py-0.5 rounded-full">
                   Type amount and click LOCK
                 </span>
               )}
@@ -861,7 +859,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
           {/* Bottom Row: Room rent amount box and Each member share box side-by-side in 1 line */}
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
             {/* Box 1: Room rent amount box */}
-            <div className="p-3 bg-white rounded-xl border border-black flex flex-col justify-between shadow-2xs">
+            <div className="p-3 neu-upper-sm rounded-xl flex flex-col justify-between">
               <span className="text-[10px] text-slate-600 font-extrabold uppercase block mb-1">
                 Room Rent Amount
               </span>
@@ -873,8 +871,8 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   onChange={handleRentInputChange}
                   disabled={isRentInputLocked}
                   placeholder="e.g. 3500"
-                  className={`w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-sm sm:text-base font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-black ${
-                    isRentInputLocked ? 'bg-slate-100 text-slate-700 cursor-not-allowed opacity-90' : 'bg-white'
+                  className={`w-full neu-lower-sm rounded-lg px-2.5 py-1.5 text-sm sm:text-base font-black text-slate-900 focus:outline-none ${
+                    isRentInputLocked ? 'text-slate-700 cursor-not-allowed opacity-90' : ''
                   }`}
                 />
                 <span className="ml-2 text-xs font-black text-slate-700 shrink-0">AED</span>
@@ -882,7 +880,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
             </div>
 
             {/* Box 2: Each member share box */}
-            <div className="p-3 bg-white rounded-xl border border-black flex flex-col justify-between text-right shadow-2xs">
+            <div className="p-3 neu-upper-sm rounded-xl flex flex-col justify-between text-right">
               <span className="text-[10px] text-slate-600 font-extrabold uppercase block mb-1">
                 Each Member Share
               </span>
@@ -897,7 +895,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         </div>
 
         {/* Temporary Member Box */}
-        <div className="p-3 bg-slate-50 rounded-2xl border border-black/30 space-y-2">
+        <div className="p-3 neu-lower-sm rounded-2xl space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
               Temporary Member ({tempMembers.length})
@@ -906,7 +904,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowAddTempInput(!showAddTempInput)}
-                className="px-2.5 py-1 bg-black text-white rounded-xl text-xs font-bold border border-black hover:bg-slate-800 transition-all cursor-pointer flex items-center gap-1"
+                className="px-2.5 py-1 bg-black text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all cursor-pointer flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>+ Add Temp. Member</span>
@@ -916,7 +914,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
           {/* Inline Add Temporary Member Input Form */}
           {isAdmin && showAddTempInput && (
-            <div className="p-2.5 bg-white rounded-xl border border-black flex items-center gap-2 animate-in fade-in">
+            <div className="p-2.5 neu-upper-sm rounded-xl flex items-center gap-2 animate-in fade-in">
               <input
                 type="text"
                 placeholder="e.g. Guest Roommate (Rahat)"
@@ -928,12 +926,12 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                     handleAddTempMember();
                   }
                 }}
-                className="flex-1 px-3 py-1.5 bg-slate-50 border border-black rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-black"
+                className="flex-1 px-3 py-1.5 neu-lower-sm rounded-lg text-xs font-bold text-slate-900 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={handleAddTempMember}
-                className="px-3 py-1.5 bg-black text-white text-xs font-black rounded-lg border border-black hover:bg-slate-800 cursor-pointer"
+                className="px-3 py-1.5 bg-black text-white text-xs font-black rounded-lg hover:bg-slate-800 cursor-pointer"
               >
                 Add
               </button>
@@ -943,7 +941,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   setNewTempName('');
                   setShowAddTempInput(false);
                 }}
-                className="px-2.5 py-1.5 bg-slate-200 text-slate-800 text-xs font-bold rounded-lg border border-slate-400 hover:bg-slate-300 cursor-pointer"
+                className="px-2.5 py-1.5 neu-upper-btn text-slate-800 text-xs font-bold rounded-lg cursor-pointer"
               >
                 Cancel
               </button>
@@ -956,7 +954,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               {tempMembers.map((name, idx) => (
                 <div
                   key={`temp-${idx}`}
-                  className="bg-white border border-black px-3 py-1 rounded-xl text-xs font-black text-slate-900 flex items-center gap-2 shadow-xs"
+                  className="neu-upper-sm px-3 py-1 rounded-xl text-xs font-black text-slate-900 flex items-center gap-2"
                 >
                   <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
                   <span>{name} (Temp)</span>
@@ -985,7 +983,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
             <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               Member Rent Payment Status ({currentMemberRentShare.toFixed(2)} AED / person)
             </h4>
-            <span className="text-[10px] text-slate-600 font-bold bg-slate-100 px-2.5 py-0.5 rounded-full border border-black/20">
+            <span className="text-[10px] text-slate-600 font-bold neu-upper-sm px-2.5 py-0.5 rounded-full">
               1-Time Lock per month • Auto-resets on 1st of next month
             </span>
           </div>
@@ -998,10 +996,10 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               return (
                 <div
                   key={member.id}
-                  className={`p-3 rounded-2xl border flex items-center justify-between text-xs font-semibold transition-all ${
+                  className={`p-3 rounded-2xl flex items-center justify-between text-xs font-semibold transition-all ${
                     isPaid
-                      ? 'bg-emerald-100 text-emerald-950 border-emerald-400 shadow-2xs'
-                      : 'bg-white text-slate-900 border-slate-300'
+                      ? 'bg-emerald-100 text-emerald-950 neu-upper-sm'
+                      : 'neu-upper-sm text-slate-900'
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -1035,11 +1033,11 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                     <span className="text-xs font-extrabold flex items-center gap-1">
                       {isPaid ? (
                         <>
-                          <span className="text-emerald-400">Paid</span>
+                          <span className="text-emerald-700">Paid</span>
                           {isUntickDisabled ? (
                             <span title="Locked for current month">🔒</span>
                           ) : (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
                           )}
                         </>
                       ) : (
@@ -1052,7 +1050,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
             })}
           </div>
         </div>
-      </GlassContainer>
+      </div>
     </div>
   );
 };

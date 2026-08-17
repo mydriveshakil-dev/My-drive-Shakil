@@ -42,19 +42,19 @@ export const GlassContainer: React.FC<GlassContainerProps> = ({
 
   const variantStyles: Record<GlassVariant, string> = {
     default:
-      'bg-white text-slate-900 border border-slate-200/80 shadow-lg shadow-blue-950/[0.03] rounded-3xl',
+      'neu-upper text-slate-900 rounded-3xl',
     card:
-      'bg-white text-slate-900 border border-slate-200/80 shadow-lg shadow-blue-950/[0.03] rounded-3xl',
+      'neu-upper text-slate-900 rounded-3xl',
     emerald:
-      'bg-white text-slate-900 border border-emerald-200/80 shadow-lg shadow-emerald-950/[0.03] rounded-3xl',
+      'neu-upper text-slate-900 rounded-3xl',
     amber:
-      'bg-white text-slate-900 border border-amber-200/80 shadow-lg shadow-amber-950/[0.03] rounded-3xl',
+      'neu-upper text-slate-900 rounded-3xl',
     pill:
-      'bg-white text-slate-900 border border-slate-200/80 shadow-sm rounded-full',
+      'neu-upper-sm text-slate-900 rounded-full',
     subtle:
-      'bg-white/90 text-slate-900 border border-slate-200/70 shadow-xs rounded-2xl',
+      'neu-upper-sm text-slate-900 rounded-2xl',
     modal:
-      'bg-white text-slate-900 border border-slate-200 shadow-2xl shadow-blue-950/15 rounded-3xl',
+      'neu-upper text-slate-900 rounded-3xl',
     dark:
       'bg-gradient-to-br from-[#071E55] to-[#0A297A] text-white border border-[#0F3DFF]/30 shadow-2xl shadow-blue-950/20 rounded-3xl',
   };

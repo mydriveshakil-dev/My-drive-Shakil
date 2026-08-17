@@ -87,22 +87,30 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 
 // 0. Sync All Groups Across Devices
 export function subscribeToAllGroups(onUpdate: (groups: Group[]) => void) {
-  const groupsRef = collection(db, 'groups');
-  return onSnapshot(
-    groupsRef,
-    (snapshot) => {
-      const items: Group[] = [];
-      snapshot.forEach((docSnap) => {
-        items.push({ ...docSnap.data(), id: docSnap.id } as Group);
-      });
-      if (items.length > 0) {
-        onUpdate(items);
+  if (isQuotaExceeded) return () => {};
+  try {
+    const groupsRef = collection(db, 'groups');
+    return onSnapshot(
+      groupsRef,
+      (snapshot) => {
+        const items: Group[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push({ ...docSnap.data(), id: docSnap.id } as Group);
+        });
+        if (items.length > 0) {
+          onUpdate(items);
+        }
+      },
+      (err) => {
+        if (!isQuotaError(err)) {
+          console.warn('Firestore all groups listener warning:', err);
+        }
       }
-    },
-    (err) => {
-      console.warn('Firestore all groups listener warning:', err);
-    }
-  );
+    );
+  } catch (e) {
+    isQuotaError(e);
+    return () => {};
+  }
 }
 
 function removeUndefinedFields<T extends Record<string, any>>(obj: T): T {
@@ -143,14 +151,56 @@ export function isPhoneMatch(p1?: string, p2?: string): boolean {
   return false;
 }
 
-let isQuotaExceeded = false;
+const QUOTA_EXCEEDED_KEY = 'firestore_quota_limit_exceeded_until';
 
-function isQuotaError(err: unknown): boolean {
+function checkStoredQuotaStatus(): boolean {
+  try {
+    const until = sessionStorage.getItem(QUOTA_EXCEEDED_KEY) || localStorage.getItem(QUOTA_EXCEEDED_KEY);
+    if (until && Number(until) > Date.now()) {
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+let isQuotaExceeded = checkStoredQuotaStatus();
+
+export function getIsQuotaExceeded(): boolean {
+  if (isQuotaExceeded) {
+    // Check if expired
+    const until = sessionStorage.getItem(QUOTA_EXCEEDED_KEY) || localStorage.getItem(QUOTA_EXCEEDED_KEY);
+    if (until && Number(until) <= Date.now()) {
+      isQuotaExceeded = false;
+      try {
+        sessionStorage.removeItem(QUOTA_EXCEEDED_KEY);
+        localStorage.removeItem(QUOTA_EXCEEDED_KEY);
+      } catch (e) {}
+    }
+  }
+  return isQuotaExceeded;
+}
+
+export function markQuotaExceeded() {
+  isQuotaExceeded = true;
+  try {
+    const until = Date.now() + 60 * 60 * 1000; // 1 hour pause before re-testing Firestore quotas
+    sessionStorage.setItem(QUOTA_EXCEEDED_KEY, String(until));
+    localStorage.setItem(QUOTA_EXCEEDED_KEY, String(until));
+  } catch (e) {}
+}
+
+export function isQuotaError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
-  if (msg.includes('resource-exhausted') || msg.includes('Quota limit exceeded') || (err as any)?.code === 'resource-exhausted') {
+  if (
+    msg.includes('resource-exhausted') ||
+    msg.includes('Quota limit exceeded') ||
+    msg.includes('Free daily write units') ||
+    msg.includes('Free daily read units') ||
+    (err as any)?.code === 'resource-exhausted'
+  ) {
     if (!isQuotaExceeded) {
-      isQuotaExceeded = true;
-      console.warn('Firestore Quota Limit Exceeded: Operating in local storage mode.');
+      markQuotaExceeded();
+      console.warn('Firestore Quota Limit Exceeded: Application running in resilient Local Storage mode.');
     }
     return true;
   }
@@ -360,49 +410,37 @@ export function subscribeToGroup(
   onUpdate: (group: Group | null) => void,
   onError?: (err: any) => void
 ) {
-  const groupRef = doc(db, 'groups', groupId);
-  return onSnapshot(
-    groupRef,
-    (snapshot) => {
-      if (snapshot.exists()) {
-        onUpdate(snapshot.data() as Group);
-      } else {
-        onUpdate(null);
+  if (!groupId || isQuotaExceeded) return () => {};
+  try {
+    const groupRef = doc(db, 'groups', groupId);
+    return onSnapshot(
+      groupRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          onUpdate(snapshot.data() as Group);
+        } else {
+          onUpdate(null);
+        }
+      },
+      (err) => {
+        if (!isQuotaError(err)) {
+          console.warn('Firestore group subscription warning:', err);
+        }
+        if (onError) onError(err);
       }
-    },
-    (err) => {
-      console.warn('Firestore group subscription warning:', err);
-      if (onError) onError(err);
-    }
-  );
+    );
+  } catch (e) {
+    isQuotaError(e);
+    return () => {};
+  }
 }
 
 export async function saveGroupToFirestore(group: Group) {
-  if (isQuotaExceeded) return;
+  if (!group || !group.id || isQuotaExceeded) return;
   try {
     const groupRef = doc(db, 'groups', group.id);
     const payload = removeUndefinedFields(group);
     await setDoc(groupRef, payload, { merge: true });
-
-    // Auto-save all group members to 'users' collection so they can log in seamlessly
-    if (group.members && Array.isArray(group.members)) {
-      for (const m of group.members) {
-        const mob = m.mobileNumber || m.phone || '';
-        if (mob) {
-          saveUserProfileToFirestore({
-            name: m.name,
-            email: m.email || `${cleanPhoneDigits(mob)}@mess.com`,
-            mobileNumber: mob,
-            password: m.password || '',
-            idNumber: '',
-            identity: null,
-            isLoggedIn: true,
-            role: 'user',
-            linkedGroupId: group.id,
-          });
-        }
-      }
-    }
   } catch (err) {
     if (!isQuotaError(err)) {
       console.warn('Warning saving group to Firestore:', err);
@@ -529,24 +567,30 @@ export function subscribeToExpenses(
   groupId: string,
   onUpdate: (expenses: Expense[]) => void
 ) {
-  const expensesRef = collection(db, 'expenses');
-  const q = query(expensesRef, where('groupId', '==', groupId));
-  
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const items: Expense[] = [];
-      snapshot.forEach((doc) => {
-        items.push({ ...doc.data(), id: doc.id } as Expense);
-      });
-      onUpdate(items);
-    },
-    (err) => {
-      if (!isQuotaError(err)) {
-        console.warn('Firestore expenses listener warning:', err);
+  if (!groupId || isQuotaExceeded) return () => {};
+  try {
+    const expensesRef = collection(db, 'expenses');
+    const q = query(expensesRef, where('groupId', '==', groupId));
+    
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const items: Expense[] = [];
+        snapshot.forEach((doc) => {
+          items.push({ ...doc.data(), id: doc.id } as Expense);
+        });
+        onUpdate(items);
+      },
+      (err) => {
+        if (!isQuotaError(err)) {
+          console.warn('Firestore expenses listener warning:', err);
+        }
       }
-    }
-  );
+    );
+  } catch (e) {
+    isQuotaError(e);
+    return () => {};
+  }
 }
 
 export async function saveExpenseToFirestore(expense: Expense, activeGroupId?: string) {
@@ -581,24 +625,30 @@ export function subscribeToUtilities(
   groupId: string,
   onUpdate: (utilities: UtilityBill[]) => void
 ) {
-  const utilsRef = collection(db, 'utilities');
-  const q = query(utilsRef, where('groupId', '==', groupId));
+  if (!groupId || isQuotaExceeded) return () => {};
+  try {
+    const utilsRef = collection(db, 'utilities');
+    const q = query(utilsRef, where('groupId', '==', groupId));
 
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const items: UtilityBill[] = [];
-      snapshot.forEach((doc) => {
-        items.push({ ...doc.data(), id: doc.id } as UtilityBill);
-      });
-      onUpdate(items);
-    },
-    (err) => {
-      if (!isQuotaError(err)) {
-        console.warn('Firestore utilities listener warning:', err);
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const items: UtilityBill[] = [];
+        snapshot.forEach((doc) => {
+          items.push({ ...doc.data(), id: doc.id } as UtilityBill);
+        });
+        onUpdate(items);
+      },
+      (err) => {
+        if (!isQuotaError(err)) {
+          console.warn('Firestore utilities listener warning:', err);
+        }
       }
-    }
-  );
+    );
+  } catch (e) {
+    isQuotaError(e);
+    return () => {};
+  }
 }
 
 export async function saveUtilityToFirestore(utility: UtilityBill, activeGroupId?: string) {
@@ -633,22 +683,28 @@ export function subscribeToRent(
   groupId: string,
   onUpdate: (rent: RentContribution | null) => void
 ) {
-  const rentRef = doc(db, 'rent', groupId);
-  return onSnapshot(
-    rentRef,
-    (snapshot) => {
-      if (snapshot.exists()) {
-        onUpdate(snapshot.data() as RentContribution);
-      } else {
-        onUpdate(null);
+  if (!groupId || isQuotaExceeded) return () => {};
+  try {
+    const rentRef = doc(db, 'rent', groupId);
+    return onSnapshot(
+      rentRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          onUpdate(snapshot.data() as RentContribution);
+        } else {
+          onUpdate(null);
+        }
+      },
+      (err) => {
+        if (!isQuotaError(err)) {
+          console.warn('Firestore rent listener warning:', err);
+        }
       }
-    },
-    (err) => {
-      if (!isQuotaError(err)) {
-        console.warn('Firestore rent listener warning:', err);
-      }
-    }
-  );
+    );
+  } catch (e) {
+    isQuotaError(e);
+    return () => {};
+  }
 }
 
 export async function saveRentToFirestore(groupId: string, rent: RentContribution) {
@@ -697,32 +753,40 @@ export function subscribeToChatMessages(
   groupId: string,
   onUpdate: (messages: ChatMessage[]) => void
 ) {
-  const chatRef = collection(db, 'chatMessages');
-  const q = query(chatRef, where('groupId', '==', groupId));
+  if (!groupId || isQuotaExceeded) return () => {};
+  try {
+    const chatRef = collection(db, 'chatMessages');
+    const q = query(chatRef, where('groupId', '==', groupId));
 
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const items: ChatMessage[] = [];
-      const startOfMonthMs = getStartOfCurrentMonthMs();
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const msg = { ...data, id: docSnap.id } as ChatMessage;
-        const msgTime = getMessageTimestampMs(msg);
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const items: ChatMessage[] = [];
+        const startOfMonthMs = getStartOfCurrentMonthMs();
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const msg = { ...data, id: docSnap.id } as ChatMessage;
+          const msgTime = getMessageTimestampMs(msg);
 
-        // Keep only messages created in the current month (1st of the month onwards)
-        if (msgTime >= startOfMonthMs) {
-          items.push(msg);
+          // Keep only messages created in the current month (1st of the month onwards)
+          if (msgTime >= startOfMonthMs) {
+            items.push(msg);
+          }
+        });
+        // sort by timestamp ascending
+        items.sort((a, b) => getMessageTimestampMs(a) - getMessageTimestampMs(b));
+        onUpdate(items);
+      },
+      (err) => {
+        if (!isQuotaError(err)) {
+          console.warn('Firestore chat listener warning:', err);
         }
-      });
-      // sort by timestamp ascending
-      items.sort((a, b) => getMessageTimestampMs(a) - getMessageTimestampMs(b));
-      onUpdate(items);
-    },
-    (err) => {
-      console.warn('Firestore chat listener warning:', err);
-    }
-  );
+      }
+    );
+  } catch (e) {
+    isQuotaError(e);
+    return () => {};
+  }
 }
 
 export async function saveChatMessageToFirestore(groupId: string, message: ChatMessage) {
@@ -772,23 +836,28 @@ export async function deletePayToTransactionFromFirestore(groupId: string, txId:
 }
 
 export function subscribeToPayToTransactions(groupId: string, onUpdate: (txs: PayToTransaction[]) => void) {
-  if (!groupId) return () => {};
-  const colRef = collection(db, `payto_${groupId}`);
-  return onSnapshot(
-    colRef,
-    (snapshot) => {
-      const items: PayToTransaction[] = [];
-      snapshot.forEach((docSnap) => {
-        items.push({ ...docSnap.data(), id: docSnap.id } as PayToTransaction);
-      });
-      onUpdate(items);
-    },
-    (err) => {
-      if (!isQuotaError(err)) {
-        console.warn('Firestore payto listener warning:', err);
+  if (!groupId || isQuotaExceeded) return () => {};
+  try {
+    const colRef = collection(db, `payto_${groupId}`);
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const items: PayToTransaction[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push({ ...docSnap.data(), id: docSnap.id } as PayToTransaction);
+        });
+        onUpdate(items);
+      },
+      (err) => {
+        if (!isQuotaError(err)) {
+          console.warn('Firestore payto listener warning:', err);
+        }
       }
-    }
-  );
+    );
+  } catch (e) {
+    isQuotaError(e);
+    return () => {};
+  }
 }
 
 // 7. Real-Time Online Presence Tracking
@@ -822,26 +891,33 @@ export async function updateUserPresenceInFirestore(groupId: string, memberId: s
 }
 
 export function subscribeToUserPresences(groupId: string, onUpdate: (activeMemberIds: string[]) => void) {
-  if (!groupId) return () => {};
-  const colRef = collection(db, 'room_presence');
-  const q = query(colRef, where('groupId', '==', groupId));
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const now = Date.now();
-      const activeIds: string[] = [];
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data() as UserPresence;
-        // Active if pinged in last 3 minutes
-        if (data.lastActiveMs && now - data.lastActiveMs < 180000) {
-          activeIds.push(data.memberId);
+  if (!groupId || isQuotaExceeded) return () => {};
+  try {
+    const colRef = collection(db, 'room_presence');
+    const q = query(colRef, where('groupId', '==', groupId));
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const now = Date.now();
+        const activeIds: string[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data() as UserPresence;
+          // Active if pinged in last 3 minutes
+          if (data.lastActiveMs && now - data.lastActiveMs < 180000) {
+            activeIds.push(data.memberId);
+          }
+        });
+        onUpdate(activeIds);
+      },
+      (err) => {
+        if (!isQuotaError(err)) {
+          console.warn('Presence listener warning:', err);
         }
-      });
-      onUpdate(activeIds);
-    },
-    (err) => {
-      console.warn('Presence listener warning:', err);
-    }
-  );
+      }
+    );
+  } catch (e) {
+    isQuotaError(e);
+    return () => {};
+  }
 }
 

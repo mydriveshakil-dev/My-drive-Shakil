@@ -249,28 +249,26 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
   return (
     <div className="space-y-6 pb-28">
-      {/* Top Banner - Navy Theme */}
-      <GlassContainer
-        variant="card"
-        blur="3xl"
-        className="p-5 sm:p-6 md:p-8 rounded-3xl border border-blue-900/40 shadow-xl bg-gradient-to-r from-[#07193F] to-[#041029] text-white flex flex-col gap-4 relative overflow-hidden"
+      {/* Top Banner - Neumorphic Theme */}
+      <div
+        className="p-5 sm:p-6 md:p-8 rounded-3xl neu-upper text-slate-900 flex flex-col gap-4 relative overflow-hidden"
       >
         {/* Top Row: Badges (Member View) on Left & Profile Button in the same alignment on the Right Corner */}
         <div className="flex items-center justify-between gap-2.5 w-full flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
             {isAdmin && (
-              <span className="text-xs font-black text-blue-200 uppercase tracking-wider bg-blue-500/20 px-3.5 py-1 rounded-full border border-blue-400/30">
+              <span className="text-xs font-black text-white bg-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-xs">
                 Single Master Gmail Account Setup
               </span>
             )}
             {isAdmin ? (
-              <span className="bg-emerald-500/20 text-emerald-300 text-xs font-black px-3 py-1 rounded-full border border-emerald-400/30 flex items-center gap-1 shadow-md">
-                <ShieldCheck className="w-4 h-4" />
+              <span className="bg-emerald-100 text-emerald-950 text-xs font-black px-3 py-1 rounded-full flex items-center gap-1 shadow-xs">
+                <ShieldCheck className="w-4 h-4 text-emerald-700" />
                 APP ADMIN UNLOCKED
               </span>
             ) : (
-              <span className="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20 flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-blue-300" />
+              <span className="neu-upper-sm text-slate-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-slate-700" />
                 Member View
               </span>
             )}
@@ -283,7 +281,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               triggerHaptic(hapticPatterns.click);
               setShowProfileModal(true);
             }}
-            className="flex items-center gap-2 p-1.5 pr-3 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/25 text-white transition-all cursor-pointer shadow-md active:scale-95 group hover:border-blue-300/60 shrink-0 ml-auto"
+            className="flex items-center gap-2 p-1.5 pr-3 rounded-2xl neu-upper-btn text-slate-900 transition-all cursor-pointer shadow-xs active:scale-95 group shrink-0 ml-auto"
             title="Click to view your profile details and update photo"
           >
             <div className="relative">
@@ -291,12 +289,12 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 name={currentUser?.name || loggedInMember?.name || 'User'}
                 avatar={currentUser?.avatar || loggedInMember?.avatar}
                 size="xs"
-                className="w-7 h-7 ring-2 ring-blue-400/50 shadow-xs group-hover:scale-105 transition-transform"
+                className="w-7 h-7 ring-2 ring-slate-300 shadow-xs group-hover:scale-105 transition-transform"
               />
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-[#07193F]" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white" />
             </div>
             <div className="text-left leading-tight">
-              <span className="text-xs font-black text-white block leading-tight max-w-[120px] sm:max-w-[160px] truncate">
+              <span className="text-xs font-black text-slate-900 block leading-tight max-w-[120px] sm:max-w-[160px] truncate">
                 {currentUser?.name || loggedInMember?.name || 'My Account'}
               </span>
             </div>
@@ -306,10 +304,10 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
         {/* Title and Subtitle Row */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
           <div>
-            <h2 className="text-xl sm:text-2xl font-black text-white">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-950">
               {isAdmin ? 'Group & Member Settings' : 'Room Members & Group Details'}
             </h2>
-            <p className="text-xs text-blue-100/80 font-medium mt-1">
+            <p className="text-xs text-slate-600 font-medium mt-1">
               {isAdmin
                 ? 'Manage room members and administrative controls'
                 : 'View active room members and personal group transactions'}
@@ -319,14 +317,14 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
           {isAdmin && (
             <button
               onClick={onOpenArchGuide}
-              className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/30 active:scale-95 border border-blue-400/30 self-start md:self-auto cursor-pointer shrink-0"
+              className="bg-black hover:bg-slate-800 text-white font-black px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 self-start md:self-auto cursor-pointer shrink-0"
             >
               <Code className="w-4 h-4" />
               <span>Flutter & API Guide</span>
             </button>
           )}
         </div>
-      </GlassContainer>
+      </div>
 
       {/* 1st Sub-Component / PAY TO Option Button */}
       <button
@@ -335,7 +333,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
           triggerHaptic(hapticPatterns.click);
           if (onOpenPayTo) onOpenPayTo();
         }}
-        className="w-full bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black px-6 py-4 rounded-[24px] text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-950/40 active:scale-95 transition-all cursor-pointer border border-blue-400/30 uppercase tracking-wider"
+        className="w-full bg-black hover:bg-slate-800 text-white font-black px-6 py-4 rounded-[24px] text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer uppercase tracking-wider"
       >
         <HandCoins className="w-5 h-5 stroke-[2.5]" />
         <span>Transaction with Group Member</span>
@@ -349,12 +347,12 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
           triggerHaptic(hapticPatterns.click);
           if (onOpenGroupNote) onOpenGroupNote();
         }}
-        className="w-full bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black px-6 py-4 rounded-[24px] text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-blue-950/30 active:scale-95 transition-all cursor-pointer border border-blue-400/30 uppercase tracking-wider relative overflow-hidden"
+        className="w-full bg-black hover:bg-slate-800 text-white font-black px-6 py-4 rounded-[24px] text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-lg active:scale-95 transition-all cursor-pointer uppercase tracking-wider relative overflow-hidden"
       >
-        <StickyNote className="w-5 h-5 stroke-[2.5] text-blue-300" />
+        <StickyNote className="w-5 h-5 stroke-[2.5] text-white" />
         <span>Group Notes</span>
         {group.notice && group.notice.expiresAtMs && Date.now() < group.notice.expiresAtMs && (
-          <span className="ml-1 bg-blue-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full lowercase tracking-normal border border-blue-400 shadow-xs">
+          <span className="ml-1 bg-white text-black text-[10px] font-black px-2.5 py-0.5 rounded-full lowercase tracking-normal shadow-xs">
             Active Notice
           </span>
         )}
@@ -362,16 +360,16 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* ADMIN PERMISSION CONTROL SECTION (Visible ONLY to App Admin) */}
       {isAdmin && (
-        <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-4 relative overflow-hidden">
-          <div className="flex items-center justify-between border-b border-black/20 pb-3">
+        <div className="p-5 neu-upper text-slate-900 rounded-3xl space-y-4 relative overflow-hidden">
+          <div className="flex items-center justify-between border-b border-slate-300/60 pb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold border border-black">
+              <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold">
                 <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-black text-slate-900">App Admin Management Controls</h3>
-                  <span className="bg-black text-white text-[10px] font-black px-2.5 py-0.5 rounded-full border border-black">
+                  <span className="bg-black text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs">
                     FULL ACCESS
                   </span>
                 </div>
@@ -384,7 +382,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
           {/* Group Held Status Warning Banner */}
           {group.isHeld && (
-            <div className="bg-black text-white p-3.5 rounded-2xl flex items-center justify-between text-xs border border-black">
+            <div className="bg-black text-white p-3.5 rounded-2xl flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <PauseCircle className="w-5 h-5 text-white shrink-0" />
                 <span>This room group is currently on <strong>HOLD / PAUSED</strong> by the App Admin.</span>
@@ -392,7 +390,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               {onToggleHoldGroup && (
                 <button
                   onClick={() => onToggleHoldGroup(group.id)}
-                  className="bg-white text-black font-black px-3 py-1 rounded-xl text-xs hover:bg-slate-100 transition-all cursor-pointer border border-black"
+                  className="bg-white text-black font-black px-3 py-1 rounded-xl text-xs hover:bg-slate-100 transition-all cursor-pointer"
                 >
                   Resume Group
                 </button>
@@ -403,7 +401,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
           {/* Admin Action Buttons Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
             {/* Action 1: Create New Group */}
-            <div className="bg-white p-3.5 rounded-2xl border border-black flex flex-col justify-between space-y-2">
+            <div className="neu-lower-sm p-3.5 rounded-2xl flex flex-col justify-between space-y-2">
               <div>
                 <span className="text-slate-900 font-extrabold uppercase text-[10px]">Group Creation</span>
                 <div className="text-slate-900 font-bold text-xs mt-0.5">Create New Room Group</div>
@@ -413,7 +411,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   triggerHaptic(hapticPatterns.click);
                   setShowCreateGroup(!showCreateGroup);
                 }}
-                className="w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer bg-black hover:bg-slate-800 text-white shadow-md border border-black"
+                className="w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer bg-black hover:bg-slate-800 text-white shadow-md"
               >
                 <FolderPlus className="w-4 h-4" />
                 <span>{showCreateGroup ? 'Close Form' : '+ Create Group'}</span>
@@ -421,7 +419,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             </div>
 
             {/* Action 2: Hold / Pause Group */}
-            <div className="bg-white p-3.5 rounded-2xl border border-black flex flex-col justify-between space-y-2">
+            <div className="neu-lower-sm p-3.5 rounded-2xl flex flex-col justify-between space-y-2">
               <div>
                 <span className="text-slate-900 font-extrabold uppercase text-[10px]">Group Status</span>
                 <div className="text-slate-900 font-bold text-xs mt-0.5">
@@ -434,8 +432,8 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 }}
                 className={`w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   group.isHeld
-                    ? 'bg-black text-white shadow-md border border-black'
-                    : 'bg-white text-slate-900 border border-black hover:bg-slate-100 shadow-md'
+                    ? 'bg-black text-white shadow-md'
+                    : 'neu-upper-btn text-slate-900 shadow-md'
                 }`}
               >
                 {group.isHeld ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
@@ -444,7 +442,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             </div>
 
             {/* Action 3: Change Base Currency */}
-            <div className="bg-white p-3.5 rounded-2xl border border-black flex flex-col justify-between space-y-2">
+            <div className="neu-lower-sm p-3.5 rounded-2xl flex flex-col justify-between space-y-2">
               <div>
                 <span className="text-slate-900 font-extrabold uppercase text-[10px]">Base Currency</span>
                 <div className="text-slate-900 font-bold text-xs mt-0.5">
@@ -457,7 +455,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   if (onChangeBaseCurrency) onChangeBaseCurrency(e.target.value);
                   triggerHaptic(hapticPatterns.click);
                 }}
-                className="w-full py-2 px-3 rounded-xl font-extrabold text-xs bg-white text-slate-900 border border-black focus:outline-none cursor-pointer"
+                className="w-full py-2 px-3 rounded-xl font-extrabold text-xs neu-upper-sm text-slate-900 focus:outline-none cursor-pointer"
               >
                 <option value="AED">AED (Dirham)</option>
                 <option value="USD">USD (US Dollar)</option>
@@ -469,16 +467,16 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             </div>
 
             {/* Action 4: Delete / Remove Group */}
-            <div className="bg-white p-3.5 rounded-2xl border border-black flex flex-col justify-between space-y-2">
+            <div className="neu-lower-sm p-3.5 rounded-2xl flex flex-col justify-between space-y-2">
               <div>
                 <span className="text-slate-900 font-extrabold uppercase text-[10px]">Delete Group</span>
                 <div className="text-slate-900 font-bold text-xs mt-0.5">Remove Room Group</div>
               </div>
               <button
                 onClick={() => setDeleteConfirmGroup(group)}
-                className="w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer bg-white text-slate-900 hover:bg-slate-100 border border-black shadow-md"
+                className="w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer neu-upper-btn text-rose-600 shadow-md"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-4 h-4 text-rose-600" />
                 <span>Delete Group</span>
               </button>
             </div>
@@ -486,8 +484,8 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
           {/* CREATE NEW GROUP INLINE FORM PANEL */}
           {showCreateGroup && (
-            <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border-2 border-black shadow-md space-y-4 my-3 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between border-b-2 border-black pb-2.5">
+            <div className="neu-lower-sm p-4 sm:p-5 rounded-2xl shadow-md space-y-4 my-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between border-b border-slate-300/60 pb-2.5">
                 <h3 className="text-sm sm:text-base font-black text-slate-950 flex items-center gap-2">
                   <FolderPlus className="w-5 h-5 text-slate-900" />
                   <span>Create New Room Group</span>
@@ -495,7 +493,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowCreateGroup(false)}
-                  className="text-slate-700 hover:text-black text-xs font-bold px-2.5 py-1 rounded-xl bg-white hover:bg-slate-200 transition-all cursor-pointer border border-black"
+                  className="text-slate-700 hover:text-black text-xs font-bold px-2.5 py-1 rounded-xl neu-upper-btn transition-all cursor-pointer"
                 >
                   Close
                 </button>
@@ -509,7 +507,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     placeholder="e.g. DSO Villa 402 / Silicon Oasis Room 3"
                     value={newGroupName}
                     onChange={(e) => setNewGroupName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black"
+                    className="w-full px-3.5 py-2.5 neu-upper-sm rounded-xl font-bold text-slate-900 placeholder-slate-400 focus:outline-none"
                     required
                   />
                 </div>
@@ -519,7 +517,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   <select
                     value={newGroupCurrency}
                     onChange={(e) => setNewGroupCurrency(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-black cursor-pointer"
+                    className="w-full px-3.5 py-2.5 neu-upper-sm rounded-xl font-bold text-slate-900 focus:outline-none cursor-pointer"
                   >
                     <option value="AED">AED - UAE Dirham</option>
                     <option value="USD">USD - US Dollar</option>
@@ -534,13 +532,13 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowCreateGroup(false)}
-                    className="w-1/2 py-2.5 rounded-xl border border-black text-xs font-bold text-slate-900 bg-white hover:bg-slate-200 transition-all cursor-pointer"
+                    className="w-1/2 py-2.5 rounded-xl neu-upper-btn text-xs font-bold text-slate-900 transition-all cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="w-1/2 bg-black hover:bg-slate-800 text-white font-black py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer border border-black uppercase tracking-wider"
+                    className="w-1/2 bg-black hover:bg-slate-800 text-white font-black py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer uppercase tracking-wider"
                   >
                     Confirm & Create Group
                   </button>
@@ -551,7 +549,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
           {/* DELETE GROUP CONFIRMATION INLINE BANNER */}
           {deleteConfirmGroup && (
-            <div className="bg-rose-50 border-2 border-rose-600 rounded-2xl p-4 space-y-3 my-3 text-slate-900 animate-in fade-in duration-200">
+            <div className="bg-rose-50 border border-rose-400 rounded-2xl p-4 space-y-3 my-3 text-slate-900 animate-in fade-in duration-200">
               <div className="flex items-center gap-2 border-b border-rose-200 pb-2">
                 <Trash2 className="w-5 h-5 shrink-0 text-rose-600" />
                 <h3 className="text-sm font-black text-rose-950">Delete Room Group</h3>
@@ -563,7 +561,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setDeleteConfirmGroup(null)}
-                  className="px-3.5 py-1.5 bg-white hover:bg-slate-100 border border-black rounded-xl text-xs font-bold text-slate-900 transition-all cursor-pointer"
+                  className="px-3.5 py-1.5 neu-upper-btn rounded-xl text-xs font-bold text-slate-900 transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -574,28 +572,28 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     setDeleteConfirmGroup(null);
                     triggerHaptic(hapticPatterns.error);
                   }}
-                  className="px-3.5 py-1.5 bg-black hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-md transition-all cursor-pointer border border-black uppercase tracking-wider"
+                  className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-md transition-all cursor-pointer uppercase tracking-wider"
                 >
                   Confirm & Delete
                 </button>
               </div>
             </div>
           )}
-        </GlassContainer>
+        </div>
       )}
 
       {/* SECTION 1: Google Sheets Direct Integration Panel (Admin Only) */}
       {isAdmin && (
-        <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-black/20 pb-3 gap-3">
+        <div className="p-5 neu-upper text-slate-900 rounded-3xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-300/60 pb-3 gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold border border-black shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold shrink-0">
                 <FileSpreadsheet className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-bold text-slate-900">Master Google Sheet Storage</h3>
-                  <span className="bg-black text-white text-[10px] font-bold px-2 py-0.5 rounded-full border border-black">
+                  <span className="bg-black text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                     Connected Live
                   </span>
                 </div>
@@ -625,7 +623,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   triggerHaptic(hapticPatterns.click);
                   setIsEditingSheetConfig(!isEditingSheetConfig);
                 }}
-                className="bg-white hover:bg-slate-100 text-slate-900 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all border border-black active:scale-95 cursor-pointer"
+                className="neu-upper-btn text-slate-900 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
               >
                 <Edit className="w-3.5 h-3.5" />
                 <span>{isEditingSheetConfig ? 'Close Settings' : 'Edit Sheet ID'}</span>
@@ -635,7 +633,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
           {/* Edit Sheet Config Form */}
           {isEditingSheetConfig && (
-            <form onSubmit={handleSaveSheetConfigSubmit} className="bg-slate-50 p-4 rounded-2xl border border-black space-y-3">
+            <form onSubmit={handleSaveSheetConfigSubmit} className="neu-lower-sm p-4 rounded-2xl space-y-3">
               <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Configure Google Sheet & Web App Script</h4>
               <div className="space-y-2">
                 <div>
@@ -645,7 +643,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     value={sheetIdInput}
                     onChange={(e) => setSheetIdInput(e.target.value)}
                     placeholder="e.g. 1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM"
-                    className="w-full bg-white border border-black rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-black"
+                    className="w-full neu-upper-sm rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none"
                   />
                   <p className="text-[10px] text-slate-600 mt-0.5">Found in your Google Sheet URL between /d/ and /edit</p>
                 </div>
@@ -657,7 +655,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     value={webAppUrlInput}
                     onChange={(e) => setWebAppUrlInput(e.target.value)}
                     placeholder="e.g. https://script.google.com/macros/s/AKfycb.../exec"
-                    className="w-full bg-white border border-black rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-black"
+                    className="w-full neu-upper-sm rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none"
                   />
                   <p className="text-[10px] text-slate-600 mt-0.5">Optional Apps Script URL to push data live directly into your sheet on every edit.</p>
                 </div>
@@ -685,21 +683,21 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
           {/* Config details */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-            <div className="bg-slate-50 p-3 rounded-2xl border border-black">
+            <div className="neu-lower-sm p-3 rounded-2xl">
               <span className="text-slate-700 block text-[10px] uppercase font-bold">Central Spreadsheet ID</span>
               <span className="font-mono font-bold text-slate-950 truncate block mt-0.5 text-xs" title={group.spreadsheetId || (group.id === 'group-room-3' ? '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM' : 'Not Linked')}>
                 {group.spreadsheetId || (group.id === 'group-room-3' ? '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM' : 'Not Linked')}
               </span>
             </div>
 
-            <div className="bg-slate-50 p-3 rounded-2xl border border-black">
+            <div className="neu-lower-sm p-3 rounded-2xl">
               <span className="text-slate-700 block text-[10px] uppercase font-bold">Last Synced At</span>
               <span className="font-bold text-slate-950 block mt-0.5">
                 {sheetsConfig.lastSyncedAt || 'Just Now'}
               </span>
             </div>
 
-            <div className="bg-slate-50 p-3 rounded-2xl border border-black">
+            <div className="neu-lower-sm p-3 rounded-2xl">
               <span className="text-slate-700 block text-[10px] uppercase font-bold">Group Currency</span>
               <span className="font-bold text-slate-950 block mt-0.5">
                 {group.currency} (United Arab Emirates Dirham)
@@ -717,7 +715,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowAppsScriptModal(true)}
-                className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-900 font-bold px-3 py-1.5 rounded-xl border border-black transition-all text-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 neu-upper-btn text-slate-900 font-bold px-3 py-1.5 rounded-xl transition-all text-xs cursor-pointer"
               >
                 <Code className="w-3.5 h-3.5 text-slate-900" />
                 <span>Apps Script Code</span>
@@ -736,7 +734,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               )}
             </div>
           </div>
-        </GlassContainer>
+        </div>
       )}
 
       {/* Apps Script Guide Modal */}
@@ -856,7 +854,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
       {/* SECTION 2: Global Display Currency & Conversion Rates (Admin Only) */}
       {isAdmin && (
-        <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-3">
+        <div className="p-5 neu-upper text-slate-900 rounded-3xl space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Coins className="w-5 h-5 text-slate-900" />
@@ -872,30 +870,30 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
             <button
               onClick={onOpenCurrencySettings}
-              className="bg-white hover:bg-slate-100 text-slate-900 font-bold px-3.5 py-2 rounded-2xl text-xs flex items-center gap-1.5 border border-black transition-all cursor-pointer"
+              className="neu-upper-btn text-slate-900 font-bold px-3.5 py-2 rounded-2xl text-xs flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <ArrowRightLeft className="w-3.5 h-3.5 text-slate-900" />
               <span>Configure Currency</span>
             </button>
           </div>
 
-          <div className="bg-slate-50 p-3.5 rounded-2xl border border-black flex items-center justify-between text-xs">
+          <div className="neu-lower-sm p-3.5 rounded-2xl flex items-center justify-between text-xs">
             <div>
               <span className="text-slate-700 block text-[10px] uppercase font-bold">Currently Active Preferred Currency</span>
               <span className="font-extrabold text-slate-950 text-sm block mt-0.5">
                 {preferredCurrency} (Base Currency: {group.currency})
               </span>
             </div>
-            <span className="bg-black text-white font-bold px-2.5 py-1 rounded-full text-[11px] border border-black">
+            <span className="bg-black text-white font-bold px-2.5 py-1 rounded-full text-[11px]">
               Dual Currency Mode Active
             </span>
           </div>
-        </GlassContainer>
+        </div>
       )}
 
-      {/* SECTION 2: Members Management List */}
-      <GlassContainer variant="card" className="p-5 border border-black bg-white text-slate-900 shadow-md space-y-4">
-        <div className="flex items-center justify-between border-b border-black/20 pb-3">
+      {/* SECTION 3: Members Management List */}
+      <div className="p-5 neu-upper text-slate-900 rounded-3xl space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-300/60 pb-3">
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-slate-900" />
             <h3 className="text-base font-black text-slate-900 tracking-wide uppercase">
@@ -909,7 +907,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 triggerHaptic(hapticPatterns.click);
                 setShowAddMember(!showAddMember);
               }}
-              className="bg-black hover:bg-slate-800 text-white font-black px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-md border border-black active:scale-95 cursor-pointer"
+              className="bg-black hover:bg-slate-800 text-white font-black px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-md active:scale-95 cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               <span>{showAddMember ? 'Close Form' : '+ Add Member'}</span>
@@ -919,8 +917,8 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
         {/* ADD MEMBER INLINE PANEL */}
         {showAddMember && (
-          <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border-2 border-black shadow-md space-y-4 mb-4 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between border-b-2 border-black pb-2.5">
+          <div className="neu-lower-sm p-4 sm:p-5 rounded-2xl shadow-md space-y-4 mb-4 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b border-slate-300/60 pb-2.5">
               <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                 <Users className="w-5 h-5 text-slate-900" />
                 <span>Add New Room Member</span>
@@ -928,7 +926,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowAddMember(false)}
-                className="text-slate-600 hover:text-black text-xs font-bold px-2.5 py-1 bg-white border border-black rounded-lg transition-all cursor-pointer"
+                className="text-slate-600 hover:text-black text-xs font-bold px-2.5 py-1 neu-upper-btn rounded-lg transition-all cursor-pointer"
               >
                 Close
               </button>
@@ -945,7 +943,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   placeholder="e.g. Mahfuzur Rahman"
                   value={newMemberName}
                   onChange={(e) => setNewMemberName(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
+                  className="w-full px-4 py-3 neu-upper-sm rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none"
                 />
               </div>
 
@@ -959,7 +957,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   placeholder="e.g. +971 50 123 4567"
                   value={newMemberPhone}
                   onChange={(e) => setNewMemberPhone(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
+                  className="w-full px-4 py-3 neu-upper-sm rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none"
                 />
               </div>
 
@@ -973,7 +971,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   placeholder="e.g. 123456 or uae2024"
                   value={newMemberPassword}
                   onChange={(e) => setNewMemberPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-black rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-black focus:outline-none"
+                  className="w-full px-4 py-3 neu-upper-sm rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none"
                 />
                 <p className="text-[10px] text-slate-600 mt-1">
                   This mobile number and password will be used by this user to log in.
@@ -984,23 +982,23 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               <div>
                 <label className="block text-xs font-bold text-slate-900 uppercase mb-1 flex items-center justify-between">
                   <span>Expense Scope & Inclusions (কোন কোন খরচের আওতায় থাকবে) *</span>
-                  <span className="text-[10px] text-white font-bold bg-black px-2 py-0.5 rounded-full border border-black">
+                  <span className="text-[10px] text-white font-bold bg-black px-2 py-0.5 rounded-full">
                     {newMemberCategories.length}/{ALL_EXPENSE_OPTIONS.length} Selected
                   </span>
                 </label>
                 <p className="text-[11px] text-slate-600 mb-2">
                   Tick the checkboxes for expenses this member will participate in. Unchecked expenses will NOT be charged to this member.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-2.5 bg-white border border-black rounded-2xl shadow-inner">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-2.5 neu-upper-sm rounded-2xl">
                   {ALL_EXPENSE_OPTIONS.map((opt) => {
                     const isChecked = newMemberCategories.includes(opt.id);
                     return (
                       <label
                         key={opt.id}
-                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                        className={`flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer transition-all ${
                           isChecked
-                            ? 'bg-black text-white border-black shadow-xs'
-                            : 'bg-white text-slate-700 border-black hover:bg-slate-100'
+                            ? 'bg-black text-white shadow-xs'
+                            : 'neu-upper-btn text-slate-700'
                         }`}
                       >
                         <input
@@ -1021,17 +1019,17 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-2 border-t border-black/20">
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-300/60">
                 <button
                   type="button"
                   onClick={() => setShowAddMember(false)}
-                  className="w-1/2 py-3 rounded-2xl border border-black text-xs font-bold text-slate-900 bg-white hover:bg-slate-100 transition-all cursor-pointer"
+                  className="w-1/2 py-3 rounded-2xl neu-upper-btn text-xs font-bold text-slate-900 transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="w-1/2 py-3 rounded-2xl bg-black hover:bg-slate-800 text-white text-xs font-black shadow-md transition-all cursor-pointer uppercase tracking-wider border border-black"
+                  className="w-1/2 py-3 rounded-2xl bg-black hover:bg-slate-800 text-white text-xs font-black shadow-md transition-all cursor-pointer uppercase tracking-wider"
                 >
                   Add Member
                 </button>
@@ -1042,8 +1040,8 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
         {/* EDIT MEMBER SCOPE INLINE PANEL */}
         {editingMember && (
-          <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border-2 border-black shadow-md space-y-4 mb-4 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between border-b-2 border-black pb-2.5">
+          <div className="neu-lower-sm p-4 sm:p-5 rounded-2xl shadow-md space-y-4 mb-4 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b border-slate-300/60 pb-2.5">
               <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                 <Edit className="w-5 h-5 text-slate-900" />
                 <span>Edit Scope: {editingMember.name}</span>
@@ -1051,7 +1049,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               <button
                 type="button"
                 onClick={() => setEditingMember(null)}
-                className="text-slate-600 hover:text-black text-xs font-bold px-2.5 py-1 bg-white border border-black rounded-lg transition-all cursor-pointer"
+                className="text-slate-600 hover:text-black text-xs font-bold px-2.5 py-1 neu-upper-btn rounded-lg transition-all cursor-pointer"
               >
                 Close
               </button>
@@ -1068,7 +1066,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     required
                     value={editMemberName}
                     onChange={(e) => setEditMemberName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                    className="w-full px-3.5 py-2.5 neu-upper-sm rounded-xl text-xs font-bold text-slate-900 focus:outline-none"
                   />
                 </div>
 
@@ -1081,7 +1079,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     required
                     value={editMemberPhone}
                     onChange={(e) => setEditMemberPhone(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                    className="w-full px-3.5 py-2.5 neu-upper-sm rounded-xl text-xs font-bold text-slate-900 focus:outline-none"
                   />
                 </div>
 
@@ -1094,7 +1092,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     placeholder="Member Password"
                     value={editMemberPassword}
                     onChange={(e) => setEditMemberPassword(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-black rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-black focus:outline-none"
+                    className="w-full px-3.5 py-2.5 neu-upper-sm rounded-xl text-xs font-bold text-slate-900 focus:outline-none"
                   />
                 </div>
               </div>
@@ -1103,23 +1101,23 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               <div>
                 <label className="block text-xs font-bold text-slate-900 uppercase mb-1 flex items-center justify-between">
                   <span>Expense Inclusions & Scope (খরচের টিক বক্স) *</span>
-                  <span className="text-[10px] text-white font-bold bg-black px-2 py-0.5 rounded-full border border-black">
+                  <span className="text-[10px] text-white font-bold bg-black px-2 py-0.5 rounded-full">
                     {editMemberCategories.length}/{ALL_EXPENSE_OPTIONS.length} Ticked
                   </span>
                 </label>
                 <p className="text-[11px] text-slate-600 mb-2">
                   Checkboxes that are checked will charge this user for that expense. Unchecked expenses will NOT apply to this user.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto p-2.5 bg-white border border-black rounded-2xl shadow-inner">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto p-2.5 neu-upper-sm rounded-2xl">
                   {ALL_EXPENSE_OPTIONS.map((opt) => {
                     const isChecked = editMemberCategories.includes(opt.id);
                     return (
                       <label
                         key={opt.id}
-                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                        className={`flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer transition-all ${
                           isChecked
-                            ? 'bg-black text-white border-black shadow-xs'
-                            : 'bg-white text-slate-700 border-black hover:bg-slate-100'
+                            ? 'bg-black text-white shadow-xs'
+                            : 'neu-upper-btn text-slate-700'
                         }`}
                       >
                         <input
@@ -1140,17 +1138,17 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-2 border-t border-black/20">
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-300/60">
                 <button
                   type="button"
                   onClick={() => setEditingMember(null)}
-                  className="w-1/2 py-3 rounded-2xl border border-black text-xs font-bold text-slate-900 bg-white hover:bg-slate-100 transition-all cursor-pointer"
+                  className="w-1/2 py-3 rounded-2xl neu-upper-btn text-xs font-bold text-slate-900 transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="w-1/2 py-3 rounded-2xl bg-black hover:bg-slate-800 text-white text-xs font-black shadow-md transition-all cursor-pointer uppercase tracking-wider border border-black"
+                  className="w-1/2 py-3 rounded-2xl bg-black hover:bg-slate-800 text-white text-xs font-black shadow-md transition-all cursor-pointer uppercase tracking-wider"
                 >
                   Save Member Scope
                 </button>
@@ -1161,7 +1159,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
         {/* DELETE MEMBER CONFIRMATION INLINE BANNER */}
         {deleteConfirmMember && (
-          <div className="bg-rose-50 border-2 border-rose-600 rounded-2xl p-4 space-y-3 mb-4 text-slate-900 animate-in fade-in duration-200">
+          <div className="bg-rose-50 border border-rose-400 rounded-2xl p-4 space-y-3 mb-4 text-slate-900 animate-in fade-in duration-200">
             <div className="flex items-center gap-2 border-b border-rose-200 pb-2">
               <Trash2 className="w-5 h-5 shrink-0 text-rose-600" />
               <h3 className="text-sm font-black text-rose-950">Delete Room Member</h3>
@@ -1173,7 +1171,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               <button
                 type="button"
                 onClick={() => setDeleteConfirmMember(null)}
-                className="px-3.5 py-1.5 bg-white hover:bg-slate-100 border border-black rounded-xl text-xs font-bold text-slate-900 transition-all cursor-pointer"
+                className="px-3.5 py-1.5 neu-upper-btn rounded-xl text-xs font-bold text-slate-900 transition-all cursor-pointer"
               >
                 Cancel
               </button>
@@ -1184,20 +1182,20 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   setDeleteConfirmMember(null);
                   triggerHaptic(hapticPatterns.error);
                 }}
-                className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-md transition-all cursor-pointer border border-rose-700 uppercase tracking-wider"
+                className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-md transition-all cursor-pointer uppercase tracking-wider"
               >
                 Confirm & Delete Member
               </button>
             </div>
           </div>
         )}
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {group.members.map((member) => {
             const activeCount = (member.includedCategories || ALL_EXPENSE_OPTIONS.map((o) => o.id)).length;
             return (
               <div
                 key={member.id}
-                className="bg-white border border-slate-200/90 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-slate-900 shadow-2xs hover:border-blue-200 transition-all"
+                className="neu-lower-sm rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-slate-900 transition-all"
               >
                 {/* Left Side: Member Name & Avatar */}
                 <div className="flex items-center gap-2.5 shrink-0">
@@ -1205,29 +1203,29 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     name={member.name}
                     avatar={member.avatar}
                     size="sm"
-                    className="shadow-xs shrink-0 ring-1 ring-slate-200"
+                    className="shadow-xs shrink-0 ring-1 ring-slate-300"
                   />
-                  <h4 className="text-xs sm:text-sm font-black text-[#07193F]">{member.name}</h4>
+                  <h4 className="text-xs sm:text-sm font-black text-slate-950">{member.name}</h4>
                 </div>
 
                 {/* Right Side: Badges & Controls (Aligned consistently to the right) */}
                 <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end shrink-0">
                   {/* Mobile Number Badge */}
-                  <span className="text-[11px] text-slate-700 font-bold bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 font-mono flex items-center gap-1.5 shadow-2xs">
+                  <span className="text-[11px] text-slate-700 font-bold neu-upper-sm px-2.5 py-1 rounded-lg font-mono flex items-center gap-1.5">
                     <Phone className="w-3 h-3 text-slate-500" />
                     <span>{member.phone || member.mobileNumber || member.email || 'No Mobile'}</span>
                   </span>
 
                   {/* Password Badge (Admin Only) */}
                   {isAdmin && (
-                    <span className="text-[11px] text-amber-900 font-bold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300/80 font-mono flex items-center gap-1.5 shadow-2xs">
+                    <span className="text-[11px] text-amber-900 font-bold bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-300/80 font-mono flex items-center gap-1.5 shadow-2xs">
                       <KeyRound className="w-3.5 h-3.5 text-amber-600" />
                       <span>Pass: {member.password || '123456'}</span>
                     </span>
                   )}
 
                   {/* Expense Scope Badge */}
-                  <span className="text-[11px] text-blue-900 font-bold bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200/80 flex items-center gap-1 shadow-2xs">
+                  <span className="text-[11px] text-blue-900 font-bold bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-200/80 flex items-center gap-1 shadow-2xs">
                     <span>Scope:</span>
                     <strong className="font-black text-blue-950">{activeCount}/{ALL_EXPENSE_OPTIONS.length}</strong>
                   </span>
@@ -1237,9 +1235,9 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     <button
                       type="button"
                       onClick={() => openEditMemberModal(member)}
-                      className="text-[11px] text-[#0052FF] bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-200 font-bold cursor-pointer transition-all flex items-center gap-1 shadow-2xs"
+                      className="text-[11px] text-slate-900 neu-upper-btn px-2.5 py-1 rounded-lg font-bold cursor-pointer transition-all flex items-center gap-1"
                     >
-                      <Edit className="w-3 h-3 text-[#0052FF]" />
+                      <Edit className="w-3 h-3 text-slate-900" />
                       <span>Edit Scope</span>
                     </button>
                   )}
@@ -1249,7 +1247,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setDeleteConfirmMember(member)}
-                      className="p-1 px-2.5 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-all border border-rose-200 cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
+                      className="p-1 px-2.5 text-rose-600 neu-upper-btn rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold"
                       title="Delete member"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-rose-600" />
@@ -1261,7 +1259,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             );
           })}
         </div>
-      </GlassContainer>
+      </div>
 
       {/* User Profile Modal */}
       {showProfileModal && (

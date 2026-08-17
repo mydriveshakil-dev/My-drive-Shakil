@@ -317,18 +317,16 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
   return (
     <div className="space-y-6 pb-28">
-      {/* Top Banner - Navy Theme */}
-      <GlassContainer
-        variant="card"
-        blur="3xl"
-        className="p-6 md:p-8 rounded-3xl border border-blue-900/40 shadow-xl bg-gradient-to-r from-[#07193F] to-[#041029] text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+      {/* Top Banner - Neumorphic Theme */}
+      <div
+        className="p-6 md:p-8 rounded-3xl neu-upper text-slate-900 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
       >
         <div>
-          <span className="text-xs font-black text-blue-200 uppercase tracking-wider bg-blue-500/20 px-3.5 py-1 rounded-full border border-blue-400/30">
+          <span className="text-xs font-black text-white bg-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-xs">
             Settlement Engine & Dynamic Balance
           </span>
-          <h2 className="text-2xl font-black mt-2 text-white">Report & Member Settlement</h2>
-          <p className="text-xs text-blue-100/80 font-medium mt-1">
+          <h2 className="text-2xl font-black mt-2 text-slate-950">Report & Member Settlement</h2>
+          <p className="text-xs text-slate-600 font-medium mt-1">
             Exact meal rates and individual spending balance calculations
           </p>
         </div>
@@ -337,19 +335,19 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           <button
             type="button"
             onClick={() => setIsPdfPreviewOpen(true)}
-            className="bg-white/10 hover:bg-white/20 text-white font-extrabold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 border border-white/20 transition-all active:scale-95 cursor-pointer shadow-md"
+            className="bg-black hover:bg-slate-800 text-white font-extrabold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-md"
           >
-            <FileText className="w-4 h-4 text-blue-300" />
+            <FileText className="w-4 h-4 text-white" />
             <span>Export PDF</span>
           </button>
         </div>
-      </GlassContainer>
+      </div>
 
       {/* Date Picker & Compact Include Categories in 1 Line */}
-      <div className="p-4 border border-slate-200 bg-white text-slate-900 shadow-xs space-y-3 rounded-2xl">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-2.5">
+      <div className="p-4 neu-upper text-slate-900 space-y-3 rounded-2xl">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-300/60 pb-2.5">
           <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900">
-            <Calendar className="w-3.5 h-3.5 text-[#0052FF]" />
+            <Calendar className="w-3.5 h-3.5 text-black" />
             <span>Settlement Period Range:</span>
           </div>
 
@@ -358,14 +356,14 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className="px-2.5 py-1 bg-white border border-slate-300 rounded-lg font-semibold text-slate-900 focus:outline-none"
+              className="px-2.5 py-1 neu-lower-sm rounded-lg font-semibold text-slate-900 focus:outline-none"
             />
             <span className="text-slate-500 font-bold">to</span>
             <input
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className="px-2.5 py-1 bg-white border border-slate-300 rounded-lg font-semibold text-slate-900 focus:outline-none"
+              className="px-2.5 py-1 neu-lower-sm rounded-lg font-semibold text-slate-900 focus:outline-none"
             />
           </div>
         </div>
@@ -387,10 +385,10 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                 <button
                   key={key}
                   onClick={() => toggleCategory(key as keyof typeof includeCategories)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
                     isChecked
-                      ? 'bg-[#0052FF] text-white border-blue-600 shadow-2xs'
-                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                      ? 'bg-black text-white shadow-xs'
+                      : 'neu-upper-btn text-slate-700'
                   }`}
                 >
                   {isChecked ? <CheckSquare className="w-3.5 h-3.5 text-white" /> : <Square className="w-3.5 h-3.5 text-slate-400" />}
@@ -403,10 +401,10 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       </div>
 
       {/* SECTION 1: Member-wise Calculation Breakdown */}
-      <div className="p-4 border border-slate-200 bg-white text-slate-900 shadow-xs space-y-3 rounded-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+      <div className="p-4 neu-upper text-slate-900 space-y-3 rounded-2xl">
+        <div className="flex items-center justify-between border-b border-slate-300/60 pb-2.5">
           <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-            <User className="w-4 h-4 text-[#0052FF]" />
+            <User className="w-4 h-4 text-black" />
             Member-wise Calculation Breakdown
           </h3>
           <span className="text-[11px] text-slate-500 font-semibold">
@@ -415,7 +413,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         </div>
 
         {/* Member Calculation Cards with 3 Side-by-Side Boxes (Actual Share, Amount Paid, Final Status) */}
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {settlementResult.memberSummaries.map((ms) => {
             const isOverpaid = ms.balance >= 0;
             const memberObj = group.members.find(
@@ -424,35 +422,35 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
             return (
               <div
                 key={ms.memberId}
-                className="bg-slate-50/70 p-3 rounded-2xl border border-slate-200 space-y-2 text-xs text-slate-900"
+                className="neu-lower-sm p-3.5 rounded-2xl space-y-2 text-xs text-slate-900"
               >
-                <div className="font-extrabold text-xs sm:text-sm text-[#07193F] flex items-center gap-2">
+                <div className="font-extrabold text-xs sm:text-sm text-slate-950 flex items-center gap-2">
                   <MemberAvatar
                     name={ms.memberName}
                     avatar={memberObj?.avatar}
                     size="xs"
-                    className="w-5 h-5 text-[8px] shrink-0 ring-1 ring-blue-500/20"
+                    className="w-5 h-5 text-[8px] shrink-0"
                   />
                   <span>{ms.memberName}</span>
                 </div>
 
                 {/* 3 Small Boxes Side-by-Side in 1 Alignment */}
                 <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
-                  <div className="bg-white p-2 rounded-xl border border-slate-200 text-center shadow-2xs">
+                  <div className="neu-upper-sm p-2 rounded-xl text-center">
                     <span className="text-slate-500 block text-[9px] sm:text-[10px] font-extrabold uppercase">Per Person Cost</span>
                     <span className="font-black text-slate-900 block mt-0.5">{ms.totalActualExpense.toFixed(2)} {group.currency}</span>
                   </div>
 
-                  <div className="bg-white p-2 rounded-xl border border-slate-200 text-center shadow-2xs">
+                  <div className="neu-upper-sm p-2 rounded-xl text-center">
                     <span className="text-slate-500 block text-[9px] sm:text-[10px] font-extrabold uppercase">Amount Paid</span>
                     <span className="font-black text-slate-900 block mt-0.5">{ms.totalAmountSpent.toFixed(2)} {group.currency}</span>
                   </div>
 
                   <div
-                    className={`p-2 rounded-xl border text-center shadow-2xs ${
+                    className={`p-2 rounded-xl text-center ${
                       isOverpaid
-                        ? 'bg-emerald-50 text-emerald-950 border-emerald-300'
-                        : 'bg-rose-50 text-rose-950 border-rose-300'
+                        ? 'bg-emerald-100 text-emerald-950 neu-upper-sm'
+                        : 'bg-rose-100 text-rose-950 neu-upper-sm'
                     }`}
                   >
                     <span className="block text-[9px] sm:text-[10px] font-extrabold uppercase opacity-80">Final Status</span>

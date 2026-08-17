@@ -144,18 +144,16 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   return (
     <div className="space-y-6 pb-28">
       {/* 1. Large Total Expense Card */}
-      <GlassContainer
-        variant="card"
-        blur="3xl"
-        className="p-6 md:p-8 rounded-3xl border-2 border-black shadow-xl bg-white text-slate-900 relative overflow-hidden"
+      <div
+        className="p-6 md:p-8 rounded-3xl neu-upper text-slate-900 relative overflow-hidden"
       >
         <div className="relative z-10 space-y-4">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-white bg-black px-3.5 py-1 rounded-full shadow-xs border border-black">
+              <span className="text-xs font-black uppercase tracking-wider text-white bg-black px-3.5 py-1 rounded-full shadow-xs">
                 {group.name}
               </span>
-              <span className="text-xs text-slate-900 flex items-center gap-1 font-bold bg-white px-3 py-1 rounded-full border border-black">
+              <span className="text-xs text-slate-900 flex items-center gap-1 font-bold neu-upper-sm px-3 py-1 rounded-full">
                 <Calendar className="w-3.5 h-3.5 text-slate-900" />
                 Cycle: {group.billingCycle}
               </span>
@@ -163,12 +161,12 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             {/* Logged in User Name & Avatar under Group Name */}
             <div className="text-xs text-slate-700 font-bold flex items-center gap-1.5 px-1 pt-0.5 flex-wrap">
               <span className="text-slate-600 font-medium">Logged in as:</span>
-              <span className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-300 text-slate-900 font-extrabold text-xs px-2.5 py-0.5 rounded-full shadow-xs">
+              <span className="inline-flex items-center gap-1.5 neu-upper-sm text-slate-900 font-extrabold text-xs px-2.5 py-0.5 rounded-full">
                 <MemberAvatar
                   name={currentUserName}
                   avatar={currentUserAvatar}
                   size="xs"
-                  className="w-4.5 h-4.5 text-[8px] shrink-0 border border-slate-300 shadow-xs"
+                  className="w-4.5 h-4.5 text-[8px] shrink-0"
                 />
                 <span>{currentUserName}</span>
               </span>
@@ -189,21 +187,19 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </div>
           </div>
 
-          <div className="pt-2 border-t border-black/20 flex items-center justify-between text-xs text-slate-600">
+          <div className="pt-2 border-t border-slate-300/60 flex items-center justify-between text-xs text-slate-600">
             <span>Created: {group.createdAt}</span>
           </div>
         </div>
-      </GlassContainer>
+      </div>
 
       {/* 2. Mess Food Expense Only Box */}
-      <GlassContainer
-        variant="card"
-        blur="2xl"
-        className="p-5 rounded-3xl border-2 border-black shadow-lg bg-white text-slate-900 space-y-3"
+      <div
+        className="p-5 rounded-3xl neu-upper text-slate-900 space-y-3"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-black/15">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-300/60">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-black text-white font-black flex items-center justify-center shrink-0 border border-black shadow-xs">
+            <div className="w-11 h-11 rounded-2xl bg-black text-white font-black flex items-center justify-center shrink-0 shadow-xs">
               <Utensils className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -211,7 +207,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 <h3 className="text-base font-black text-slate-950 tracking-tight">
                   Mess Food Expenses (মেস খাবার খরচ)
                 </h3>
-                <span className="bg-emerald-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-700 shadow-xs">
+                <span className="bg-emerald-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs">
                   Food & Grocery Only
                 </span>
               </div>
@@ -224,7 +220,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           <div className="self-start sm:self-auto flex items-center gap-2">
             <button
               onClick={() => onNavigateTab('report')}
-              className="bg-black hover:bg-slate-800 text-white text-xs font-black px-3.5 py-2 rounded-2xl transition-all flex items-center gap-1.5 shadow-md active:scale-95 border border-black cursor-pointer"
+              className="bg-black hover:bg-slate-800 text-white text-xs font-black px-3.5 py-2 rounded-2xl transition-all flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer"
             >
               <span>Settlement Report</span>
               <ArrowRight className="w-3.5 h-3.5 text-white" />
@@ -234,7 +230,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
         {/* Amount & Key Metrics Row for Mess Food Expense Only */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-          <div className="bg-slate-50 p-3.5 rounded-2xl border border-black/20">
+          <div className="neu-lower-sm p-3.5 rounded-2xl">
             <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider block">
               Total Mess Food Spent
             </span>
@@ -253,7 +249,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </span>
           </div>
 
-          <div className="bg-slate-50 p-3.5 rounded-2xl border border-black/20">
+          <div className="neu-lower-sm p-3.5 rounded-2xl">
             <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider block">
               Mess Share Per Member
             </span>
@@ -265,7 +261,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </span>
           </div>
 
-          <div className="bg-slate-50 p-3.5 rounded-2xl border border-black/20">
+          <div className="neu-lower-sm p-3.5 rounded-2xl">
             <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider block">
               Mess Members
             </span>
@@ -277,7 +273,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </span>
           </div>
         </div>
-      </GlassContainer>
+      </div>
 
       {/* 3. Quick Action Buttons (4 row) */}
       <div>
@@ -287,9 +283,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         <div className="grid grid-cols-4 gap-3">
           <button
             onClick={() => onNavigateTab('expenses')}
-            className="flex flex-col items-center justify-center p-3.5 bg-white hover:bg-slate-100 border border-black rounded-3xl shadow-md transition-all group text-center active:scale-95 cursor-pointer text-slate-900"
+            className="flex flex-col items-center justify-center p-3.5 neu-upper-btn rounded-3xl transition-all group text-center active:scale-95 cursor-pointer text-slate-900"
           >
-            <div className="w-11 h-11 rounded-2xl bg-black text-white flex items-center justify-center mb-1.5 group-hover:scale-110 transition-transform border border-black">
+            <div className="w-11 h-11 rounded-2xl bg-black text-white flex items-center justify-center mb-1.5 group-hover:scale-110 transition-transform">
               <Wallet className="w-5 h-5" />
             </div>
             <span className="text-xs font-bold text-slate-900">Expenses</span>
@@ -298,9 +294,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
           <button
             onClick={() => onNavigateTab('utilities')}
-            className="flex flex-col items-center justify-center p-3.5 bg-white hover:bg-slate-100 border border-black rounded-3xl shadow-md transition-all group text-center active:scale-95 cursor-pointer text-slate-900"
+            className="flex flex-col items-center justify-center p-3.5 neu-upper-btn rounded-3xl transition-all group text-center active:scale-95 cursor-pointer text-slate-900"
           >
-            <div className="w-11 h-11 rounded-2xl bg-black text-white flex items-center justify-center mb-1.5 group-hover:scale-110 transition-transform border border-black">
+            <div className="w-11 h-11 rounded-2xl bg-black text-white flex items-center justify-center mb-1.5 group-hover:scale-110 transition-transform">
               <Zap className="w-5 h-5" />
             </div>
             <span className="text-xs font-bold text-slate-900">Utilities</span>
@@ -309,9 +305,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
           <button
             onClick={() => onNavigateTab('utilities')}
-            className="flex flex-col items-center justify-center p-3.5 bg-white hover:bg-slate-100 border border-black rounded-3xl shadow-md transition-all group text-center active:scale-95 cursor-pointer text-slate-900"
+            className="flex flex-col items-center justify-center p-3.5 neu-upper-btn rounded-3xl transition-all group text-center active:scale-95 cursor-pointer text-slate-900"
           >
-            <div className="w-11 h-11 rounded-2xl bg-black text-white flex items-center justify-center mb-1.5 group-hover:scale-110 transition-transform border border-black">
+            <div className="w-11 h-11 rounded-2xl bg-black text-white flex items-center justify-center mb-1.5 group-hover:scale-110 transition-transform">
               <HomeIcon className="w-5 h-5" />
             </div>
             <span className="text-xs font-bold text-slate-900">Rent</span>
@@ -320,9 +316,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
           <button
             onClick={() => onNavigateTab('report')}
-            className="flex flex-col items-center justify-center p-3.5 bg-white hover:bg-slate-100 border border-black rounded-3xl shadow-md transition-all group text-center active:scale-95 cursor-pointer text-slate-900"
+            className="flex flex-col items-center justify-center p-3.5 neu-upper-btn rounded-3xl transition-all group text-center active:scale-95 cursor-pointer text-slate-900"
           >
-            <div className="w-11 h-11 rounded-2xl bg-black text-white flex items-center justify-center mb-1.5 group-hover:scale-110 transition-transform border border-black">
+            <div className="w-11 h-11 rounded-2xl bg-black text-white flex items-center justify-center mb-1.5 group-hover:scale-110 transition-transform">
               <ReportIcon className="w-5 h-5" />
             </div>
             <span className="text-xs font-bold text-slate-900">Report</span>
@@ -342,10 +338,10 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Mess Expense Card */}
-          <GlassContainer variant="card" className="p-5 border border-black shadow-md bg-white text-slate-900">
+          <div className="p-5 neu-upper text-slate-900 rounded-3xl">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center border border-black">
+                <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center">
                   <Utensils className="w-5 h-5" />
                 </div>
                 <div>
@@ -353,7 +349,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                   <p className="text-[11px] text-slate-600">Groceries, Meat, Rice, Vegetables</p>
                 </div>
               </div>
-              <span className="text-xs font-bold text-white bg-black px-2.5 py-1 rounded-lg border border-black">
+              <span className="text-xs font-bold text-white bg-black px-2.5 py-1 rounded-lg">
                 {totalExpenses > 0 ? Math.round((messTotal / totalExpenses) * 100) : 0}%
               </span>
             </div>
@@ -368,26 +364,26 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                   layout="pill"
                   baseClassName="text-2xl font-black text-slate-950"
                 />
-                <span className="text-xs font-semibold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-black">
+                <span className="text-xs font-semibold text-slate-900 neu-upper-sm px-2.5 py-1 rounded-lg">
                   ~{messPerMember.toFixed(2)} {group.currency}/member
                 </span>
               </div>
 
               {/* Progress bar */}
-              <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden border border-black">
+              <div className="w-full neu-lower-sm rounded-full h-3 overflow-hidden p-0.5">
                 <div
-                  className="bg-black h-2.5 rounded-full transition-all duration-500"
+                  className="bg-black h-2 rounded-full transition-all duration-500"
                   style={{ width: `${totalExpenses > 0 ? (messTotal / totalExpenses) * 100 : 0}%` }}
                 ></div>
               </div>
             </div>
-          </GlassContainer>
+          </div>
 
           {/* General Expense Card */}
-          <GlassContainer variant="card" className="p-5 border border-black shadow-md bg-white text-slate-900">
+          <div className="p-5 neu-upper text-slate-900 rounded-3xl">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center border border-black">
+                <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center">
                   <ShoppingBag className="w-5 h-5" />
                 </div>
                 <div>
@@ -395,7 +391,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                   <p className="text-[11px] text-slate-600">Water, Detergent, Gas, Room items</p>
                 </div>
               </div>
-              <span className="text-xs font-bold text-white bg-black px-2.5 py-1 rounded-lg border border-black">
+              <span className="text-xs font-bold text-white bg-black px-2.5 py-1 rounded-lg">
                 {totalExpenses > 0 ? Math.round((generalTotal / totalExpenses) * 100) : 0}%
               </span>
             </div>
@@ -414,20 +410,20 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               </div>
 
               {/* Progress bar */}
-              <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden border border-black">
+              <div className="w-full neu-lower-sm rounded-full h-3 overflow-hidden p-0.5">
                 <div
-                  className="bg-black h-2.5 rounded-full transition-all duration-500"
+                  className="bg-black h-2 rounded-full transition-all duration-500"
                   style={{ width: `${totalExpenses > 0 ? (generalTotal / totalExpenses) * 100 : 0}%` }}
                 ></div>
               </div>
             </div>
-          </GlassContainer>
+          </div>
         </div>
       </div>
 
       {/* 5. Overview Section: My Contribution & Avg. per Person */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <GlassContainer variant="card" className="p-4 border border-black shadow-md bg-white text-slate-900 flex items-center justify-between">
+        <div className="p-4 neu-upper text-slate-900 rounded-3xl flex items-center justify-between">
           <div>
             <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               My Paid Contribution
@@ -441,18 +437,18 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 layout="pill"
                 baseClassName="text-2xl font-black text-slate-950"
               />
-              <span className="text-xs font-bold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-full border border-black">
+              <span className="text-xs font-bold text-slate-900 neu-upper-sm px-2.5 py-0.5 rounded-full">
                 {myPercentage}% of Group
               </span>
             </div>
             <div className="text-[11px] text-slate-600 mt-1.5 flex items-center gap-1.5 flex-wrap">
               <span>Logged in as:</span>
-              <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-300 font-bold text-slate-900 text-[11px]">
+              <span className="inline-flex items-center gap-1 neu-upper-sm px-2 py-0.5 rounded-full font-bold text-slate-900 text-[11px]">
                 <MemberAvatar
                   name={currentUserName}
                   avatar={currentUserAvatar}
                   size="xs"
-                  className="w-4 h-4 text-[8px] shrink-0 border border-slate-300"
+                  className="w-4 h-4 text-[8px] shrink-0"
                 />
                 <span>{currentUserName}</span>
               </span>
@@ -462,11 +458,11 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             name={currentUserName}
             avatar={currentUserAvatar}
             size="lg"
-            className="rounded-2xl border border-black shadow-md shrink-0"
+            className="rounded-2xl neu-upper-sm shrink-0"
           />
-        </GlassContainer>
+        </div>
 
-        <GlassContainer variant="card" className="p-4 border border-black shadow-md bg-white text-slate-900 flex items-center justify-between">
+        <div className="p-4 neu-upper text-slate-900 rounded-3xl flex items-center justify-between">
           <div>
             <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               Avg. Expense per Person
@@ -484,10 +480,10 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </div>
             <p className="text-[11px] text-slate-600 mt-1">Based on current cycle total</p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-black text-white border border-black flex items-center justify-center shadow-md">
+          <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center shadow-md">
             <Users className="w-6 h-6" />
           </div>
-        </GlassContainer>
+        </div>
       </div>
 
       {/* 6. Top Contributors Chart */}
@@ -505,7 +501,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           </button>
         </div>
 
-        <div className="bg-white rounded-[28px] p-4 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.06)] border border-slate-100">
+        <div className="neu-upper rounded-[28px] p-4 sm:p-6">
           {contributorData.length > 0 ? (
             <div className="flex flex-row items-center justify-start sm:justify-center gap-3 sm:gap-8">
               {/* Pie Chart on Left */}
@@ -531,7 +527,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                     </Pie>
                     <Tooltip
                       formatter={(value: any) => [`${value} AED`, 'Amount Paid']}
-                      contentStyle={{ borderRadius: '12px', background: '#ffffff', border: '1px solid #e2e8f0', color: '#0f172a', fontWeight: 'bold' }}
+                      contentStyle={{ borderRadius: '12px', background: '#E7E7E7', border: 'none', boxShadow: 'inset -5px -5px 12px rgba(255,255,255,0.9), inset 5px 5px 12px rgba(174,174,192,0.8)', color: '#0f172a', fontWeight: 'bold' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -565,8 +561,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
       {/* 7. RECENT EXPENSES Section */}
       <div id="recent-expenses-section">
-        <GlassContainer variant="card" className="p-5 border-2 border-black shadow-xl bg-white text-slate-900 rounded-3xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black pb-3">
+        <div className="p-5 neu-upper text-slate-900 rounded-3xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-300/60 pb-3">
           <div>
             <div className="flex items-center gap-2">
               <Receipt className="w-5 h-5 text-slate-950" />
@@ -584,7 +580,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               <button
                 type="button"
                 onClick={onRestoreExpenses}
-                className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-full border border-black shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-full shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
                 title="Restore deleted room expenses"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -604,10 +600,10 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             <button
               type="button"
               onClick={() => setSelectedUserFilter('all')}
-              className={`px-3 py-1.5 rounded-2xl text-xs font-black border transition-all shrink-0 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-2xl text-xs font-black transition-all shrink-0 cursor-pointer ${
                 selectedUserFilter === 'all'
-                  ? 'bg-black text-white border-black shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-900 border-black/30'
+                  ? 'bg-black text-white shadow-xs'
+                  : 'neu-upper-sm text-slate-900'
               }`}
             >
               All Users ({expenses.length})
@@ -620,10 +616,10 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                   key={member.id}
                   type="button"
                   onClick={() => setSelectedUserFilter(member.id)}
-                  className={`px-3 py-1.5 rounded-2xl text-xs font-bold border transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
                     selectedUserFilter === member.id
-                      ? 'bg-black text-white border-black shadow-xs font-black'
-                      : 'bg-white hover:bg-slate-100 text-slate-900 border-black'
+                      ? 'bg-black text-white shadow-xs font-black'
+                      : 'neu-upper-sm text-slate-900'
                   }`}
                 >
                   <MemberAvatar
@@ -649,13 +645,13 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
           if (displayedList.length === 0) {
             return (
-              <div className="py-8 text-center bg-slate-50 border border-black rounded-2xl p-6 space-y-3">
+              <div className="py-8 text-center neu-lower-sm rounded-2xl p-6 space-y-3">
                 <p className="text-xs font-bold text-slate-600">No expenses recorded for this user in the running month.</p>
                 {onRestoreExpenses && (
                   <button
                     type="button"
                     onClick={onRestoreExpenses}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl border border-black shadow-md inline-flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-md inline-flex items-center gap-2 cursor-pointer transition-all active:scale-95"
                   >
                     <RotateCcw className="w-4 h-4" />
                     Restore Deleted Expenses
@@ -677,7 +673,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 return (
                   <div
                     key={exp.id}
-                    className="bg-white border-2 border-black rounded-2xl p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:shadow-md transition-all text-slate-900"
+                    className="neu-upper-sm rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:scale-[1.01] transition-all text-slate-900"
                   >
                     <div className="flex items-start sm:items-center gap-3">
                       {/* User Avatar */}
@@ -685,13 +681,13 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                         name={payer?.name || exp.paidById}
                         avatar={payer?.avatar}
                         size="custom"
-                        className="w-11 h-11 rounded-2xl border border-black shadow-xs text-sm shrink-0"
+                        className="w-11 h-11 rounded-2xl shadow-xs text-sm shrink-0"
                       />
 
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="text-sm font-black text-slate-950 line-clamp-1">{cleanExpenseTitle(exp.title)}</h4>
-                          <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-black bg-slate-100 text-slate-900">
+                          <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-900">
                             {isMess ? 'Mess Food' : 'General'}
                           </span>
                         </div>
@@ -706,7 +702,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                           {exp.sharedWithIds && exp.sharedWithIds.length > 0 && exp.sharedWithIds.length < group.members.length && (
                             <>
                               <span>•</span>
-                              <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-blue-50 text-blue-900 border border-blue-200">
+                              <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-blue-100 text-blue-900">
                                 Shared: {exp.sharedWithIds.length}/{group.members.length} members
                               </span>
                             </>
@@ -716,7 +712,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                     </div>
 
                     {/* Amount & Delete */}
-                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t sm:border-0 pt-2.5 sm:pt-0 border-slate-200">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t sm:border-0 pt-2.5 sm:pt-0 border-slate-300/60">
                       <div className="text-left sm:text-right">
                         <span className="text-[10px] font-extrabold text-slate-500 uppercase block">Amount</span>
                         <DualCurrencyDisplay
@@ -732,7 +728,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                       {currentUser?.role === 'admin' && (
                         <div>
                           {deleteConfirmId === exp.id ? (
-                            <div className="flex items-center gap-1.5 bg-rose-50 p-1.5 rounded-2xl border border-black shadow-md">
+                            <div className="flex items-center gap-1.5 bg-rose-50 p-1.5 rounded-2xl shadow-md">
                               <span className="text-[11px] text-rose-900 font-bold px-1">Delete?</span>
                               <button
                                 type="button"
@@ -740,14 +736,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                                   onDeleteExpense(exp.id);
                                   setDeleteConfirmId(null);
                                 }}
-                                className="px-2.5 py-1 bg-black hover:bg-slate-800 text-white font-black text-xs rounded-xl transition-all border border-black cursor-pointer"
+                                className="px-2.5 py-1 bg-black hover:bg-slate-800 text-white font-black text-xs rounded-xl transition-all cursor-pointer"
                               >
                                 Delete
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setDeleteConfirmId(null)}
-                                className="px-2 py-1 bg-white text-black font-bold text-xs rounded-xl border border-black transition-all cursor-pointer"
+                                className="px-2 py-1 neu-upper-sm text-black font-bold text-xs rounded-xl transition-all cursor-pointer"
                               >
                                 Cancel
                               </button>
@@ -756,7 +752,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                             <button
                               type="button"
                               onClick={() => setDeleteConfirmId(exp.id)}
-                              className="px-2.5 py-1.5 text-black hover:bg-slate-100 bg-white rounded-xl transition-all border border-black cursor-pointer flex items-center gap-1.5 shadow-xs"
+                              className="px-2.5 py-1.5 text-black neu-upper-sm rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
                               title="Delete expense"
                             >
                               <Trash2 className="w-4 h-4 text-black" />
@@ -775,7 +771,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowAllExpenses(!showAllExpenses)}
-                    className="px-4 py-2 bg-black text-white text-xs font-black rounded-2xl border border-black hover:bg-slate-800 transition-all cursor-pointer shadow-xs"
+                    className="px-4 py-2 bg-black text-white text-xs font-black rounded-2xl hover:bg-slate-800 transition-all cursor-pointer shadow-xs"
                   >
                     {showAllExpenses ? 'Show Less' : `View All (${displayedList.length} Expenses)`}
                   </button>
@@ -784,7 +780,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </div>
           );
         })()}
-      </GlassContainer>
+        </div>
       </div>
     </div>
   );

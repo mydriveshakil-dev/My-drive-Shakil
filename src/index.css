@@ -12,7 +12,7 @@
     margin: 0;
     padding: 0;
     font-family: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
-    background-color: #F6F8FC;
+    background-color: #E7E7E7;
     color: #071E55;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
@@ -49,11 +49,105 @@
   position: fixed;
   inset: 0;
   z-index: -10;
-  background-color: #F6F8FC;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(15, 61, 255, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(7, 30, 85, 0.04) 0px, transparent 50%);
+  background-color: #E7E7E7;
   pointer-events: none;
+}
+
+/* ==========================================================================
+   NEUMORPHISM DESIGN SYSTEM (Matching exact specs from user reference images)
+   1. Upper Shadow (Drop Shadow - IMG_8167.jpeg)
+      Background: #E7E7E7
+      Drop Shadow: -10px -10px 30px 0px #FFFFFF 100%, 10px 10px 30px 0px #AEAEC0 100%
+   2. Lower Shadow (Inner Shadow - IMG_8168.jpeg)
+      Background: #E7E7E7
+      Inner Shadow: -10px -10px 25px 0px rgba(255,255,255,0.9), 10px 10px 25px 0px rgba(174,174,192,0.8)
+   ========================================================================== */
+
+/* 1. UPPER SHADOW (RAISED NEUMORPHISM FOR CARDS, BUTTONS & PANELS) */
+.neu-upper,
+.neu-raised {
+  background-color: #E7E7E7 !important;
+  box-shadow: -10px -10px 30px 0px #FFFFFF, 10px 10px 30px 0px #AEAEC0 !important;
+}
+
+.neu-upper-sm,
+.neu-raised-sm {
+  background-color: #E7E7E7 !important;
+  box-shadow: -6px -6px 16px 0px #FFFFFF, 6px 6px 16px 0px rgba(174, 174, 192, 0.85) !important;
+}
+
+.neu-upper-lg,
+.neu-raised-lg {
+  background-color: #E7E7E7 !important;
+  box-shadow: -12px -12px 35px 0px #FFFFFF, 12px 12px 35px 0px #AEAEC0 !important;
+}
+
+.neu-upper-btn {
+  background-color: #E7E7E7 !important;
+  box-shadow: -6px -6px 16px 0px #FFFFFF, 6px 6px 16px 0px rgba(174, 174, 192, 0.85) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.neu-upper-btn:hover {
+  box-shadow: -8px -8px 20px 0px #FFFFFF, 8px 8px 20px 0px rgba(174, 174, 192, 0.95) !important;
+}
+.neu-upper-btn:active {
+  box-shadow: inset -5px -5px 12px 0px rgba(255, 255, 255, 0.9), inset 5px 5px 12px 0px rgba(174, 174, 192, 0.8) !important;
+}
+
+/* 2. LOWER SHADOW (INSET INNER SHADOW FOR ALL TYPEABLE BOXES & INPUTS) */
+.neu-lower,
+.neu-type-box,
+.neu-input {
+  background-color: #E7E7E7 !important;
+  box-shadow: inset -10px -10px 25px 0px rgba(255, 255, 255, 0.9), inset 10px 10px 25px 0px rgba(174, 174, 192, 0.8) !important;
+  border: none !important;
+  outline: none !important;
+  color: #0f172a !important;
+}
+
+.neu-lower-sm,
+.neu-type-box-sm,
+.neu-input-sm {
+  background-color: #E7E7E7 !important;
+  box-shadow: inset -6px -6px 15px 0px rgba(255, 255, 255, 0.9), inset 6px 6px 15px 0px rgba(174, 174, 192, 0.8) !important;
+  border: none !important;
+  outline: none !important;
+  color: #0f172a !important;
+}
+
+.neu-lower:focus,
+.neu-lower:focus-within,
+.neu-type-box:focus,
+.neu-input:focus,
+.neu-lower-sm:focus,
+.neu-type-box-sm:focus,
+.neu-input-sm:focus {
+  box-shadow: inset -10px -10px 25px 0px rgba(255, 255, 255, 0.95), inset 10px 10px 25px 0px rgba(174, 174, 192, 0.95), 0 0 0 2px rgba(7, 30, 85, 0.3) !important;
+}
+
+/* Scoped automatically for main app view inputs (excluding the login modal which has its own style) */
+.app-neu-scope input[type="text"],
+.app-neu-scope input[type="number"],
+.app-neu-scope input[type="date"],
+.app-neu-scope input[type="password"],
+.app-neu-scope input[type="email"],
+.app-neu-scope textarea,
+.app-neu-scope select {
+  background-color: #E7E7E7 !important;
+  box-shadow: inset -10px -10px 25px 0px rgba(255, 255, 255, 0.9), inset 10px 10px 25px 0px rgba(174, 174, 192, 0.8) !important;
+  border: none !important;
+  color: #0f172a !important;
+}
+
+.app-neu-scope input[type="text"]:focus,
+.app-neu-scope input[type="number"]:focus,
+.app-neu-scope input[type="date"]:focus,
+.app-neu-scope input[type="password"]:focus,
+.app-neu-scope input[type="email"]:focus,
+.app-neu-scope textarea:focus,
+.app-neu-scope select:focus {
+  outline: none !important;
+  box-shadow: inset -10px -10px 25px 0px rgba(255, 255, 255, 0.95), inset 10px 10px 25px 0px rgba(174, 174, 192, 0.95), 0 0 0 2px rgba(7, 30, 85, 0.3) !important;
 }
 
 .ios26-ambient-orbs {

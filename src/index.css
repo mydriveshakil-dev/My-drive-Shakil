@@ -126,28 +126,49 @@
 }
 
 /* Scoped automatically for main app view inputs (excluding the login modal which has its own style) */
-.app-neu-scope input[type="text"],
-.app-neu-scope input[type="number"],
-.app-neu-scope input[type="date"],
-.app-neu-scope input[type="password"],
-.app-neu-scope input[type="email"],
-.app-neu-scope textarea,
-.app-neu-scope select {
+.app-neu-scope:not(.uae-login-modal) input[type="text"]:not(.uae-login-input),
+.app-neu-scope:not(.uae-login-modal) input[type="number"]:not(.uae-login-input),
+.app-neu-scope:not(.uae-login-modal) input[type="date"]:not(.uae-login-input),
+.app-neu-scope:not(.uae-login-modal) input[type="password"]:not(.uae-login-input),
+.app-neu-scope:not(.uae-login-modal) input[type="email"]:not(.uae-login-input),
+.app-neu-scope:not(.uae-login-modal) input[type="tel"]:not(.uae-login-input),
+.app-neu-scope:not(.uae-login-modal) textarea:not(.uae-login-input),
+.app-neu-scope:not(.uae-login-modal) select:not(.uae-login-input) {
   background-color: #E7E7E7 !important;
   box-shadow: inset -10px -10px 25px 0px rgba(255, 255, 255, 0.9), inset 10px 10px 25px 0px rgba(174, 174, 192, 0.8) !important;
   border: none !important;
   color: #0f172a !important;
 }
 
-.app-neu-scope input[type="text"]:focus,
-.app-neu-scope input[type="number"]:focus,
-.app-neu-scope input[type="date"]:focus,
-.app-neu-scope input[type="password"]:focus,
-.app-neu-scope input[type="email"]:focus,
-.app-neu-scope textarea:focus,
-.app-neu-scope select:focus {
+.app-neu-scope:not(.uae-login-modal) input[type="text"]:not(.uae-login-input):focus,
+.app-neu-scope:not(.uae-login-modal) input[type="number"]:not(.uae-login-input):focus,
+.app-neu-scope:not(.uae-login-modal) input[type="date"]:not(.uae-login-input):focus,
+.app-neu-scope:not(.uae-login-modal) input[type="password"]:not(.uae-login-input):focus,
+.app-neu-scope:not(.uae-login-modal) input[type="email"]:not(.uae-login-input):focus,
+.app-neu-scope:not(.uae-login-modal) input[type="tel"]:not(.uae-login-input):focus,
+.app-neu-scope:not(.uae-login-modal) textarea:not(.uae-login-input):focus,
+.app-neu-scope:not(.uae-login-modal) select:not(.uae-login-input):focus {
   outline: none !important;
   box-shadow: inset -10px -10px 25px 0px rgba(255, 255, 255, 0.95), inset 10px 10px 25px 0px rgba(174, 174, 192, 0.95), 0 0 0 2px rgba(7, 30, 85, 0.3) !important;
+}
+
+/* Explicitly clean inputs inside the login modal so there are no nested inner shadow boxes */
+.uae-login-modal input,
+.uae-login-modal input[type="text"],
+.uae-login-modal input[type="password"],
+.uae-login-modal input[type="tel"],
+.uae-login-input,
+.app-neu-scope .uae-login-modal input,
+.app-neu-scope .uae-login-modal input[type="text"],
+.app-neu-scope .uae-login-modal input[type="password"],
+.app-neu-scope .uae-login-modal input[type="tel"],
+.app-neu-scope .uae-login-input,
+.app-neu-scope .uae-login-input:focus {
+  background-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
 }
 
 .ios26-ambient-orbs {

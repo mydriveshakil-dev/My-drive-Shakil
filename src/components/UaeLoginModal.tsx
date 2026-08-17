@@ -455,7 +455,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
   };
 
   return (
-    <div className="w-full min-h-[85vh] sm:min-h-screen py-6 sm:py-10 px-3 sm:px-6 md:px-8 flex items-center justify-center bg-[#ebf0f7] max-w-full selection:bg-sky-500/20 my-auto">
+    <div className="uae-login-modal w-full min-h-[85vh] sm:min-h-screen py-6 sm:py-10 px-3 sm:px-6 md:px-8 flex items-center justify-center bg-[#ebf0f7] max-w-full selection:bg-sky-500/20 my-auto">
       {/* Neumorphic Soft UI Card */}
       <div className="neu-card w-full max-w-[420px] rounded-[36px] sm:rounded-[42px] border border-white/70 flex flex-col overflow-hidden relative my-auto box-border text-slate-800 p-6 sm:p-8 transition-all">
         
@@ -564,7 +564,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                       setResetMobile(e.target.value);
                       setResetError(null);
                     }}
-                    className="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400"
+                    className="uae-login-input w-full !bg-transparent !border-none !outline-none !shadow-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
               </div>
@@ -584,7 +584,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                       setNewPasswordInput(e.target.value);
                       setResetError(null);
                     }}
-                    className="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 pr-12"
+                    className="uae-login-input w-full !bg-transparent !border-none !outline-none !shadow-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 pr-12"
                   />
                   <button
                     type="button"
@@ -611,7 +611,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                       setConfirmPasswordInput(e.target.value);
                       setResetError(null);
                     }}
-                    className="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400"
+                    className="uae-login-input w-full !bg-transparent !border-none !outline-none !shadow-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
               </div>
@@ -700,7 +700,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                       setMobileNumber(e.target.value);
                       setLoginError(null);
                     }}
-                    className="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400"
+                    className="uae-login-input w-full !bg-transparent !border-none !outline-none !shadow-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400"
                   />
                 </div>
               </div>
@@ -720,7 +720,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
                       setUserPassword(e.target.value);
                       setLoginError(null);
                     }}
-                    className="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 pr-12"
+                    className="uae-login-input w-full !bg-transparent !border-none !outline-none !shadow-none text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 pr-12"
                   />
                   <button
                     type="button"

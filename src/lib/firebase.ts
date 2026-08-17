@@ -10,7 +10,10 @@ import {
   query,
   where,
   deleteDoc,
-  addDoc
+  addDoc,
+  disableNetwork,
+  enableNetwork,
+  setLogLevel,
 } from 'firebase/firestore';
 import {
   getAuth,
@@ -21,6 +24,11 @@ import {
 } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { Group, Expense, UtilityBill, RentContribution, ChatMessage, UserAuthProfile, PayToTransaction } from '../types';
+
+// Silence verbose internal backoff logging on quota limits
+try {
+  setLogLevel('silent');
+} catch (e) {}
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -34,6 +42,80 @@ export const db = firebaseConfig.firestoreDatabaseId
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export { onAuthStateChanged, signOut };
+
+const QUOTA_EXCEEDED_KEY = 'firestore_quota_limit_exceeded_until';
+
+function checkStoredQuotaStatus(): boolean {
+  try {
+    const until = sessionStorage.getItem(QUOTA_EXCEEDED_KEY) || localStorage.getItem(QUOTA_EXCEEDED_KEY);
+    if (until && Number(until) > Date.now()) {
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+let isQuotaExceeded = checkStoredQuotaStatus();
+
+export async function pauseFirestoreNetwork() {
+  try {
+    await disableNetwork(db);
+  } catch (e) {}
+}
+
+export async function resumeFirestoreNetwork() {
+  try {
+    await enableNetwork(db);
+  } catch (e) {}
+}
+
+if (isQuotaExceeded) {
+  pauseFirestoreNetwork();
+}
+
+export function getIsQuotaExceeded(): boolean {
+  if (isQuotaExceeded) {
+    // Check if expired
+    const until = sessionStorage.getItem(QUOTA_EXCEEDED_KEY) || localStorage.getItem(QUOTA_EXCEEDED_KEY);
+    if (until && Number(until) <= Date.now()) {
+      isQuotaExceeded = false;
+      try {
+        sessionStorage.removeItem(QUOTA_EXCEEDED_KEY);
+        localStorage.removeItem(QUOTA_EXCEEDED_KEY);
+      } catch (e) {}
+      resumeFirestoreNetwork();
+    }
+  }
+  return isQuotaExceeded;
+}
+
+export function markQuotaExceeded() {
+  isQuotaExceeded = true;
+  try {
+    const until = Date.now() + 60 * 60 * 1000; // 1 hour pause before re-testing Firestore quotas
+    sessionStorage.setItem(QUOTA_EXCEEDED_KEY, String(until));
+    localStorage.setItem(QUOTA_EXCEEDED_KEY, String(until));
+  } catch (e) {}
+  pauseFirestoreNetwork();
+}
+
+export function isQuotaError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (
+    msg.includes('resource-exhausted') ||
+    msg.includes('Quota limit exceeded') ||
+    msg.includes('Free daily write units') ||
+    msg.includes('Free daily read units') ||
+    (err as any)?.code === 'resource-exhausted'
+  ) {
+    if (!isQuotaExceeded) {
+      markQuotaExceeded();
+      console.warn('Firestore Quota Limit Exceeded: Application running in resilient Local Storage mode.');
+    }
+    return true;
+  }
+  return false;
+}
 
 export enum OperationType {
   CREATE = 'create',
@@ -147,62 +229,6 @@ export function isPhoneMatch(p1?: string, p2?: string): boolean {
     if (c1.endsWith(c2.slice(-minLen)) || c2.endsWith(c1.slice(-minLen))) {
       return true;
     }
-  }
-  return false;
-}
-
-const QUOTA_EXCEEDED_KEY = 'firestore_quota_limit_exceeded_until';
-
-function checkStoredQuotaStatus(): boolean {
-  try {
-    const until = sessionStorage.getItem(QUOTA_EXCEEDED_KEY) || localStorage.getItem(QUOTA_EXCEEDED_KEY);
-    if (until && Number(until) > Date.now()) {
-      return true;
-    }
-  } catch (e) {}
-  return false;
-}
-
-let isQuotaExceeded = checkStoredQuotaStatus();
-
-export function getIsQuotaExceeded(): boolean {
-  if (isQuotaExceeded) {
-    // Check if expired
-    const until = sessionStorage.getItem(QUOTA_EXCEEDED_KEY) || localStorage.getItem(QUOTA_EXCEEDED_KEY);
-    if (until && Number(until) <= Date.now()) {
-      isQuotaExceeded = false;
-      try {
-        sessionStorage.removeItem(QUOTA_EXCEEDED_KEY);
-        localStorage.removeItem(QUOTA_EXCEEDED_KEY);
-      } catch (e) {}
-    }
-  }
-  return isQuotaExceeded;
-}
-
-export function markQuotaExceeded() {
-  isQuotaExceeded = true;
-  try {
-    const until = Date.now() + 60 * 60 * 1000; // 1 hour pause before re-testing Firestore quotas
-    sessionStorage.setItem(QUOTA_EXCEEDED_KEY, String(until));
-    localStorage.setItem(QUOTA_EXCEEDED_KEY, String(until));
-  } catch (e) {}
-}
-
-export function isQuotaError(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
-  if (
-    msg.includes('resource-exhausted') ||
-    msg.includes('Quota limit exceeded') ||
-    msg.includes('Free daily write units') ||
-    msg.includes('Free daily read units') ||
-    (err as any)?.code === 'resource-exhausted'
-  ) {
-    if (!isQuotaExceeded) {
-      markQuotaExceeded();
-      console.warn('Firestore Quota Limit Exceeded: Application running in resilient Local Storage mode.');
-    }
-    return true;
   }
   return false;
 }

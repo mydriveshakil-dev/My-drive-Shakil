@@ -375,7 +375,9 @@ export default function App() {
         };
         setUserAuth(userProf);
         localStorage.setItem('uae_user_auth', JSON.stringify(userProf));
-        saveUserProfileToFirestore(userProf);
+        if (!getIsQuotaExceeded()) {
+          saveUserProfileToFirestore(userProf);
+        }
         setIsLoginModalOpen(false);
         setActiveTab('dashboard');
       }

@@ -4,6 +4,7 @@ import {
   MessageCircle,
   X,
   Send,
+  ArrowUp,
   Sparkles,
   Users,
   CheckCircle2,
@@ -329,22 +330,26 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSend} className="flex items-center gap-2">
+          <form onSubmit={handleSend} className="flex items-center gap-2.5">
             <input
               type="text"
               placeholder={`Send message as ${activeSenderName.split(' ')[0]}...`}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              className="flex-1 neu-lower rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-500 focus:outline-none"
+              className="flex-1 neu-lower rounded-full px-4.5 py-3 text-xs sm:text-sm font-bold text-slate-900 placeholder-slate-500 focus:outline-none"
             />
 
             <button
               type="submit"
               disabled={!inputText.trim()}
-              className="bg-[#07193F] hover:bg-[#0B2556] text-white font-black px-4 py-3 rounded-2xl neu-upper-sm transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 active:scale-95 shrink-0 text-xs sm:text-sm cursor-pointer"
+              aria-label="Send message"
+              className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 cursor-pointer border ${
+                inputText.trim()
+                  ? 'bg-gradient-to-b from-slate-500/90 via-slate-650/95 to-slate-800 border-white text-white shadow-[0_4px_16px_rgba(0,0,0,0.35),0_0_12px_rgba(255,255,255,0.4),inset_0_1.5px_2px_rgba(255,255,255,0.9),inset_0_-2px_4px_rgba(0,0,0,0.45)] hover:scale-105 active:scale-95'
+                  : 'bg-gradient-to-b from-slate-500/60 via-slate-600/70 to-slate-750/80 border-white/70 text-white/80 shadow-[0_2px_10px_rgba(0,0,0,0.2),inset_0_1.5px_2px_rgba(255,255,255,0.65),inset_0_-2px_3px_rgba(0,0,0,0.35)] opacity-60 cursor-not-allowed'
+              }`}
             >
-              <span>Send</span>
-              <Send className="w-4 h-4 stroke-[2.5]" />
+              <ArrowUp className="w-5.5 h-5.5 sm:w-6 sm:h-6 stroke-[3] text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
             </button>
           </form>
         </div>

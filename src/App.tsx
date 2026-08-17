@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Group, Expense, UtilityBill, RentContribution, GoogleSheetsConfig, BillingCycleType, Member, ChatMessage, UserAuthProfile, PayToTransaction, GroupNotice } from './types';
+import { Group, Expense, UtilityBill, RentContribution, GoogleSheetsConfig, BillingCycleType, Member, ChatMessage, UserAuthProfile, PayToTransaction, GroupNotice, NoticeViewerRecord } from './types';
 import { getCurrentCycleId, getBillingCycleLabel, getPreviousCycleOptions } from './utils/cycleUtils';
 import {
   INITIAL_GROUP,
@@ -539,6 +539,66 @@ export default function App() {
     }
   }, []);
 
+  // Function to record member notice views and increment view count
+  const recordNoticeView = async (targetGroup: Group, noticeId: string, user: UserAuthProfile) => {
+    if (!targetGroup?.notice || targetGroup.notice.id !== noticeId) return;
+
+    const now = Date.now();
+    const currentMember = targetGroup.members?.find(
+      (m) =>
+        (user?.idNumber && m.id === user.idNumber) ||
+        (user?.name && m.name.toLowerCase() === user.name.toLowerCase()) ||
+        (user?.mobileNumber && m.phone === user.mobileNumber)
+    );
+
+    const userName = user?.name || user?.identity?.fullName || currentMember?.name || 'Member';
+    const userAvatar = user?.avatar || user?.identity?.photoUrl || currentMember?.avatar || '';
+    const userId = currentMember?.id || user?.idNumber || user?.email || user?.mobileNumber || userName;
+    const userKey = userId.replace(/[^a-zA-Z0-9_\-]/g, '_') || 'user';
+
+    const existingSeenBy: Record<string, NoticeViewerRecord> = {};
+    if (targetGroup.notice.seenBy) {
+      if (Array.isArray(targetGroup.notice.seenBy)) {
+        targetGroup.notice.seenBy.forEach((rec) => {
+          const k = (rec.userId || rec.userName).replace(/[^a-zA-Z0-9_\-]/g, '_');
+          existingSeenBy[k] = rec;
+        });
+      } else if (typeof targetGroup.notice.seenBy === 'object') {
+        Object.assign(existingSeenBy, targetGroup.notice.seenBy);
+      }
+    }
+
+    const prevRecord = existingSeenBy[userKey];
+    const newRecord: NoticeViewerRecord = {
+      userId,
+      userName,
+      userAvatar,
+      viewCount: (prevRecord?.viewCount || 0) + 1,
+      lastViewedAtMs: now,
+      lastViewedAt: new Date(now).toISOString(),
+    };
+
+    existingSeenBy[userKey] = newRecord;
+
+    const updatedNotice: GroupNotice = {
+      ...targetGroup.notice,
+      seenBy: existingSeenBy,
+    };
+
+    const updatedGroup: Group = {
+      ...targetGroup,
+      notice: updatedNotice,
+    };
+
+    if (targetGroup.id === group.id) {
+      setGroup(updatedGroup);
+    }
+    setAllGroups((prev) => prev.map((g) => (g.id === targetGroup.id ? updatedGroup : g)));
+    localStorage.setItem(`room_group_${targetGroup.id}`, JSON.stringify(updatedGroup));
+
+    await saveGroupToFirestore(updatedGroup);
+  };
+
   // Trigger daily Group Notice popup once per day per active notice for group members after animation
   // and auto-clean if notice has expired
   useEffect(() => {
@@ -558,6 +618,8 @@ export default function App() {
         if (lastSeen !== todayStr) {
           setActivePopupNotice(notice);
           setIsNoticePopupOpen(true);
+          // Automatically record view and increment count for this user
+          recordNoticeView(group, notice.id, userAuth);
         }
       }
     }
@@ -1152,10 +1214,10 @@ export default function App() {
     triggerSheetsSync(false, updatedExpenses);
   };
 
-  const handleSendMessage = (data: { text: string; senderId: string; senderName?: string }) => {
+  const handleSendMessage = (data: { text: string; senderId: string; senderName?: string; senderAvatar?: string }) => {
     const sender = group.members.find((m) => m.id === data.senderId) || group.members[0];
     const nameToUse = data.senderName || sender?.name || userAuth?.name || 'User';
-    const avatarToUse = sender?.avatar || nameToUse.slice(0, 2).toUpperCase();
+    const avatarToUse = data.senderAvatar || userAuth?.avatar || userAuth?.identity?.photoUrl || sender?.avatar || nameToUse.slice(0, 2).toUpperCase();
 
     const nowMs = Date.now();
     const newMsg: ChatMessage = {
@@ -1745,27 +1807,67 @@ export default function App() {
     triggerHaptic(hapticPatterns.error);
   };
 
-  const handleSaveGroupNotice = async (notice: GroupNotice | null) => {
-    const updatedGroup: Group = {
-      ...group,
-      notice,
-    };
-    setGroup(updatedGroup);
-    const updatedAll = allGroups.map((g) => (g.id === group.id ? updatedGroup : g));
-    setAllGroups(updatedAll);
-    localStorage.setItem(`room_group_${group.id}`, JSON.stringify(updatedGroup));
-    localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
-    await saveGroupToFirestore(updatedGroup);
-
-    if (notice) {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      localStorage.setItem(`group_notice_seen_${group.id}_${notice.id}`, todayStr);
-      setSyncNotification('Group notice broadcasted to all room members!');
-      setTimeout(() => setSyncNotification(null), 3000);
-    } else {
+  const handleSaveGroupNotice = async (notice: GroupNotice | null, targetGroupIds?: string[]) => {
+    if (!notice) {
+      // Clear notice from current group or targeted groups
+      const targets = targetGroupIds && targetGroupIds.length > 0 ? targetGroupIds : [group.id];
+      let updatedCurrent = group;
+      const updatedAll = allGroups.map((g) => {
+        if (targets.includes(g.id)) {
+          const cleared: Group = { ...g, notice: null };
+          localStorage.setItem(`room_group_${g.id}`, JSON.stringify(cleared));
+          saveGroupToFirestore(cleared);
+          if (g.id === group.id) updatedCurrent = cleared;
+          return cleared;
+        }
+        return g;
+      });
+      setGroup(updatedCurrent);
+      setAllGroups(updatedAll);
+      localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
       setSyncNotification('Group notice cleared.');
       setTimeout(() => setSyncNotification(null), 3000);
+      return;
     }
+
+    // Determine affected groups
+    const targets = targetGroupIds && targetGroupIds.length > 0
+      ? targetGroupIds
+      : (notice.targetScope === 'all' ? allGroups.map((g) => g.id) : [group.id]);
+
+    let updatedCurrentGroup = group;
+    const updatedAll = allGroups.map((g) => {
+      if (targets.includes(g.id)) {
+        const noticeForGroup: GroupNotice = {
+          ...notice,
+          groupId: g.id,
+        };
+        const updatedG: Group = {
+          ...g,
+          notice: noticeForGroup,
+        };
+        localStorage.setItem(`room_group_${g.id}`, JSON.stringify(updatedG));
+        saveGroupToFirestore(updatedG);
+        if (g.id === group.id) {
+          updatedCurrentGroup = updatedG;
+        }
+        return updatedG;
+      }
+      return g;
+    });
+
+    setGroup(updatedCurrentGroup);
+    setAllGroups(updatedAll);
+    localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    localStorage.setItem(`group_notice_seen_${group.id}_${notice.id}`, todayStr);
+
+    const msg = targets.length > 1
+      ? `Group notice broadcasted to all ${targets.length} groups!`
+      : 'Group notice broadcasted to room members!';
+    setSyncNotification(msg);
+    setTimeout(() => setSyncNotification(null), 3000);
   };
 
   return (
@@ -2080,6 +2182,7 @@ export default function App() {
         isOpen={isGroupNoteModalOpen}
         onClose={() => setIsGroupNoteModalOpen(false)}
         group={group}
+        allGroups={allGroups}
         currentUser={userAuth}
         onSaveNotice={handleSaveGroupNotice}
       />

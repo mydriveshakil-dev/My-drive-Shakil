@@ -22,7 +22,7 @@ interface GroupChatModalProps {
   onClose: () => void;
   group: Group;
   messages: ChatMessage[];
-  onSendMessage: (msg: { text: string; senderId: string; senderName?: string }) => void;
+  onSendMessage: (msg: { text: string; senderId: string; senderName?: string; senderAvatar?: string }) => void;
   currentUser?: UserAuthProfile | null;
   activeMemberIds?: string[];
 }
@@ -52,6 +52,12 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
     loggedInMember?.name ||
     group?.members?.[0]?.name ||
     'Logged In User';
+
+  const activeSenderAvatar =
+    currentUser?.avatar ||
+    currentUser?.identity?.photoUrl ||
+    loggedInMember?.avatar ||
+    '';
 
   const activeSenderId = loggedInMember?.id || currentUser?.id || currentUser?.email || 'm_current';
 
@@ -91,6 +97,7 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
       text: inputText.trim(),
       senderId: activeSenderId,
       senderName: activeSenderName,
+      senderAvatar: activeSenderAvatar,
     });
     setInputText('');
   };
@@ -150,6 +157,8 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
                   (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
                   (currentUser?.name && m.name.toLowerCase().includes(currentUser.name.toLowerCase()));
 
+                const memberAvatar = isMe ? (activeSenderAvatar || m.avatar) : m.avatar;
+
                 const isOnline =
                   isMe ||
                   activeMemberIds.includes(m.id) ||
@@ -166,7 +175,7 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
                   >
                     <MemberAvatar
                       name={m.name}
-                      avatar={m.avatar}
+                      avatar={memberAvatar}
                       size="xs"
                       className="w-5 h-5 text-[9px] shrink-0"
                     />
@@ -212,13 +221,26 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
               return true;
             })
             .map((msg) => {
+            const senderMember = group.members.find(
+              (m) =>
+                m.id === msg.senderId ||
+                (msg.senderName && m.name.toLowerCase() === msg.senderName.toLowerCase()) ||
+                (msg.senderName && m.name.toLowerCase().includes(msg.senderName.toLowerCase()))
+            );
+
             const isMe =
               msg.senderId === activeSenderId ||
               (loggedInMember && msg.senderId === loggedInMember.id) ||
               (msg.senderName && activeSenderName && msg.senderName.trim().toLowerCase() === activeSenderName.trim().toLowerCase()) ||
               (currentUser?.name && msg.senderName && msg.senderName.trim().toLowerCase().includes(currentUser.name.trim().toLowerCase())) ||
               (currentUser?.email && msg.senderId === currentUser.email) ||
-              msg.senderName.includes('(Me)');
+              msg.senderName?.includes('(Me)');
+
+            const resolvedAvatar = isMe
+              ? (activeSenderAvatar || msg.senderAvatar || senderMember?.avatar || '')
+              : (msg.senderAvatar || senderMember?.avatar || '');
+
+            const displayName = isMe ? 'You' : (msg.senderName || senderMember?.name || 'User');
             const isSystemOrExpense = msg.type === 'expense_added' || msg.type === 'settlement_update';
 
             if (isSystemOrExpense) {
@@ -239,8 +261,8 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
               >
                 {!isMe && (
                   <MemberAvatar
-                    name={msg.senderName || 'User'}
-                    avatar={msg.senderAvatar}
+                    name={displayName}
+                    avatar={resolvedAvatar}
                     size="sm"
                     className="w-8 h-8 rounded-2xl border border-black shadow-sm mt-0.5 shrink-0"
                   />
@@ -255,10 +277,18 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
                   }`}
                 >
                   <div className={`flex items-center justify-between gap-3 text-[10px] font-bold border-b pb-1 ${isMe ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'}`}>
-                    <span className={isMe ? 'text-emerald-400 font-extrabold' : 'text-slate-950 font-black'}>
-                      {isMe ? 'You' : msg.senderName}
-                    </span>
-                    <span className="text-[9px] opacity-80">{msg.timestamp}</span>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <MemberAvatar
+                        name={displayName}
+                        avatar={resolvedAvatar}
+                        size="xs"
+                        className="w-4 h-4 text-[8px] shrink-0 border border-current/20 shadow-xs"
+                      />
+                      <span className={`truncate ${isMe ? 'text-emerald-400 font-extrabold' : 'text-slate-950 font-black'}`}>
+                        {displayName}
+                      </span>
+                    </div>
+                    <span className="text-[9px] opacity-80 shrink-0">{msg.timestamp}</span>
                   </div>
                   <p className="text-xs sm:text-sm font-medium leading-relaxed break-words pt-0.5">
                     {msg.text}
@@ -266,9 +296,12 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
                 </div>
 
                 {isMe && (
-                  <div className="w-8 h-8 rounded-2xl bg-emerald-950 text-white font-black text-[10px] flex items-center justify-center shrink-0 border border-emerald-900 shadow-sm mt-0.5">
-                    {msg.senderAvatar || 'ME'}
-                  </div>
+                  <MemberAvatar
+                    name={activeSenderName}
+                    avatar={resolvedAvatar}
+                    size="sm"
+                    className="w-8 h-8 rounded-2xl border border-emerald-800 shadow-sm mt-0.5 shrink-0"
+                  />
                 )}
               </div>
             );
@@ -278,11 +311,19 @@ export const GroupChatModal: React.FC<GroupChatModalProps> = ({
 
         {/* Footer Input Controls */}
         <div className="p-3 sm:p-4 bg-white border-t-2 border-black shrink-0 space-y-2">
-          {/* Logged in sender identity label */}
+          {/* Logged in sender identity label with Profile Image */}
           <div className="flex items-center justify-between text-xs text-slate-800 px-1">
-            <div className="flex items-center gap-1.5 font-bold text-[11px]">
+            <div className="flex items-center gap-2 font-bold text-[11px]">
               <span className="text-slate-600">Chatting as:</span>
-              <span className="text-slate-950 font-black">{activeSenderName}</span>
+              <span className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-300 text-slate-950 font-black px-2.5 py-0.5 rounded-full shadow-xs">
+                <MemberAvatar
+                  name={activeSenderName}
+                  avatar={activeSenderAvatar}
+                  size="xs"
+                  className="w-4.5 h-4.5 text-[8px] shrink-0 border border-slate-300 shadow-xs"
+                />
+                <span>{activeSenderName}</span>
+              </span>
             </div>
             <span className="text-[10px] text-slate-700 font-extrabold uppercase">
               Logged In User

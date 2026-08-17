@@ -57,6 +57,15 @@ export interface RentContribution {
   isLocked?: boolean;
 }
 
+export interface NoticeViewerRecord {
+  userId?: string;
+  userName: string;
+  userAvatar?: string;
+  viewCount: number;
+  lastViewedAtMs: number;
+  lastViewedAt?: string;
+}
+
 export interface GroupNotice {
   id: string;
   groupId: string;
@@ -68,6 +77,9 @@ export interface GroupNotice {
   publishedAt: string; // ISO string
   publishedAtMs: number;
   expiresAtMs: number;
+  targetScope?: 'selected' | 'all'; // 'selected' (specific group) or 'all' (all groups)
+  targetGroupIds?: string[];
+  seenBy?: Record<string, NoticeViewerRecord> | NoticeViewerRecord[];
 }
 
 export interface Group {

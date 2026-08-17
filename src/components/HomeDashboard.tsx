@@ -99,15 +99,25 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   const activeMembersCount = group.members.filter((m) => m.active).length || 1;
   const avgPerPerson = totalExpenses / activeMembersCount;
 
-  // "My Contribution" (Finding Shakil or m3)
-  const myMember = (group?.members || []).find((m) => m?.name?.includes('Shakil') || m?.id === 'm3') || group?.members?.[0] || {
-    id: 'm3',
-    name: 'Shakil Hossain',
-    role: 'MEMBER',
-    avatar: '👨‍💼',
-    active: true,
-    daysPresent: 30,
-  };
+  // "My Contribution" (Matching logged in member or fallback)
+  const loggedInMember = getLoggedInMember(group, currentUser);
+  const myMember =
+    loggedInMember ||
+    (group?.members || []).find((m) => m?.name?.includes('Shakil') || m?.id === 'm3') ||
+    group?.members?.[0] || {
+      id: 'm3',
+      name: currentUser?.name || 'Shakil Hossain',
+      role: 'MEMBER',
+      avatar: currentUser?.avatar || '👨‍💼',
+      active: true,
+      daysPresent: 30,
+    };
+
+  const currentUserName =
+    currentUser?.name || currentUser?.identity?.fullName || myMember.name || 'Member';
+  const currentUserAvatar =
+    currentUser?.avatar || currentUser?.identity?.photoUrl || myMember.avatar || '';
+
   const mySpent = expenses
     .filter((e) => e.paidById === myMember.id)
     .reduce((sum, e) => sum + e.amount, 0);
@@ -150,10 +160,18 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 Cycle: {group.billingCycle}
               </span>
             </div>
-            {/* Logged in User Name under Group Name */}
-            <div className="text-xs text-slate-700 font-bold flex items-center gap-1.5 px-1 pt-0.5">
-              <UserCheck className="w-3.5 h-3.5 text-slate-900" />
-              <span>Logged in as: <strong className="text-slate-900 font-extrabold">{currentUser?.name || 'Member'}</strong></span>
+            {/* Logged in User Name & Avatar under Group Name */}
+            <div className="text-xs text-slate-700 font-bold flex items-center gap-1.5 px-1 pt-0.5 flex-wrap">
+              <span className="text-slate-600 font-medium">Logged in as:</span>
+              <span className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-300 text-slate-900 font-extrabold text-xs px-2.5 py-0.5 rounded-full shadow-xs">
+                <MemberAvatar
+                  name={currentUserName}
+                  avatar={currentUserAvatar}
+                  size="xs"
+                  className="w-4.5 h-4.5 text-[8px] shrink-0 border border-slate-300 shadow-xs"
+                />
+                <span>{currentUserName}</span>
+              </span>
             </div>
           </div>
 
@@ -427,13 +445,22 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 {myPercentage}% of Group
               </span>
             </div>
-            <p className="text-[11px] text-slate-600 mt-1">
-              Logged in as: <strong className="text-slate-900">{myMember.name}</strong>
-            </p>
+            <div className="text-[11px] text-slate-600 mt-1.5 flex items-center gap-1.5 flex-wrap">
+              <span>Logged in as:</span>
+              <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-300 font-bold text-slate-900 text-[11px]">
+                <MemberAvatar
+                  name={currentUserName}
+                  avatar={currentUserAvatar}
+                  size="xs"
+                  className="w-4 h-4 text-[8px] shrink-0 border border-slate-300"
+                />
+                <span>{currentUserName}</span>
+              </span>
+            </div>
           </div>
           <MemberAvatar
-            name={myMember.name}
-            avatar={myMember.avatar}
+            name={currentUserName}
+            avatar={currentUserAvatar}
             size="lg"
             className="rounded-2xl border border-black shadow-md shrink-0"
           />

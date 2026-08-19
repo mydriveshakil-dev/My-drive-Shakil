@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Group, Expense, UtilityBill, RentContribution, GoogleSheetsConfig, UserAuthProfile } from '../types';
 import { GlassContainer } from './GlassContainer';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
+import { MemberAvatar } from './MemberAvatar';
 import { cleanExpenseTitle } from '../utils/textCleaner';
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import {
@@ -613,6 +614,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <span className="truncate">All Users ({expenses.length})</span>
                     ) : (
                       <div className="flex items-center gap-1.5 truncate">
+                        <MemberAvatar
+                          name={selectedMember?.name || 'Selected User'}
+                          avatar={selectedMember?.avatar}
+                          size="xs"
+                          className="w-5 h-5 text-[9px] shrink-0 ring-1 ring-white/40"
+                        />
                         <span className="truncate">{selectedMember?.name || 'Selected User'}</span>
                         <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full shrink-0">
                           {selectedUserCount} • {selectedUserTotal.toFixed(0)} {group.currency}
@@ -682,11 +689,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         }`}
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
-                            isSelected ? 'bg-white text-[#0052FF]' : 'bg-slate-200 text-slate-800'
-                          }`}>
-                            {member.avatar || member.name.slice(0, 2).toUpperCase()}
-                          </div>
+                          <MemberAvatar
+                            name={member.name}
+                            avatar={member.avatar}
+                            size="xs"
+                            className="w-6 h-6 text-[10px] shrink-0"
+                          />
                           <span className="truncate">{member.name}</span>
                         </div>
 
@@ -728,7 +736,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           return (
             <div className="space-y-2.5">
               {visibleItems.map((exp) => {
-                const payer = group.members.find((m) => m.id === exp.paidById);
+                const payer = group.members.find(
+                  (m) =>
+                    m.id === exp.paidById ||
+                    m.name.toLowerCase() === exp.paidById.toLowerCase() ||
+                    (exp.paidByName && m.name.toLowerCase() === exp.paidByName.toLowerCase())
+                );
                 const isMess = exp.type === 'mess';
 
                 return (
@@ -736,11 +749,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     key={exp.id}
                     className="neu-upper-sm rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-2 transition-all text-slate-900"
                   >
-                    {/* Left: User Badge, Title, Date */}
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className="bg-[#0052FF] text-white font-extrabold text-[11px] sm:text-xs px-2.5 py-1 rounded-lg shrink-0 shadow-2xs">
-                        {payer?.name || exp.paidById}
-                      </span>
+                    {/* Left: User Badge with Profile Image, Title, Date */}
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 bg-[#0052FF] text-white font-extrabold text-[11px] sm:text-xs pl-1.5 pr-2.5 py-1 rounded-xl shrink-0 shadow-2xs">
+                        <MemberAvatar
+                          name={payer?.name || exp.paidById}
+                          avatar={payer?.avatar}
+                          size="xs"
+                          className="w-5 h-5 text-[9px] shrink-0 ring-1 ring-white/40"
+                        />
+                        <span className="truncate max-w-[85px] sm:max-w-[130px]">
+                          {payer?.name || exp.paidById}
+                        </span>
+                      </div>
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 min-w-0 flex-wrap">

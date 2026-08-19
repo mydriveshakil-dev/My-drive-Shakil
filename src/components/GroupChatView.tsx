@@ -90,7 +90,7 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
 
   // Dynamic visualViewport height for seamless mobile keyboard support (iOS & Android)
-  const [viewportHeight, setViewportHeight] = useState<string>('100dvh');
+  const [viewportHeight, setViewportHeight] = useState<string>('100%');
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -128,7 +128,7 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 60);
       } else {
-        setViewportHeight('100dvh');
+        setViewportHeight('100%');
       }
     };
 
@@ -369,55 +369,11 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
         </div>
       </div>
 
-      {/* 2. FIXED Active Members Bar (Directly under top header; ONLY shows same-time active members) */}
-      <div className="shrink-0 w-full z-30 px-3 py-1.5 sm:py-2 bg-[#E6DFD5] border-b border-slate-300/80 flex items-center justify-between text-xs overflow-x-auto shadow-2xs">
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5 w-full">
-          <span className="text-[10px] font-black text-emerald-950 bg-[#DCF8C6]/90 border border-emerald-300/90 px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0 flex items-center gap-1.5 shadow-2xs">
-            <Radio className="w-3 h-3 text-emerald-600 animate-pulse shrink-0" />
-            <span>Active Now ({activeMembersList.length}):</span>
-          </span>
-
-          <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none">
-            {activeMembersList.map((m) => {
-              const isMe =
-                (loggedInMember && m.id === loggedInMember.id) ||
-                (currentUser?.email && m.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
-                (currentUser?.name && m.name.toLowerCase().includes(currentUser.name.toLowerCase()));
-
-              const memberAvatar = isMe ? (activeSenderAvatar || m.avatar) : m.avatar;
-
-              return (
-                <div
-                  key={m.id}
-                  className="flex items-center gap-1.5 bg-white/95 hover:bg-white text-slate-900 px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap shadow-2xs border border-emerald-300/80 transition-all shrink-0 animate-in fade-in zoom-in-95 duration-150"
-                >
-                  <div className="relative shrink-0">
-                    <MemberAvatar
-                      name={m.name}
-                      avatar={memberAvatar}
-                      size="xs"
-                      className="w-4.5 h-4.5 text-[8px] shrink-0 ring-1 ring-emerald-400"
-                    />
-                    <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-white" />
-                  </div>
-                  <span className="font-bold text-slate-800">{m.name.split(' ')[0]}</span>
-                  {isMe && (
-                    <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-1 rounded-md">
-                      You
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* 3. WhatsApp Messages Canvas (Scrollable messages area) */}
+      {/* WhatsApp Messages Canvas (Scrollable messages area) */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 w-full p-3.5 sm:p-4 overflow-y-auto space-y-3 relative overscroll-contain"
+        className="flex-1 min-h-0 w-full p-3.5 sm:p-4 overflow-y-auto space-y-3 relative overscroll-contain"
         style={{
           backgroundImage: `radial-gradient(#CBD5E1 0.75px, transparent 0.75px)`,
           backgroundSize: '16px 16px',
@@ -648,7 +604,7 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
       )}
 
       {/* 6. WhatsApp / Messenger Styled Bottom Input Bar (Fixed immediately above virtual keyboard) */}
-      <div className="shrink-0 w-full z-40 p-2 sm:p-2.5 bg-[#F0F2F5] border-t border-slate-300/80">
+      <div className="shrink-0 w-full z-40 px-3 py-2.5 sm:px-4 sm:py-3 bg-[#F0F2F5] border-t border-slate-300/80 pb-[max(env(safe-area-inset-bottom),0.75rem)] shadow-lg">
         <form onSubmit={handleSend} className="flex items-center gap-1.5 sm:gap-2">
           {/* Emoji Button */}
           <button

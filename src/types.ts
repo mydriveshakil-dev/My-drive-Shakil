@@ -55,6 +55,8 @@ export interface RentContribution {
   paidMemberIds: string[];
   temporaryMembers?: string[];
   isLocked?: boolean;
+  paidCycle?: string; // e.g. "2026-08" to lock until 1st of next month
+  paidAt?: string;
 }
 
 export interface NoticeViewerRecord {
@@ -170,6 +172,7 @@ export interface ChatMessage {
   createdAt?: string;
   type?: 'text' | 'expense_added' | 'settlement_update' | 'bill_reminder';
   amount?: number;
+  reactions?: Record<string, string[]>;
 }
 
 export interface PayToTransaction {

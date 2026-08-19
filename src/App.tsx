@@ -28,6 +28,7 @@ import {
   saveRentToFirestore,
   subscribeToChatMessages,
   saveChatMessageToFirestore,
+  updateChatMessageReactionInFirestore,
   subscribeToPayToTransactions,
   savePayToTransactionToFirestore,
   deletePayToTransactionFromFirestore,
@@ -701,7 +702,7 @@ export default function App() {
       if (!getIsQuotaExceeded()) {
         updateUserPresenceInFirestore(group.id, memberId, memberName);
       }
-    }, 180000);
+    }, 45000);
 
     return () => clearInterval(interval);
   }, [group.id, userAuth.isLoggedIn, userAuth.mobileNumber, userAuth.email, userAuth.name]);
@@ -1262,6 +1263,29 @@ export default function App() {
     triggerHaptic(hapticPatterns.click);
   };
 
+  const handleToggleMessageReaction = (messageId: string, emoji: string) => {
+    const currentUserId = userAuth.id || userAuth.mobileNumber || userAuth.email || 'user';
+    setChatMessages((prev) => {
+      const updated = prev.map((msg) => {
+        if (msg.id !== messageId) return msg;
+        const reactions = { ...(msg.reactions || {}) };
+        const userList = reactions[emoji] || [];
+        if (userList.includes(currentUserId)) {
+          reactions[emoji] = userList.filter((u) => u !== currentUserId);
+          if (reactions[emoji].length === 0) {
+            delete reactions[emoji];
+          }
+        } else {
+          reactions[emoji] = [...userList, currentUserId];
+        }
+        updateChatMessageReactionInFirestore(group.id, messageId, reactions);
+        return { ...msg, reactions };
+      });
+      localStorage.setItem(`room_chat_messages_${group.id}`, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const handleLoginSuccess = (authData: UserAuthProfile) => {
     triggerHaptic(hapticPatterns.success);
     saveUserProfileToFirestore(authData);
@@ -1655,7 +1679,15 @@ export default function App() {
   };
 
   const handleUpdateRentStatus = (status: 'paid' | 'pending') => {
-    const updatedRent = { ...rent, status };
+    const now = new Date();
+    const currentMonthCycle = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const updatedRent: RentContribution = {
+      ...rent,
+      status,
+      paidCycle: status === 'paid' ? currentMonthCycle : undefined,
+      paidAt: status === 'paid' ? now.toISOString() : undefined,
+      cycle: rent.cycle || currentMonthCycle,
+    };
     setRent(updatedRent);
     localStorage.setItem('room_rent_' + group.id, JSON.stringify(updatedRent));
     saveRentToFirestore(group.id, updatedRent);
@@ -1780,7 +1812,28 @@ export default function App() {
     setGroup(updatedGroup);
     saveGroupToFirestore(updatedGroup);
 
-    const updatedAll = allGroups.map((g) => (g.id === group.id ? updatedGroup : g));
+    // Also update and save to all other room groups that contain this user
+    const updatedAll = allGroups.map((g) => {
+      if (g.id === group.id) return updatedGroup;
+      const memIdx = (g.members || []).findIndex(
+        (m) =>
+          (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase()) ||
+          (userMobile && (isPhoneMatch(m.phone, userMobile) || isPhoneMatch(m.mobileNumber, userMobile))) ||
+          (userAuth.name && m.name.toLowerCase().includes(userAuth.name.toLowerCase()))
+      );
+      if (memIdx >= 0) {
+        const mems = [...g.members];
+        mems[memIdx] = {
+          ...mems[memIdx],
+          name: data.name || mems[memIdx].name,
+          avatar: data.avatar !== undefined ? data.avatar : mems[memIdx].avatar,
+        };
+        const updatedG = { ...g, members: mems };
+        saveGroupToFirestore(updatedG);
+        return updatedG;
+      }
+      return g;
+    });
     setAllGroups(updatedAll);
     localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
 
@@ -1915,7 +1968,7 @@ export default function App() {
 
       {/* Main Container with Screen Transitions */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 md:px-8 pt-4 pb-12">
-        {/* Header Bar (Visible ONLY when logged in on Dashboard View and not adding expense) */}
+        {/* Header Bar (Visible ONLY on Dashboard View when logged in and not adding expense) */}
         {activeTab === 'dashboard' && !isAddExpenseOpen && !isLoginModalOpen && userAuth.isLoggedIn && (
           <HeaderBar
             group={displayedGroup}
@@ -2172,6 +2225,7 @@ export default function App() {
         onSendMessage={handleSendMessage}
         currentUser={userAuth}
         activeMemberIds={activeMemberIds}
+        onToggleReaction={handleToggleMessageReaction}
       />
 
       {/* UAE Residence Visa Login Full Screen Page */}

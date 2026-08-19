@@ -257,6 +257,44 @@ export async function saveUserProfileToFirestore(profile: UserAuthProfile) {
 
     const userRef = doc(db, 'users', cleanDocId);
     await setDoc(userRef, payload, { merge: true });
+
+    // Also sync updated avatar/name into any group members in Firestore
+    if (profile.avatar !== undefined || profile.name) {
+      try {
+        const groupsRef = collection(db, 'groups');
+        const groupsSnap = await getDocs(groupsRef);
+        if (!groupsSnap.empty) {
+          for (const gDoc of groupsSnap.docs) {
+            const gData = gDoc.data() as Group;
+            if (gData.members && Array.isArray(gData.members)) {
+              let hasChange = false;
+              const updatedMembers = gData.members.map((m) => {
+                const isMatch =
+                  (profile.email && m.email && m.email.toLowerCase() === profile.email.toLowerCase()) ||
+                  (profile.mobileNumber && (isPhoneMatch(m.mobileNumber, profile.mobileNumber) || isPhoneMatch(m.phone, profile.mobileNumber))) ||
+                  (profile.name && m.name && m.name.toLowerCase().trim() === profile.name.toLowerCase().trim());
+
+                if (isMatch) {
+                  hasChange = true;
+                  return {
+                    ...m,
+                    name: profile.name || m.name,
+                    avatar: profile.avatar !== undefined ? profile.avatar : m.avatar,
+                  };
+                }
+                return m;
+              });
+
+              if (hasChange) {
+                await setDoc(doc(db, 'groups', gDoc.id), removeUndefinedFields({ ...gData, members: updatedMembers }), { merge: true });
+              }
+            }
+          }
+        }
+      } catch (grpSyncErr) {
+        // Non-blocking background sync
+      }
+    }
   } catch (err) {
     if (!isQuotaError(err)) {
       console.warn('Warning saving user profile to Firestore:', err);
@@ -835,6 +873,22 @@ export async function saveChatMessageToFirestore(groupId: string, message: ChatM
   }
 }
 
+export async function updateChatMessageReactionInFirestore(
+  groupId: string,
+  messageId: string,
+  reactions: Record<string, string[]>
+) {
+  if (isQuotaExceeded || !messageId) return;
+  try {
+    const msgRef = doc(db, 'chatMessages', messageId);
+    await setDoc(msgRef, { reactions, groupId }, { merge: true });
+  } catch (err) {
+    if (!isQuotaError(err)) {
+      console.warn('Warning updating message reactions in Firestore:', err);
+    }
+  }
+}
+
 // 6. PayTo Personal Ledger Firestore Cloud Sync
 export async function savePayToTransactionToFirestore(groupId: string, tx: PayToTransaction) {
   if (isQuotaExceeded) return;
@@ -928,8 +982,8 @@ export function subscribeToUserPresences(groupId: string, onUpdate: (activeMembe
         const activeIds: string[] = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data() as UserPresence;
-          // Active if pinged in last 3 minutes
-          if (data.lastActiveMs && now - data.lastActiveMs < 180000) {
+          // Active if pinged in last 2 minutes (same time presence)
+          if (data.lastActiveMs && now - data.lastActiveMs < 120000) {
             activeIds.push(data.memberId);
           }
         });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Group, Expense, UtilityBill, RentContribution, GoogleSheetsConfig, UserAuthProfile } from '../types';
 import { GlassContainer } from './GlassContainer';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
@@ -23,6 +23,10 @@ import {
   Trash2,
   Info,
   User,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  X as XIcon,
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -115,6 +119,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [showAllExpenses, setShowAllExpenses] = useState(false);
   const [selectedUserFilter, setSelectedUserFilter] = useState<string>('all');
+  const [isUserFilterOpen, setIsUserFilterOpen] = useState<boolean>(false);
+  const userFilterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (userFilterRef.current && !userFilterRef.current.contains(e.target as Node)) {
+        setIsUserFilterOpen(false);
+      }
+    };
+    if (isUserFilterOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isUserFilterOpen]);
   // Financial Calculations
   const messTotal = expenses
     .filter((e) => e.type === 'mess')
@@ -227,15 +249,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
             </div>
           </div>
-
-          {/* View Detailed Breakdown Button */}
-          <button
-            onClick={() => onNavigateTab('report')}
-            className="w-full bg-[#07193F] hover:bg-[#0B2556] active:scale-98 text-white font-bold text-xs py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
-          >
-            <PieChart className="w-4 h-4 text-white" />
-            <span>View Detailed Breakdown</span>
-          </button>
         </div>
       </div>
 
@@ -552,40 +565,145 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* Member Filter Pills */}
-        <div className="space-y-1.5">
-          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Filter by User:</span>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            <button
-              type="button"
-              onClick={() => setSelectedUserFilter('all')}
-              className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-                selectedUserFilter === 'all'
-                  ? 'bg-[#0052FF] text-white shadow-md'
-                  : 'neu-upper-sm text-slate-700'
-              }`}
-            >
-              All Users ({expenses.length})
-            </button>
-            {group.members.map((member) => {
-              const userCount = expenses.filter((e) => e.paidById === member.id).length;
-              const userTotal = expenses.filter((e) => e.paidById === member.id).reduce((sum, e) => sum + e.amount, 0);
+        {/* Member Filter Dropdown / Collapsible */}
+        <div ref={userFilterRef} className="relative space-y-1.5 z-20">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
+              Filter by User:
+            </span>
+            {selectedUserFilter !== 'all' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedUserFilter('all');
+                  setIsUserFilterOpen(false);
+                }}
+                className="text-[11px] font-extrabold text-[#0052FF] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <XIcon className="w-3 h-3" />
+                <span>Reset to All Users</span>
+              </button>
+            )}
+          </div>
+
+          <div className="relative">
+            {/* Trigger Button */}
+            {(() => {
+              const selectedMember = group.members.find((m) => m.id === selectedUserFilter);
+              const selectedUserCount = selectedMember
+                ? expenses.filter((e) => e.paidById === selectedMember.id).length
+                : 0;
+              const selectedUserTotal = selectedMember
+                ? expenses.filter((e) => e.paidById === selectedMember.id).reduce((sum, e) => sum + e.amount, 0)
+                : 0;
+
               return (
                 <button
-                  key={member.id}
                   type="button"
-                  onClick={() => setSelectedUserFilter(member.id)}
-                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
-                    selectedUserFilter === member.id
+                  onClick={() => setIsUserFilterOpen(!isUserFilterOpen)}
+                  className={`w-full sm:w-auto min-w-[200px] px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center justify-between gap-3 cursor-pointer shadow-xs ${
+                    selectedUserFilter === 'all'
                       ? 'bg-[#0052FF] text-white shadow-md'
-                      : 'neu-upper-sm text-slate-700'
+                      : 'bg-[#07193F] text-white shadow-md'
                   }`}
                 >
-                  <span>{member.name}</span>
-                  <span className="text-[10px] opacity-80">({userCount} • {userTotal.toFixed(0)} {group.currency})</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Users className="w-4 h-4 text-white shrink-0" />
+                    {selectedUserFilter === 'all' ? (
+                      <span className="truncate">All Users ({expenses.length})</span>
+                    ) : (
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="truncate">{selectedMember?.name || 'Selected User'}</span>
+                        <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full shrink-0">
+                          {selectedUserCount} • {selectedUserTotal.toFixed(0)} {group.currency}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 text-white shrink-0 transition-transform duration-200 ${
+                      isUserFilterOpen ? 'rotate-180' : ''
+                    }`}
+                  />
                 </button>
               );
-            })}
+            })()}
+
+            {/* Dropdown Menu (Hidden by default, shown when All Users button is clicked) */}
+            {isUserFilterOpen && (
+              <div className="absolute left-0 top-full mt-2 w-full sm:w-80 bg-white neu-upper rounded-2xl shadow-2xl p-2 space-y-1 z-30 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+                {/* Option 1: All Users */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedUserFilter('all');
+                    setIsUserFilterOpen(false);
+                  }}
+                  className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                    selectedUserFilter === 'all'
+                      ? 'bg-[#0052FF] text-white shadow-xs'
+                      : 'hover:bg-slate-100 text-slate-900'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Users className={`w-4 h-4 ${selectedUserFilter === 'all' ? 'text-white' : 'text-slate-600'}`} />
+                    <span>All Users</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[11px] font-extrabold ${selectedUserFilter === 'all' ? 'text-blue-100' : 'text-slate-500'}`}>
+                      {expenses.length} expenses
+                    </span>
+                    {selectedUserFilter === 'all' && <Check className="w-4 h-4 text-white" />}
+                  </div>
+                </button>
+
+                <div className="border-t border-slate-200 my-1" />
+
+                {/* Member Options */}
+                <div className="max-h-60 overflow-y-auto space-y-1 pr-0.5">
+                  {group.members.map((member) => {
+                    const userExpenses = expenses.filter((e) => e.paidById === member.id);
+                    const userCount = userExpenses.length;
+                    const userTotal = userExpenses.reduce((sum, e) => sum + e.amount, 0);
+                    const isSelected = selectedUserFilter === member.id;
+
+                    return (
+                      <button
+                        key={member.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedUserFilter(member.id);
+                          setIsUserFilterOpen(false);
+                        }}
+                        className={`w-full px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#0052FF] text-white shadow-xs'
+                            : 'hover:bg-slate-100 text-slate-900'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
+                            isSelected ? 'bg-white text-[#0052FF]' : 'bg-slate-200 text-slate-800'
+                          }`}>
+                            {member.avatar || member.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <span className="truncate">{member.name}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`text-[10px] font-bold ${
+                            isSelected ? 'text-blue-100' : 'text-slate-500'
+                          }`}>
+                            {userCount} exp • {userTotal.toFixed(0)} {group.currency}
+                          </span>
+                          {isSelected && <Check className="w-4 h-4 text-white shrink-0" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -605,7 +723,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           }
 
           const reversedList = [...displayedList].reverse();
-          const visibleItems = showAllExpenses ? reversedList : reversedList.slice(0, 8);
+          const visibleItems = showAllExpenses ? reversedList : reversedList.slice(0, 5);
 
           return (
             <div className="space-y-2.5">
@@ -692,14 +810,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 );
               })}
 
-              {displayedList.length > 8 && (
+              {displayedList.length > 5 && (
                 <div className="pt-2 text-center">
                   <button
                     type="button"
                     onClick={() => setShowAllExpenses(!showAllExpenses)}
-                    className="px-4 py-2 bg-[#0052FF] hover:bg-[#0047E0] text-white text-xs font-bold rounded-2xl border border-blue-400/20 hover:shadow-lg transition-all cursor-pointer shadow-xs"
+                    className="px-5 py-2.5 bg-[#0052FF] hover:bg-[#0047E0] text-white text-xs font-black rounded-2xl border border-blue-400/20 hover:shadow-lg transition-all cursor-pointer shadow-md inline-flex items-center gap-2"
                   >
-                    {showAllExpenses ? 'Show Less' : `View All (${displayedList.length} Expenses)`}
+                    <span>{showAllExpenses ? 'Show Less (Last 5)' : `View All (${displayedList.length} Expenses)`}</span>
                   </button>
                 </div>
               )}

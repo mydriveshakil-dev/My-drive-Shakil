@@ -278,8 +278,8 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
     <div className="w-full max-w-2xl mx-auto pb-6 animate-in fade-in duration-200">
       {/* Main Form Card */}
       <div ref={cardRef} className="neu-upper rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col">
-        {/* Main Page Header Banner */}
-        <div className="bg-black text-white px-3.5 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between shrink-0 gap-2">
+        {/* Main Page Header Banner - Dark Navy Theme */}
+        <div className="bg-[#07193F] text-white px-3.5 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between shrink-0 gap-2 border-b border-blue-950/40">
           <div className="flex items-center gap-2.5 min-w-0">
             <button
               type="button"
@@ -294,9 +294,9 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
             </button>
             <div className="min-w-0">
               <h1 className="text-sm sm:text-base font-black tracking-tight text-white leading-tight truncate">
-                Add New Expense
+                Add New Expense (নতুন খরচ যুক্ত করুন)
               </h1>
-              <span className="text-[10px] font-bold text-slate-300 bg-white/10 px-2 py-0.5 rounded-full inline-block mt-0.5 truncate max-w-[130px]">
+              <span className="text-[10px] font-bold text-blue-200 bg-[#0B2A66] px-2 py-0.5 rounded-full inline-block mt-0.5 truncate max-w-[150px] border border-blue-400/20">
                 {group.name}
               </span>
             </div>
@@ -304,8 +304,8 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
 
           {/* Header Right: Paid by (left of Cancel) + Cancel Button */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <div className="flex items-center gap-1 bg-white/10 hover:bg-white/15 rounded-lg px-2 py-1 text-xs text-white transition-colors">
-              <span className="text-[10px] font-bold text-slate-300 uppercase">Paid by:</span>
+            <div className="flex items-center gap-1 bg-white/10 hover:bg-white/15 rounded-lg px-2 py-1 text-xs text-white transition-colors border border-white/10">
+              <span className="text-[10px] font-bold text-blue-200 uppercase">Paid by:</span>
               {isAdmin ? (
                 <select
                   value={paidById}
@@ -334,7 +334,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                 triggerHaptic(hapticPatterns.click);
                 onClose();
               }}
-              className="text-xs font-bold text-slate-300 hover:text-white px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 transition-all cursor-pointer shrink-0"
+              className="text-xs font-bold text-blue-200 hover:text-white px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 transition-all cursor-pointer shrink-0"
             >
               Cancel
             </button>
@@ -431,7 +431,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleApplyCalculation}
-              className="flex-1 py-1.5 bg-black hover:bg-slate-800 active:scale-95 text-white font-black text-xs sm:text-sm rounded-lg cursor-pointer shadow-md"
+              className="flex-1 py-1.5 bg-[#0052FF] hover:bg-[#0047E0] active:scale-95 text-white font-black text-xs sm:text-sm rounded-lg cursor-pointer shadow-sm"
               title="Calculate"
             >
               =
@@ -604,7 +604,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               className={`w-full font-black py-2.5 sm:py-3 rounded-xl sm:rounded-2xl transition-all text-xs sm:text-sm flex items-center justify-center gap-2 active:scale-98 tracking-wider uppercase cursor-pointer ${
                 !dateValidation.isAllowed
                   ? 'neu-lower-sm text-slate-400 cursor-not-allowed opacity-70'
-                  : 'bg-black hover:bg-slate-800 text-white shadow-md'
+                  : 'bg-[#07193F] hover:bg-[#0B2A66] text-white shadow-md'
               }`}
             >
               <span>{dateValidation.isAllowed ? 'SAVE EXPENSE' : 'ENTRY LOCKED'}</span>

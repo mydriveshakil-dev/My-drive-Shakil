@@ -317,29 +317,31 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
   return (
     <div className="space-y-6 pb-28">
-      {/* Top Banner - Neumorphic Theme */}
+      {/* Top Banner - Dark Navy Luxury Theme */}
       <div
-        className="p-6 md:p-8 rounded-3xl neu-upper text-slate-900 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+        className="rounded-3xl neu-upper text-slate-900 overflow-hidden"
       >
-        <div>
-          <span className="text-xs font-black text-white bg-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-xs">
-            Settlement Engine & Dynamic Balance
-          </span>
-          <h2 className="text-2xl font-black mt-2 text-slate-950">Report & Member Settlement</h2>
-          <p className="text-xs text-slate-600 font-medium mt-1">
-            Exact meal rates and individual spending balance calculations
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Top Dark Navy Header Band */}
+        <div className="bg-[#07193F] text-white px-5 py-3.5 flex items-center justify-between font-bold text-xs uppercase tracking-wider flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <ChartIcon className="w-4 h-4 text-emerald-400" />
+            <span>SETTLEMENT & AUDIT REPORT (হিসাব ও স্টেটমেন্ট)</span>
+          </div>
           <button
             type="button"
             onClick={() => setIsPdfPreviewOpen(true)}
-            className="bg-black hover:bg-slate-800 text-white font-extrabold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-md"
+            className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer uppercase tracking-wider shadow-xs"
           >
-            <FileText className="w-4 h-4 text-white" />
+            <FileText className="w-3.5 h-3.5 text-white" />
             <span>Export PDF</span>
           </button>
+        </div>
+
+        <div className="p-5 sm:p-6">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-950">Report & Member Settlement</h2>
+          <p className="text-xs text-slate-600 font-medium mt-1">
+            Exact meal rates and individual spending balance calculations
+          </p>
         </div>
       </div>
 

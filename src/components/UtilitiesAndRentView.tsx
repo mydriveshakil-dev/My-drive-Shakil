@@ -98,15 +98,19 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
   useEffect(() => {
     if (rent) {
-      // Auto-reset on the 1st of next month if cycle has passed
-      if (rent.cycle && rent.cycle < currentMonthCycle) {
+      // Auto-reset on the 1st of next month if cycle has passed or month changed
+      const rentCycleToCheck = rent.paidCycle || rent.cycle;
+      if (rentCycleToCheck && rentCycleToCheck < currentMonthCycle) {
         const resetRent: RentContribution = {
           ...rent,
           totalRent: 0,
           paidMemberIds: [],
           cycle: currentMonthCycle,
+          paidCycle: undefined,
+          paidAt: undefined,
           perMemberAmount: 0,
           status: 'pending',
+          isLocked: false,
         };
         setTotalRentInput('0');
         setPaidRentMembers([]);
@@ -118,11 +122,58 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         setPaidRentMembers(rent.paidMemberIds || []);
       }
     }
-  }, [rent?.totalRent, paidMemberIdsJoined, rent?.cycle, currentMonthCycle]);
+  }, [rent?.totalRent, paidMemberIdsJoined, rent?.cycle, rent?.paidCycle, currentMonthCycle]);
 
   const isAdmin = currentUser?.role === 'admin';
   const isRentAmountSet = (rent?.totalRent || 0) > 0;
   const isRentInputLocked = rent?.isLocked ?? false;
+
+  const isRentPaidToLandlord = rent?.status === 'paid';
+  const isRentPaidLocked =
+    isRentPaidToLandlord &&
+    (rent?.paidCycle === currentMonthCycle || (!rent?.paidCycle && rent?.cycle === currentMonthCycle));
+
+  const handleToggleRentToLandlord = () => {
+    if (isRentPaidLocked) {
+      if (!isAdmin) {
+        alert(
+          `Rent payment to landlord is locked for the current month (${currentMonthCycle}). It will automatically unlock on the 1st of next month.`
+        );
+        return;
+      }
+      const confirmReset = window.confirm(
+        `You are Admin. Do you want to unlock & reset Rent to Landlord status for ${currentMonthCycle} back to Pending?`
+      );
+      if (confirmReset) {
+        const updatedRent: RentContribution = {
+          ...rent,
+          status: 'pending',
+          paidCycle: undefined,
+          paidAt: undefined,
+        };
+        if (onUpdateRent) {
+          onUpdateRent(updatedRent);
+        } else {
+          onUpdateRentStatus('pending');
+        }
+      }
+      return;
+    }
+
+    // Mark as paid and lock for current month
+    const updatedRent: RentContribution = {
+      ...rent,
+      status: 'paid',
+      paidCycle: currentMonthCycle,
+      paidAt: new Date().toISOString(),
+      cycle: rent.cycle || currentMonthCycle,
+    };
+    if (onUpdateRent) {
+      onUpdateRent(updatedRent);
+    } else {
+      onUpdateRentStatus('paid');
+    }
+  };
 
   const handleLockRent = () => {
     const parsed = parseFloat(totalRentInput) || 0;
@@ -286,27 +337,31 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
   return (
     <div className="space-y-6 pb-28">
-      {/* Header Banner - Black/Neumorphic Theme */}
+      {/* Header Banner - Dark Navy Luxury Theme matching Dashboard */}
       <div
-        className="p-6 md:p-8 rounded-3xl neu-upper text-slate-900 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+        className="rounded-3xl neu-upper text-slate-900 overflow-hidden"
       >
-        <div>
-          <span className="text-xs font-black text-white bg-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-xs">
-            Monthly Room Recurring Bills
-          </span>
-          <h2 className="text-2xl font-black mt-2 text-slate-950">Utilities & Rent Overview</h2>
+        {/* Top Dark Navy Header Band */}
+        <div className="bg-[#07193F] text-white px-5 py-3.5 flex items-center justify-between font-bold text-xs uppercase tracking-wider flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-amber-400" />
+            <span>UTILITIES & LANDLORD RENT (বিল ও রুম ভাড়া)</span>
+          </div>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer uppercase tracking-wider shadow-xs"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+            <span>{showAddForm ? 'Close Add Bill' : '+ Add Utility Bill'}</span>
+          </button>
+        </div>
+
+        <div className="p-5 sm:p-6">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-950">Utilities & Rent Overview</h2>
           <p className="text-xs text-slate-600 font-medium mt-1">
             Track DEWA Electricity, WiFi Internet, LPG Gas & Landlord Rent per member
           </p>
         </div>
-
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="bg-black hover:bg-slate-800 text-white font-black px-5 py-3 rounded-[24px] text-xs flex items-center gap-1.5 shadow-md active:scale-95 self-start md:self-auto cursor-pointer uppercase tracking-wider"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>{showAddForm ? 'Close Add Bill' : '+ Add Utility Bill'}</span>
-        </button>
       </div>
 
       {/* Summary Stat Cards - Compact Side-by-Side Boxes */}
@@ -795,16 +850,51 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={() => onUpdateRentStatus(rent.status === 'paid' ? 'pending' : 'paid')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer shadow-2xs ${
-              rent.status === 'paid'
-                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                : 'bg-rose-600 text-white hover:bg-rose-700'
-            }`}
-          >
-            {rent.status === 'paid' ? 'Rent Paid to Landlord' : 'Rent Pending'}
-          </button>
+          <div className="flex flex-col sm:items-end gap-1.5">
+            <button
+              type="button"
+              onClick={handleToggleRentToLandlord}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-95 ${
+                isRentPaidLocked
+                  ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+                  : isRentPaidToLandlord
+                  ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                  : 'bg-rose-600 text-white hover:bg-rose-700'
+              }`}
+              title={
+                isRentPaidLocked
+                  ? `Rent paid & locked for ${currentMonthCycle}. Automatically unlocks on 1st of next month.`
+                  : 'Click to mark Rent as Paid to Landlord and lock for this month'
+              }
+            >
+              {isRentPaidLocked ? (
+                <>
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Rent Paid to Landlord</span>
+                </>
+              ) : isRentPaidToLandlord ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Rent Paid to Landlord</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Rent Pending (Click to Pay)</span>
+                </>
+              )}
+            </button>
+
+            {isRentPaidLocked ? (
+              <span className="text-[10px] font-black text-emerald-900 bg-emerald-100/90 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 self-start sm:self-auto shadow-2xs">
+                <Lock className="w-2.5 h-2.5" /> Locked for this month • Unlocks 1st next month
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold text-slate-500 self-start sm:self-auto">
+                Click once to pay & lock for current month
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Total Rent Input Field & Per-Member Share Calculation */}

@@ -249,80 +249,91 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
   return (
     <div className="space-y-6 pb-28">
-      {/* Top Banner - Neumorphic Theme */}
+      {/* Top Banner - Dark Navy Luxury Theme */}
       <div
-        className="p-5 sm:p-6 md:p-8 rounded-3xl neu-upper text-slate-900 flex flex-col gap-4 relative overflow-hidden"
+        className="rounded-3xl neu-upper text-slate-900 overflow-hidden"
       >
-        {/* Top Row: Badges (Member View) on Left & Profile Button in the same alignment on the Right Corner */}
-        <div className="flex items-center justify-between gap-2.5 w-full flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            {isAdmin && (
-              <span className="text-xs font-black text-white bg-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-xs">
-                Single Master Gmail Account Setup
-              </span>
-            )}
+        {/* Top Dark Navy Header Band */}
+        <div className="bg-[#07193F] text-white px-5 py-3.5 flex items-center justify-between font-bold text-xs uppercase tracking-wider flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-white" />
+            <span>GROUP & MEMBER MANAGEMENT (গ্রুপ ও সদস্য ম্যানেজমেন্ট)</span>
+          </div>
+          <div className="flex items-center gap-2">
             {isAdmin ? (
-              <span className="bg-emerald-100 text-emerald-950 text-xs font-black px-3 py-1 rounded-full flex items-center gap-1 shadow-xs">
-                <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                APP ADMIN UNLOCKED
+              <span className="bg-emerald-500/20 text-emerald-300 text-[11px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400/40 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                ADMIN UNLOCKED
               </span>
             ) : (
-              <span className="neu-upper-sm text-slate-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-slate-700" />
-                Member View
+              <span className="bg-blue-500/20 text-blue-300 text-[11px] font-black px-2.5 py-0.5 rounded-full border border-blue-400/30">
+                MEMBER VIEW
               </span>
             )}
           </div>
-
-          {/* Profile Button - Aligned with Member View text on the Right Corner */}
-          <button
-            type="button"
-            onClick={() => {
-              triggerHaptic(hapticPatterns.click);
-              setShowProfileModal(true);
-            }}
-            className="flex items-center gap-2 p-1.5 pr-3 rounded-2xl neu-upper-btn text-slate-900 transition-all cursor-pointer shadow-xs active:scale-95 group shrink-0 ml-auto"
-            title="Click to view your profile details and update photo"
-          >
-            <div className="relative">
-              <MemberAvatar
-                name={currentUser?.name || loggedInMember?.name || 'User'}
-                avatar={currentUser?.avatar || loggedInMember?.avatar}
-                size="xs"
-                className="w-7 h-7 ring-2 ring-slate-300 shadow-xs group-hover:scale-105 transition-transform"
-              />
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white" />
-            </div>
-            <div className="text-left leading-tight">
-              <span className="text-xs font-black text-slate-900 block leading-tight max-w-[120px] sm:max-w-[160px] truncate">
-                {currentUser?.name || loggedInMember?.name || 'My Account'}
-              </span>
-            </div>
-          </button>
         </div>
 
-        {/* Title and Subtitle Row */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-950">
-              {isAdmin ? 'Group & Member Settings' : 'Room Members & Group Details'}
-            </h2>
-            <p className="text-xs text-slate-600 font-medium mt-1">
-              {isAdmin
-                ? 'Manage room members and administrative controls'
-                : 'View active room members and personal group transactions'}
-            </p>
+        <div className="p-5 sm:p-6 space-y-4">
+          {/* Badges on Left & Profile Button on Right */}
+          <div className="flex items-center justify-between gap-2.5 w-full flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              {isAdmin && (
+                <span className="text-[11px] font-bold text-slate-700 bg-slate-200 px-3 py-1 rounded-full">
+                  Single Master Gmail Account Setup
+                </span>
+              )}
+            </div>
+
+            {/* Profile Button - Aligned with Member View text on the Right Corner */}
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(hapticPatterns.click);
+                setShowProfileModal(true);
+              }}
+              className="flex items-center gap-2 p-1.5 pr-3 rounded-2xl neu-upper-btn text-slate-900 transition-all cursor-pointer shadow-xs active:scale-95 group shrink-0 ml-auto"
+              title="Click to view your profile details and update photo"
+            >
+              <div className="relative">
+                <MemberAvatar
+                  name={currentUser?.name || loggedInMember?.name || 'User'}
+                  avatar={currentUser?.avatar || loggedInMember?.avatar}
+                  size="xs"
+                  className="w-7 h-7 ring-2 ring-slate-300 shadow-xs group-hover:scale-105 transition-transform"
+                />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white" />
+              </div>
+              <div className="text-left leading-tight">
+                <span className="text-xs font-black text-slate-900 block leading-tight max-w-[120px] sm:max-w-[160px] truncate">
+                  {currentUser?.name || loggedInMember?.name || 'My Account'}
+                </span>
+              </div>
+            </button>
           </div>
 
-          {isAdmin && (
-            <button
-              onClick={onOpenArchGuide}
-              className="bg-black hover:bg-slate-800 text-white font-black px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 self-start md:self-auto cursor-pointer shrink-0"
-            >
-              <Code className="w-4 h-4" />
-              <span>Flutter & API Guide</span>
-            </button>
-          )}
+          {/* Title and Subtitle Row */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1 border-t border-slate-300/60">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-950">
+                {isAdmin ? 'Group & Member Settings' : 'Room Members & Group Details'}
+              </h2>
+              <p className="text-xs text-slate-600 font-medium mt-1">
+                {isAdmin
+                  ? 'Manage room members and administrative controls'
+                  : 'View active room members and personal group transactions'}
+              </p>
+            </div>
+
+            {isAdmin && (
+              <button
+                onClick={onOpenArchGuide}
+                className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 self-start md:self-auto cursor-pointer shrink-0 uppercase tracking-wider"
+              >
+                <Code className="w-4 h-4" />
+                <span>Flutter & API Guide</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

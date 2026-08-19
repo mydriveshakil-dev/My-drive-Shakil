@@ -603,8 +603,13 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
         </div>
       )}
 
-      {/* 6. WhatsApp / Messenger Styled Bottom Input Bar (Fixed immediately above virtual keyboard) */}
-      <div className="shrink-0 w-full z-40 px-3 py-2.5 sm:px-4 sm:py-3 bg-[#F0F2F5] border-t border-slate-300/80 pb-[max(env(safe-area-inset-bottom),0.75rem)] shadow-lg">
+      {/* 6. WhatsApp / Messenger Styled Bottom Input Bar (Raised higher with generous bottom clearance) */}
+      <div
+        style={{
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px) + 36px, 48px)',
+        }}
+        className="shrink-0 w-full z-40 px-3.5 pt-3.5 sm:px-4 sm:pt-4 bg-[#F0F2F5] border-t border-slate-300/80 shadow-[0_-6px_24px_rgba(0,0,0,0.1)]"
+      >
         <form onSubmit={handleSend} className="flex items-center gap-1.5 sm:gap-2">
           {/* Emoji Button */}
           <button

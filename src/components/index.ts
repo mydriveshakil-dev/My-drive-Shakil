@@ -10,7 +10,7 @@ export * from './GroupManagementView';
 export * from './PayToView';
 export * from './ArchitectureGuideModal';
 export * from './CurrencySettingsModal';
-export * from './GroupChatModal';
+export * from './GroupChatView';
 export * from './UaeLoginModal';
 export * from './GlassContainer';
 export * from './DualCurrencyDisplay';

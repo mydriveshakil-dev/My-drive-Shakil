@@ -40,7 +40,7 @@ interface DashboardViewProps {
   preferredCurrency?: string;
   customRates?: Record<string, number>;
   currentUser?: UserAuthProfile | null;
-  onNavigateTab: (tab: 'home' | 'expenses' | 'utilities' | 'report' | 'group') => void;
+  onNavigateTab: (tab: 'home' | 'expenses' | 'utilities' | 'report' | 'group' | 'chat') => void;
   onDeleteExpense?: (id: string) => void;
 }
 

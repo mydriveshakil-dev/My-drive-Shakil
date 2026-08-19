@@ -32,7 +32,7 @@ interface HomeDashboardProps {
   utilities: UtilityBill[];
   rent: RentContribution;
   onOpenAddExpense: () => void;
-  onNavigateTab: (tab: 'home' | 'expenses' | 'utilities' | 'report' | 'group') => void;
+  onNavigateTab: (tab: 'home' | 'expenses' | 'utilities' | 'report' | 'group' | 'chat') => void;
   onDeleteExpense: (id: string) => void;
   onRestoreExpenses?: () => void;
   preferredCurrency?: string;

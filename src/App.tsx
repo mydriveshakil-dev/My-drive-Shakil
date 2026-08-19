@@ -54,7 +54,7 @@ import { GroupManagementView } from './components/GroupManagementView';
 import { PayToView } from './components/PayToView';
 import { ArchitectureGuideModal } from './components/ArchitectureGuideModal';
 import { CurrencySettingsModal } from './components/CurrencySettingsModal';
-import { GroupChatModal } from './components/GroupChatModal';
+import { GroupChatView } from './components/GroupChatView';
 import { UaeLoginModal } from './components/UaeLoginModal';
 import { InstallPwaModal } from './components/InstallPwaModal';
 import { GroupNoteModal } from './components/GroupNoteModal';
@@ -854,7 +854,6 @@ export default function App() {
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isArchGuideOpen, setIsArchGuideOpen] = useState(false);
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isInstallPwaOpen, setIsInstallPwaOpen] = useState(false);
 
   // Auto-hide navigation bar and group chat button when typing in any input/textarea
@@ -995,18 +994,18 @@ export default function App() {
 
   // When chat opens or active group changes, update last read timestamp
   useEffect(() => {
-    if (isChatOpen) {
+    if (activeTab === 'chat') {
       const now = Date.now();
       setLastReadTimestamp(now);
       if (group?.id) {
         localStorage.setItem(`chat_last_read_time_${group.id}`, String(now));
       }
     }
-  }, [isChatOpen, group?.id]);
+  }, [activeTab, group?.id]);
 
   // Calculate unread messages count (only messages sent by others after lastReadTimestamp in current month)
   const unreadCount = useMemo(() => {
-    if (!chatMessages || chatMessages.length === 0 || isChatOpen) return 0;
+    if (!chatMessages || chatMessages.length === 0 || activeTab === 'chat') return 0;
     const startOfMonthMs = getStartOfCurrentMonthMs();
 
     return chatMessages.filter((msg) => {
@@ -1021,7 +1020,7 @@ export default function App() {
       if (msgTime < startOfMonthMs) return false;
       return msgTime > lastReadTimestamp;
     }).length;
-  }, [chatMessages, isChatOpen, lastReadTimestamp, userAuth.id, userAuth.linkedGroupId, userAuth.name]);
+  }, [chatMessages, activeTab, lastReadTimestamp, userAuth.id, userAuth.linkedGroupId, userAuth.name]);
   const [preferredCurrency, setPreferredCurrency] = useState<string>(() => {
     return localStorage.getItem('preferred_currency') || 'USD';
   });
@@ -2081,7 +2080,7 @@ export default function App() {
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }
                       }, 50);
-                    } else if (['dashboard', 'home', 'utilities', 'report', 'group'].includes(tab)) {
+                    } else if (['dashboard', 'home', 'utilities', 'report', 'group', 'chat'].includes(tab)) {
                       setActiveTab(tab as AppTabType);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
@@ -2106,7 +2105,7 @@ export default function App() {
                       } else {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }
-                    } else if (['dashboard', 'home', 'utilities', 'report', 'group'].includes(tab)) {
+                    } else if (['dashboard', 'home', 'utilities', 'report', 'group', 'chat'].includes(tab)) {
                       setActiveTab(tab as AppTabType);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
@@ -2115,7 +2114,7 @@ export default function App() {
                   onRestoreExpenses={handleRestoreExpenses}
                   preferredCurrency={preferredCurrency}
                   customRates={customRates}
-                  onOpenGroupChat={() => setIsChatOpen(true)}
+                  onOpenGroupChat={() => setActiveTab('chat')}
                   currentUser={userAuth}
                 />
               )}
@@ -2193,6 +2192,18 @@ export default function App() {
                   preferredCurrency={preferredCurrency}
                 />
               )}
+
+              {activeTab === 'chat' && (
+                <GroupChatView
+                  group={displayedGroup}
+                  messages={chatMessages}
+                  onSendMessage={handleSendMessage}
+                  currentUser={userAuth}
+                  activeMemberIds={activeMemberIds}
+                  onToggleReaction={handleToggleMessageReaction}
+                  onBack={() => setActiveTab('dashboard')}
+                />
+              )}
             </motion.div>
           </AnimatePresence>
         )}
@@ -2214,18 +2225,6 @@ export default function App() {
         onSelectPreferredCurrency={handleSelectPreferredCurrency}
         onUpdateCustomRate={handleUpdateCustomRate}
         onResetRates={handleResetRates}
-      />
-
-      {/* Room Group Chat Modal */}
-      <GroupChatModal
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        group={displayedGroup}
-        messages={chatMessages}
-        onSendMessage={handleSendMessage}
-        currentUser={userAuth}
-        activeMemberIds={activeMemberIds}
-        onToggleReaction={handleToggleMessageReaction}
       />
 
       {/* UAE Residence Visa Login Full Screen Page */}
@@ -2275,14 +2274,14 @@ export default function App() {
         onClose={handleCloseNoticePopup}
       />
 
-      {/* Floating Action Button (FAB) for Room Group Chat - Shown across all main tabs (Bill/rent, report, group, dashboard) and hides when typing */}
-      {!isChatOpen && !isLoginModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && (
+      {/* Floating Action Button (FAB) for Room Group Chat - Shown across all main tabs (Bill/rent, report, group, dashboard) and opens Chat directly on the main page */}
+      {activeTab !== 'chat' && !isLoginModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && (
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.92 }}
-          onClick={() => setIsChatOpen(true)}
+          onClick={() => setActiveTab('chat')}
           className={`fixed bottom-[88px] sm:bottom-[94px] right-4 sm:right-6 z-50 w-12 h-12 sm:w-13 sm:h-13 bg-[#07193F] hover:bg-[#0B2556] text-white rounded-full shadow-xl border border-slate-700/80 flex items-center justify-center cursor-pointer transition-all duration-300 ring-2 ring-white/50 ${
-            isChatOpen || isAddExpenseOpen || isTyping
+            activeTab === 'chat' || isAddExpenseOpen || isTyping
               ? 'translate-y-36 opacity-0 pointer-events-none'
               : 'translate-y-0 opacity-100'
           }`}
@@ -2313,7 +2312,7 @@ export default function App() {
           }}
           onOpenAddExpense={() => setIsAddExpenseOpen(true)}
           isAddExpenseOpen={isAddExpenseOpen}
-          isHidden={isChatOpen || isAddExpenseOpen || isTyping}
+          isHidden={activeTab === 'chat' || isAddExpenseOpen || isTyping}
         />
       )}
 

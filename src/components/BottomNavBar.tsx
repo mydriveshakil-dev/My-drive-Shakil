@@ -2,7 +2,7 @@ import React from 'react';
 import { LayoutDashboard, Zap, PieChart, Users, Plus } from 'lucide-react';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 
-export type AppTabType = 'dashboard' | 'home' | 'utilities' | 'report' | 'group' | 'payto';
+export type AppTabType = 'dashboard' | 'home' | 'utilities' | 'report' | 'group' | 'payto' | 'chat';
 
 interface BottomNavBarProps {
   activeTab: AppTabType;

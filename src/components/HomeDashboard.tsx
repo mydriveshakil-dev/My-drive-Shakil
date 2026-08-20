@@ -198,14 +198,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-base font-black text-slate-950 tracking-tight">
-                  Mess Food Expenses (মেস খাবার খরচ)
+                  Mess Food Expenses
                 </h3>
                 <span className="bg-emerald-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs">
                   Food & Grocery Only
                 </span>
               </div>
               <p className="text-xs text-slate-600 font-bold mt-0.5">
-                Excludes Room Rent & Utility Bills (রুম রেন্ট ও অন্যান্য বিল ব্যতীত)
+                Excludes Room Rent & Utility Bills
               </p>
             </div>
           </div>

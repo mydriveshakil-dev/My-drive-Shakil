@@ -1,31 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Group, Expense, UtilityBill, RentContribution, GoogleSheetsConfig, UserAuthProfile } from '../types';
-import { GlassContainer } from './GlassContainer';
+import { Group, Expense, UtilityBill, RentContribution, GoogleSheetsConfig, UserAuthProfile, BillingCycleType } from '../types';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 import { MemberAvatar } from './MemberAvatar';
 import { cleanExpenseTitle } from '../utils/textCleaner';
+import { getPreviousCycleOptions } from '../utils/cycleUtils';
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import {
-  LayoutDashboard,
   Calendar,
   Wallet,
-  Zap,
   Users,
-  Utensils,
-  ShoppingBag,
-  Home as HomeIcon,
   RefreshCw,
   ExternalLink,
-  ShieldCheck,
-  CheckCircle2,
-  TrendingUp,
-  PieChart,
-  Receipt,
   Trash2,
-  Info,
-  User,
   ChevronDown,
-  ChevronUp,
   Check,
   X as XIcon,
 } from 'lucide-react';
@@ -33,6 +20,7 @@ import {
 interface DashboardViewProps {
   group: Group;
   expenses: Expense[];
+  allExpenses?: Expense[];
   utilities: UtilityBill[];
   rent: RentContribution;
   sheetsConfig: GoogleSheetsConfig;
@@ -41,8 +29,13 @@ interface DashboardViewProps {
   preferredCurrency?: string;
   customRates?: Record<string, number>;
   currentUser?: UserAuthProfile | null;
+  billingCycleType?: BillingCycleType;
+  onToggleCycle?: (type: BillingCycleType) => void;
+  selectedPreviousCycle?: string;
+  onSelectPreviousCycle?: (cycleId: string) => void;
   onNavigateTab: (tab: 'home' | 'expenses' | 'utilities' | 'report' | 'group' | 'chat') => void;
   onDeleteExpense?: (id: string) => void;
+  onRestoreExpenses?: (expenses: Expense[]) => void;
 }
 
 const CHART_COLORS = ['#48BB47', '#CDDC39', '#FFC107', '#E91E63', '#2196F3', '#9C27B0', '#00BCD4', '#FF9800'];
@@ -72,40 +65,10 @@ const renderCustomizedPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, 
   );
 };
 
-const ITEM_THEMES = [
-  {
-    cardBg: 'bg-[#F0F6FF]/80 border-blue-100/90',
-    avatarBg: 'bg-[#2563EB]',
-    barFill: 'bg-[#2563EB]',
-    barTrack: 'bg-blue-100/80',
-    pillBg: 'bg-[#EFF6FF] text-[#2563EB] font-bold border border-blue-100/60',
-  },
-  {
-    cardBg: 'bg-[#F0FDF4]/80 border-emerald-100/90',
-    avatarBg: 'bg-[#059669]',
-    barFill: 'bg-[#059669]',
-    barTrack: 'bg-emerald-100/80',
-    pillBg: 'bg-[#ECFDF5] text-[#059669] font-bold border border-emerald-100/60',
-  },
-  {
-    cardBg: 'bg-[#FFFBEB]/80 border-amber-100/90',
-    avatarBg: 'bg-[#D97706]',
-    barFill: 'bg-[#D97706]',
-    barTrack: 'bg-amber-100/80',
-    pillBg: 'bg-[#FFFBEB] text-[#D97706] font-bold border border-amber-100/60',
-  },
-  {
-    cardBg: 'bg-[#F3E8FF]/60 border-purple-100/90',
-    avatarBg: 'bg-[#7C3AED]',
-    barFill: 'bg-[#7C3AED]',
-    barTrack: 'bg-purple-100/80',
-    pillBg: 'bg-[#F3E8FF] text-[#7C3AED] font-bold border border-purple-100/60',
-  },
-];
-
 export const DashboardView: React.FC<DashboardViewProps> = ({
   group,
   expenses,
+  allExpenses = [],
   utilities,
   rent,
   sheetsConfig,
@@ -114,6 +77,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   preferredCurrency = 'USD',
   customRates,
   currentUser,
+  billingCycleType = 'current',
+  onToggleCycle,
+  selectedPreviousCycle,
+  onSelectPreviousCycle,
   onNavigateTab,
   onDeleteExpense,
 }) => {
@@ -122,6 +89,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [selectedUserFilter, setSelectedUserFilter] = useState<string>('all');
   const [isUserFilterOpen, setIsUserFilterOpen] = useState<boolean>(false);
   const userFilterRef = useRef<HTMLDivElement>(null);
+
+  const previousCycleOptions = getPreviousCycleOptions(24, group?.createdAt);
+  const activeSelectedPreviousCycleId = selectedPreviousCycle || previousCycleOptions[0]?.cycleId || '2026-07';
+
+  // Helper to calculate total expenses for a specific cycleId from allExpenses
+  const getCycleTotalExpenses = (cId: string) => {
+    const targetExpenses = allExpenses.length > 0 ? allExpenses : expenses;
+    return targetExpenses
+      .filter((e) => {
+        const itemGroupId = e.groupId;
+        if (itemGroupId && itemGroupId !== group.id) return false;
+        if (!itemGroupId && group.id !== 'group-room-3') return false;
+        const expCycle = e.cycle || (e.date ? e.date.slice(0, 7) : '');
+        return expCycle === cId;
+      })
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
@@ -138,6 +122,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [isUserFilterOpen]);
+
   // Financial Calculations
   const messTotal = expenses
     .filter((e) => e.type === 'mess')
@@ -148,16 +133,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     .reduce((sum, e) => sum + e.amount, 0);
 
   const utilitiesTotal = utilities.reduce((sum, u) => sum + u.amount, 0);
-  const rentTotal = rent?.totalRent || 0;
-
-  // Exclude room rent from total dashboard group expenses as room rent is strictly managed in the Landlord Monthly Rent box
   const totalGroupExpenses = messTotal + generalTotal + utilitiesTotal;
-  const activeMembers = group.members.filter((m) => m.active);
-  const activeMembersCount = activeMembers.length || 1;
-  const avgPerPerson = totalGroupExpenses / activeMembersCount;
-
-  // Mess calculation
-  const messPerMember = messTotal / activeMembersCount;
 
   // Top Contributors Pie Chart Data (Sorted descending by highest expense amount)
   const contributorData = group.members
@@ -186,153 +162,133 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     .reduce((sum, e) => sum + e.amount, 0);
 
   const myPercentage = totalGroupExpenses > 0 ? (mySpent / totalGroupExpenses) * 100 : 0;
+  const avgPerPerson = group.members.length > 0 ? totalGroupExpenses / group.members.length : 0;
+  const currencyDisplay = 'AED';
 
   return (
     <div className="space-y-6 pb-28">
-      {/* Master Room Dashboard Overview Card */}
-      <div className="rounded-3xl neu-upper text-slate-900 overflow-hidden">
-        {/* Top Dark Navy Header Band */}
-        <div className="bg-[#07193F] text-white px-5 py-3.5 flex items-center gap-2 font-bold text-xs uppercase tracking-wider">
-          <LayoutDashboard className="w-4 h-4 text-white" />
-          <span>MASTER ROOM DASHBOARD OVERVIEW</span>
-        </div>
-
-        {/* Card Content */}
-        <div className="p-5 sm:p-6 space-y-4">
-          {/* Cycle & Members Pill Row */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="neu-upper-sm rounded-2xl px-3 py-2 text-xs text-slate-700 font-semibold flex items-center gap-1.5 justify-center">
-              <Calendar className="w-3.5 h-3.5 text-[#07193F] shrink-0" />
-              <span className="truncate">Cycle: {group.billingCycle}</span>
-            </div>
-            <div className="neu-upper-sm rounded-2xl px-3 py-2 text-xs text-slate-700 font-semibold flex items-center gap-1.5 justify-center">
-              <Users className="w-3.5 h-3.5 text-[#07193F] shrink-0" />
-              <span className="truncate">{group.members.length} Members</span>
-            </div>
-          </div>
-
-          {/* Total Expenses Section */}
-          <div className="pt-1">
-            <span className="text-[11px] font-extrabold text-[#1E3A8A] uppercase tracking-wider block">
-              TOTAL EXPENSES
-            </span>
-            <div className="mt-1 flex items-baseline gap-2">
-              <DualCurrencyDisplay
-                amount={totalGroupExpenses}
-                baseCurrency={group.currency}
-                preferredCurrency={preferredCurrency}
-                customRates={customRates}
-                layout="hero"
-                baseClassName="text-4xl sm:text-5xl font-extrabold tracking-tight text-[#07193F]"
-              />
+      {/* 2nd Component: Billing Cycle Control & Room Info Card */}
+      <div className="rounded-3xl neu-upper text-slate-900 overflow-hidden p-4 sm:p-6 space-y-4">
+        {/* Billing Cycle Switcher (Full Setup moved from HeaderBar) */}
+        <div className="space-y-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#07193F] text-white rounded-2xl p-2.5 sm:p-3 shadow-md">
+            <span className="text-xs text-blue-200 font-bold hidden sm:inline">Billing Cycle View:</span>
+            <div className="bg-[#0B2556] p-1 rounded-xl border border-blue-400/25 inline-flex items-center gap-1 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => onToggleCycle && onToggleCycle('current')}
+                className={`flex-1 sm:flex-none py-1.5 px-4 rounded-lg text-xs font-extrabold transition-all text-center cursor-pointer ${
+                  billingCycleType === 'current'
+                    ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/30'
+                    : 'text-blue-200/80 hover:text-white bg-transparent'
+                }`}
+              >
+                Current Cycle
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleCycle && onToggleCycle('previous')}
+                className={`flex-1 sm:flex-none py-1.5 px-4 rounded-lg text-xs font-extrabold transition-all text-center cursor-pointer ${
+                  billingCycleType === 'previous'
+                    ? 'bg-[#0052FF] text-white shadow-md shadow-blue-500/30'
+                    : 'text-blue-200/80 hover:text-white bg-transparent'
+                }`}
+              >
+                Previous Cycles
+              </button>
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-slate-300/60 my-2" />
-
-          {/* Avg per member & Mess per member */}
-          <div className="grid grid-cols-2 divide-x divide-slate-300/60 text-xs">
-            <div className="pr-3">
-              <span className="text-[10px] font-extrabold text-[#1E3A8A] uppercase block">
-                AVG PER MEMBER
-              </span>
-              <span className="text-sm sm:text-base font-extrabold text-[#07193F] mt-0.5 block">
-                {avgPerPerson.toFixed(2)} {group.currency}
-              </span>
+          {billingCycleType === 'previous' && (
+            <div className="flex items-center gap-2 pt-0.5">
+              <select
+                value={activeSelectedPreviousCycleId}
+                onChange={(e) => {
+                  if (onSelectPreviousCycle) {
+                    onSelectPreviousCycle(e.target.value);
+                  }
+                }}
+                className="w-full bg-[#07193F] text-white font-bold text-xs px-3.5 py-2.5 rounded-xl border border-blue-400/30 focus:outline-none focus:border-[#0052FF] cursor-pointer shadow-sm"
+              >
+                {previousCycleOptions.map((opt) => {
+                  const cycleTotal = getCycleTotalExpenses(opt.cycleId);
+                  return (
+                    <option key={opt.cycleId} value={opt.cycleId} className="bg-[#07193F] text-white">
+                      {opt.label} • ({cycleTotal.toFixed(2)} {currencyDisplay})
+                    </option>
+                  );
+                })}
+              </select>
             </div>
-            <div className="pl-4">
-              <span className="text-[10px] font-extrabold text-[#1E3A8A] uppercase block">
-                MESS PER MEMBER
-              </span>
-              <span className="text-sm sm:text-base font-extrabold text-[#07193F] mt-0.5 block">
-                {messPerMember.toFixed(2)} {group.currency}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* TOP CONTRIBUTORS (PAID OUT OF POCKET) */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-xl sm:text-2xl font-bold text-[#1e3a2b] tracking-tight">
-            Top Contributors
-          </h3>
-          <button
-            type="button"
-            onClick={() => onNavigateTab('report')}
-            className="text-sm sm:text-base font-semibold text-[#1e3a2b] hover:text-black cursor-pointer transition-colors"
-          >
-            View All
-          </button>
-        </div>
-
-        <div className="neu-upper rounded-[28px] p-4 sm:p-6">
-          {contributorData.length > 0 ? (
-            <div className="flex flex-row items-center justify-start sm:justify-center gap-3 sm:gap-8">
-              {/* Pie Chart on Left */}
-              <div className="w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] flex items-center justify-center shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPieChart>
-                    <Pie
-                      data={contributorData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={0}
-                      outerRadius={75}
-                      dataKey="value"
-                      isAnimationActive={false}
-                      labelLine={false}
-                      label={renderCustomizedPieLabel}
-                      stroke="#ffffff"
-                      strokeWidth={1.5}
-                    >
-                      {contributorData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: any) => [`${value} AED`, 'Amount Paid']}
-                      contentStyle={{ borderRadius: '12px', background: '#E7E7E7', border: 'none', boxShadow: 'inset -5px -5px 12px rgba(255,255,255,0.9), inset 5px 5px 12px rgba(174,174,192,0.8)', color: '#0f172a', fontWeight: 'bold' }}
-                    />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Legend list on Right */}
-              <div className="flex flex-col space-y-2 sm:space-y-3 min-w-[140px] sm:min-w-[170px]">
-                {contributorData.map((item, idx) => (
-                  <div key={item.name} className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-                      <span
-                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full shrink-0 shadow-xs"
-                        style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
-                      />
-                      <span className="font-bold text-slate-900 text-xs sm:text-sm tracking-tight leading-tight truncate">
-                        {item.name}
-                      </span>
-                    </div>
-                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm shrink-0">
-                      {item.value.toFixed(2)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500 py-8 text-center font-medium">No expenses added yet in this cycle.</p>
           )}
         </div>
       </div>
 
-      {/* OVERVIEW (MY CONTRIBUTION & AVG PER PERSON) */}
+      {/* CONTRIBUTORS (PAID OUT OF POCKET) - Without top text / view all */}
+      <div className="neu-upper rounded-[28px] p-4 sm:p-6">
+        {contributorData.length > 0 ? (
+          <div className="flex flex-row items-center justify-start sm:justify-center gap-3 sm:gap-8">
+            {/* Pie Chart on Left */}
+            <div className="w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] flex items-center justify-center shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPieChart>
+                  <Pie
+                    data={contributorData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={0}
+                    outerRadius={75}
+                    dataKey="value"
+                    isAnimationActive={false}
+                    labelLine={false}
+                    label={renderCustomizedPieLabel}
+                    stroke="#ffffff"
+                    strokeWidth={1.5}
+                  >
+                    {contributorData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: any) => [`${value} ${currencyDisplay}`, 'Amount Paid']}
+                    contentStyle={{ borderRadius: '12px', background: '#E7E7E7', border: 'none', boxShadow: 'inset -5px -5px 12px rgba(255,255,255,0.9), inset 5px 5px 12px rgba(174,174,192,0.8)', color: '#0f172a', fontWeight: 'bold' }}
+                  />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Legend list on Right */}
+            <div className="flex flex-col space-y-2 sm:space-y-3 min-w-[140px] sm:min-w-[170px]">
+              {contributorData.map((item, idx) => (
+                <div key={item.name} className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                    <span
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full shrink-0 shadow-xs"
+                      style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
+                    />
+                    <span className="font-bold text-slate-900 text-xs sm:text-sm tracking-tight leading-tight truncate">
+                      {item.name}
+                    </span>
+                  </div>
+                  <span className="font-extrabold text-slate-900 text-xs sm:text-sm shrink-0">
+                    {item.value.toFixed(2)} {currencyDisplay}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500 py-8 text-center font-medium">No expenses added yet in this cycle.</p>
+        )}
+      </div>
+
+      {/* OVERVIEW (MY CONTRIBUTION & AVG PER PERSON) matching reference image */}
       <div className="space-y-2">
-        <h3 className="text-sm font-black text-[#071E55] tracking-wide px-1">Overview</h3>
-        <div className="p-4 md:p-5 neu-upper text-slate-900 rounded-2xl">
+        <h3 className="text-lg font-black text-[#071E55] tracking-wide px-1">Overview</h3>
+        <div className="p-5 md:p-6 neu-upper text-slate-900 rounded-[28px]">
           <div className="grid grid-cols-2 divide-x divide-slate-300/60">
             {/* Left Column: My Contribution */}
-            <div className="flex flex-col items-center justify-center pr-2 sm:pr-4 text-center space-y-2">
+            <div className="flex flex-col items-center justify-center pr-3 sm:pr-6 text-center space-y-2.5">
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                   {/* Background Ring */}
@@ -355,215 +311,51 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <Wallet className="w-4 h-4 text-[#0F3DFF] mb-0.5" />
-                  <span className="text-xs font-black text-[#071E55]">{myPercentage.toFixed(1)}%</span>
+                  <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-[#0F3DFF] mb-0.5" />
+                  <span className="text-xs sm:text-sm font-black text-[#071E55]">{myPercentage.toFixed(1)}%</span>
                 </div>
               </div>
-
-              <div>
-                <div className="text-sm sm:text-lg font-black text-[#071E55]">
-                  {mySpent.toFixed(2)} {group.currency}
-                </div>
-                <div className="text-[11px] text-slate-500 font-semibold">My Contribution</div>
+              <div className="space-y-0.5">
+                <span className="text-base sm:text-xl font-black text-[#071E55] block">
+                  {mySpent.toFixed(2)} AED
+                </span>
+                <span className="text-xs font-bold text-slate-500 tracking-tight block">
+                  My Contribution
+                </span>
               </div>
             </div>
 
             {/* Right Column: Avg. per Person */}
-            <div className="flex flex-col items-center justify-center pl-2 sm:pl-4 text-center space-y-2">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full neu-lower-sm flex flex-col items-center justify-center text-center">
-                <Users className="w-4 h-4 text-[#0F3DFF] mb-0.5" />
-                <span className="text-xs font-black text-[#071E55]">÷ {activeMembersCount}</span>
-                <span className="text-[9px] text-slate-500 font-semibold">members</span>
+            <div className="flex flex-col items-center justify-center pl-3 sm:pl-6 text-center space-y-2.5">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full neu-lower-sm flex flex-col items-center justify-center space-y-0.5">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-[#0F3DFF]" />
+                <span className="text-xs sm:text-sm font-black text-[#071E55]">÷ {group.members.length}</span>
+                <span className="text-[10px] sm:text-[11px] font-bold text-slate-500">members</span>
               </div>
-
-              <div>
-                <div className="text-sm sm:text-lg font-black text-[#071E55]">
-                  {avgPerPerson.toFixed(2)} {group.currency}
-                </div>
-                <div className="text-[11px] text-slate-500 font-semibold">Avg. per Person</div>
+              <div className="space-y-0.5">
+                <span className="text-base sm:text-xl font-black text-[#071E55] block">
+                  {avgPerPerson.toFixed(2)} AED
+                </span>
+                <span className="text-xs font-bold text-slate-500 tracking-tight block">
+                  Avg. per Person
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* 4 Primary Category KPI Glass Cards (Aligned in 1 line: 4 boxes) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        {/* Mess Expense Card */}
-        <div
-          className="p-3.5 text-slate-900 neu-upper hover:scale-[1.02] transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
-          onClick={() => onNavigateTab('expenses')}
-        >
-          <div>
-            <div className="flex items-center justify-between text-[#0F3DFF] mb-1">
-              <Utensils className="w-4 h-4 shrink-0" />
-              <span className="text-[9px] font-bold uppercase bg-blue-100 text-[#0F3DFF] px-2 py-0.5 rounded-full">
-                Mess
-              </span>
-            </div>
-            <span className="text-[11px] text-slate-600 font-semibold block truncate">Mess Food Expenses</span>
-            <div className="mt-1">
-              <DualCurrencyDisplay
-                amount={messTotal}
-                baseCurrency={group.currency}
-                preferredCurrency={preferredCurrency}
-                customRates={customRates}
-                layout="stacked"
-                baseClassName="text-base font-black text-[#071E55]"
-              />
-            </div>
-          </div>
-          <span className="text-[9px] text-slate-500 mt-1 block font-medium">
-            {expenses.filter((e) => e.type === 'mess').length} Transactions
-          </span>
-        </div>
-
-        {/* General Expenses Card */}
-        <div
-          className="p-3.5 text-slate-900 neu-upper hover:scale-[1.02] transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
-          onClick={() => onNavigateTab('expenses')}
-        >
-          <div>
-            <div className="flex items-center justify-between text-[#0F3DFF] mb-1">
-              <ShoppingBag className="w-4 h-4 shrink-0" />
-              <span className="text-[9px] font-bold uppercase bg-blue-100 text-[#0F3DFF] px-2 py-0.5 rounded-full">
-                General
-              </span>
-            </div>
-            <span className="text-[11px] text-slate-600 font-semibold block truncate">General Room Items</span>
-            <div className="mt-1">
-              <DualCurrencyDisplay
-                amount={generalTotal}
-                baseCurrency={group.currency}
-                preferredCurrency={preferredCurrency}
-                customRates={customRates}
-                layout="stacked"
-                baseClassName="text-base font-black text-[#071E55]"
-              />
-            </div>
-          </div>
-          <span className="text-[9px] text-slate-500 mt-1 block font-medium">
-            {expenses.filter((e) => e.type === 'general').length} Items
-          </span>
-        </div>
-
-        {/* Utilities Card */}
-        <div
-          className="p-3.5 text-slate-900 neu-upper hover:scale-[1.02] transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
-          onClick={() => onNavigateTab('utilities')}
-        >
-          <div>
-            <div className="flex items-center justify-between text-[#0F3DFF] mb-1">
-              <Zap className="w-4 h-4 shrink-0" />
-              <span className="text-[9px] font-bold uppercase bg-blue-100 text-[#0F3DFF] px-2 py-0.5 rounded-full">
-                Utilities
-              </span>
-            </div>
-            <span className="text-[11px] text-slate-600 font-semibold block truncate">DEWA & WiFi Bills</span>
-            <div className="mt-1">
-              <DualCurrencyDisplay
-                amount={utilitiesTotal}
-                baseCurrency={group.currency}
-                preferredCurrency={preferredCurrency}
-                customRates={customRates}
-                layout="stacked"
-                baseClassName="text-base font-black text-[#071E55]"
-              />
-            </div>
-          </div>
-          <span className="text-[9px] text-slate-500 mt-1 block font-medium">
-            {utilities.length} Utility Bills
-          </span>
-        </div>
-
-        {/* Landlord Rent Card */}
-        <div
-          className="p-3.5 text-slate-900 neu-upper hover:scale-[1.02] transition-all cursor-pointer rounded-2xl flex flex-col justify-between"
-          onClick={() => onNavigateTab('utilities')}
-        >
-          <div>
-            <div className="flex items-center justify-between text-[#0F3DFF] mb-1">
-              <HomeIcon className="w-4 h-4 shrink-0" />
-              <span className="text-[9px] font-bold uppercase bg-blue-100 text-[#0F3DFF] px-2 py-0.5 rounded-full">
-                Rent
-              </span>
-            </div>
-            <span className="text-[11px] text-slate-600 font-semibold block truncate">Landlord Monthly Rent</span>
-            <div className="mt-1">
-              <DualCurrencyDisplay
-                amount={rentTotal}
-                baseCurrency={group.currency}
-                preferredCurrency={preferredCurrency}
-                customRates={customRates}
-                layout="stacked"
-                baseClassName="text-base font-black text-[#071E55]"
-              />
-            </div>
-          </div>
-          <span className="text-[9px] text-slate-500 mt-1 block font-medium">
-            Status: {rent?.status === 'paid' ? 'Paid' : 'Pending'}
-          </span>
-        </div>
-      </div>
-
-      {/* Central Google Sheets Integration & Admin Panel Info (Admin Only) */}
-      {currentUser?.role === 'admin' && (
-        <div className="p-5 md:p-6 text-slate-900 neu-upper space-y-4 rounded-3xl">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-2xl neu-lower-sm flex items-center justify-center text-[#0052FF]">
-                <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-[#07193F]">Google Sheets Central Synchronization</h3>
-                <p className="text-xs text-slate-500 font-medium">
-                  Spreadsheet ID: <code className="text-[#07193F] font-mono font-bold">{group.spreadsheetId ? group.spreadsheetId.substring(0, 16) + '...' : (group.id === 'group-room-3' ? '1-VBgqW...' : 'Not Linked')}</code>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="neu-lower-sm text-[#0052FF] font-semibold px-3.5 py-1.5 rounded-2xl text-xs flex items-center gap-1.5">
-                <RefreshCw className={`w-3.5 h-3.5 text-[#0052FF] ${isSyncing ? 'animate-spin' : ''}`} />
-                <span>{isSyncing ? 'Auto-Syncing...' : 'Auto-Synced'}</span>
-              </div>
-
-              {(group.spreadsheetId || group.id === 'group-room-3') && (
-                <a
-                  href={`https://docs.google.com/spreadsheets/d/${group.spreadsheetId || '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM'}/edit`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-bold px-3.5 py-1.5 rounded-2xl text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
-                >
-                  <ExternalLink className="w-3.5 h-3.5 text-white" />
-                  <span>Open Sheet</span>
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* RECENT EXPENSES Section */}
       <div className="p-5 neu-upper text-slate-900 rounded-3xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-300/60 pb-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <Receipt className="w-5 h-5 text-[#0052FF]" />
-              <h3 className="text-base font-black text-[#07193F] tracking-wide uppercase">
-                RECENT EXPENSES
-              </h3>
-            </div>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Running Month ({group.billingCycle || 'Current Cycle'}) • Sorted User, Date & Amount Wise (Last Entry First)
-            </p>
-          </div>
+        {/* Section Header */}
+        <div className="flex items-center justify-between gap-2 border-b border-slate-300/60 pb-3">
+          <h3 className="text-base font-black text-[#07193F] tracking-wide uppercase">
+            RECENT EXPENSES
+          </h3>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <span className="text-[10px] font-extrabold bg-[#0052FF] text-white px-3 py-1 rounded-full uppercase tracking-wider shadow-xs">
-              {expenses.length} Total Expenses
-            </span>
-          </div>
+          <span className="text-[10px] sm:text-xs font-extrabold bg-[#0052FF] text-white px-3 py-1 rounded-full uppercase tracking-wider shadow-xs shrink-0">
+            {expenses.length} Total Expenses
+          </span>
         </div>
 
         {/* Member Filter Dropdown / Collapsible */}
@@ -622,7 +414,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         />
                         <span className="truncate">{selectedMember?.name || 'Selected User'}</span>
                         <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full shrink-0">
-                          {selectedUserCount} • {selectedUserTotal.toFixed(0)} {group.currency}
+                          {selectedUserCount} • {selectedUserTotal.toFixed(0)} {currencyDisplay}
                         </span>
                       </div>
                     )}
@@ -702,7 +494,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           <span className={`text-[10px] font-bold ${
                             isSelected ? 'text-blue-100' : 'text-slate-500'
                           }`}>
-                            {userCount} exp • {userTotal.toFixed(0)} {group.currency}
+                            {userCount} exp • {userTotal.toFixed(0)} {currencyDisplay}
                           </span>
                           {isSelected && <Check className="w-4 h-4 text-white shrink-0" />}
                         </div>

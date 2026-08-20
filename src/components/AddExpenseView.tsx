@@ -278,34 +278,23 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
     <div className="w-full max-w-2xl mx-auto pb-6 animate-in fade-in duration-200">
       {/* Main Form Card */}
       <div ref={cardRef} className="neu-upper rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col">
-        {/* Main Page Header Banner - Dark Navy Theme */}
-        <div className="bg-[#07193F] text-white px-3.5 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between shrink-0 gap-2 border-b border-blue-950/40">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button
-              type="button"
-              onClick={() => {
-                triggerHaptic(hapticPatterns.click);
-                onClose();
-              }}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center transition-all cursor-pointer shrink-0"
-              aria-label="Back"
-            >
-              <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-            </button>
-            <div className="min-w-0">
-              <h1 className="text-sm sm:text-base font-black tracking-tight text-white leading-tight truncate">
-                Add New Expense (নতুন খরচ যুক্ত করুন)
-              </h1>
-              <span className="text-[10px] font-bold text-blue-200 bg-[#0B2A66] px-2 py-0.5 rounded-full inline-block mt-0.5 truncate max-w-[150px] border border-blue-400/20">
-                {group.name}
-              </span>
-            </div>
-          </div>
+        {/* Main Page Header Banner - Dark Navy Theme with Centered Title and 3-part Sub-Row */}
+        <div className="bg-[#07193F] text-white px-4 sm:px-6 py-5 sm:py-6 flex flex-col items-center justify-center shrink-0 gap-3.5 border-b border-blue-950/40">
+          {/* Centered Large Header Title */}
+          <h1 className="text-lg sm:text-xl md:text-2xl font-black tracking-wide text-white text-center">
+            Add New Expense
+          </h1>
 
-          {/* Header Right: Paid by (left of Cancel) + Cancel Button */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <div className="flex items-center gap-1 bg-white/10 hover:bg-white/15 rounded-lg px-2 py-1 text-xs text-white transition-colors border border-white/10">
-              <span className="text-[10px] font-bold text-blue-200 uppercase">Paid by:</span>
+          {/* Sub-Row: Left Group Name, Center Paid by, Right Red Cancel Button (All exactly same height h-10) */}
+          <div className="w-full flex items-center justify-between gap-2">
+            {/* Left: Group Name */}
+            <div className="h-10 px-3.5 flex items-center justify-center text-xs font-bold text-white bg-white/10 border border-white/20 rounded-xl shadow-xs truncate max-w-[130px] sm:max-w-[180px]">
+              <span className="truncate">{group.name}</span>
+            </div>
+
+            {/* Center: Paid by */}
+            <div className="h-10 px-3 flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/15 rounded-xl text-xs text-white border border-white/10 shrink-0">
+              <span className="text-[10px] sm:text-xs font-bold text-blue-200 uppercase">Paid by:</span>
               {isAdmin ? (
                 <select
                   value={paidById}
@@ -313,7 +302,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                     setPaidById(e.target.value);
                     triggerHaptic(hapticPatterns.click);
                   }}
-                  className="bg-transparent text-white font-black text-xs focus:outline-none cursor-pointer [&>option]:text-slate-900 [&>option]:bg-white max-w-[95px] sm:max-w-[125px] truncate"
+                  className="bg-transparent text-white font-black text-xs sm:text-sm focus:outline-none cursor-pointer [&>option]:text-slate-900 [&>option]:bg-white max-w-[110px] sm:max-w-[150px] truncate"
                 >
                   {group.members.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -322,35 +311,36 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                   ))}
                 </select>
               ) : (
-                <span className="font-black text-white text-xs max-w-[85px] sm:max-w-[115px] truncate">
+                <span className="font-black text-white text-xs sm:text-sm max-w-[110px] sm:max-w-[150px] truncate">
                   {currentUser?.name || loggedInMember?.name || 'User'}
                 </span>
               )}
             </div>
 
+            {/* Right: Red Cancel Button with White Text */}
             <button
               type="button"
               onClick={() => {
                 triggerHaptic(hapticPatterns.click);
                 onClose();
               }}
-              className="text-xs font-bold text-blue-200 hover:text-white px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 transition-all cursor-pointer shrink-0"
+              className="h-10 px-4 flex items-center justify-center text-xs font-black text-white rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 transition-all cursor-pointer shadow-xs shrink-0 uppercase tracking-wider"
             >
               Cancel
             </button>
           </div>
         </div>
 
-        {/* Form Body - Engineered to fit screens cleanly */}
-        <form onSubmit={handleSubmit} className="p-3.5 sm:p-5 space-y-4 w-full box-border">
-          {/* 1. Row: Expense Amount (50%) & Expense Date (50%) */}
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5 w-full box-border">
+          {/* 1. Row: Expense Amount (Left 50%, Height 20% larger) & Expense Date (Right 50%) */}
           <div className="grid grid-cols-2 gap-2 sm:gap-3 items-start">
             {/* Left 50%: Expense Amount */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                 <span className="uppercase tracking-wider truncate">Amount ({group.currency}) *</span>
                 {mathEval.hasOperator && (
-                  <span className="text-slate-950 font-black text-[10px]">
+                  <span className="text-slate-950 font-black text-xs">
                     = {mathEval.isValid ? `${mathEval.displayValue}` : '...'}
                   </span>
                 )}
@@ -370,14 +360,14 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                   onChange={(e) => setAmount(e.target.value)}
                   onKeyDown={handleAmountKeyDown}
                   onBlur={handleAmountBlur}
-                  className="w-full pl-11 pr-2.5 py-2 neu-lower-sm rounded-xl text-base sm:text-lg font-black text-slate-900 placeholder-slate-400 focus:outline-none"
+                  className="w-full pl-11 pr-2.5 py-3 sm:py-3.5 neu-lower-sm rounded-xl text-base sm:text-lg font-black text-slate-900 placeholder-slate-400 focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Right 50%: Expense Date */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                 <span className="uppercase tracking-wider truncate">Expense Date *</span>
               </div>
               <div className="relative">
@@ -385,7 +375,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className={`w-full px-2.5 py-2 neu-lower-sm rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none ${
+                  className={`w-full px-2.5 py-3 sm:py-3.5 neu-lower-sm rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none ${
                     !dateValidation.isAllowed ? 'text-rose-600' : ''
                   }`}
                 />
@@ -394,12 +384,12 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
           </div>
 
           {/* Quick Math Buttons: +, -, ×, ÷, =, Clear (Full Width Row) */}
-          <div className="flex items-center gap-1 sm:gap-1.5 pt-0.5">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleAppendSymbol('+')}
-              className="flex-1 py-1.5 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-lg cursor-pointer"
+              className="flex-1 py-2 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-xl cursor-pointer"
             >
               +
             </button>
@@ -407,7 +397,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleAppendSymbol('-')}
-              className="flex-1 py-1.5 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-lg cursor-pointer"
+              className="flex-1 py-2 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-xl cursor-pointer"
             >
               -
             </button>
@@ -415,7 +405,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleAppendSymbol('*')}
-              className="flex-1 py-1.5 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-lg cursor-pointer"
+              className="flex-1 py-2 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-xl cursor-pointer"
             >
               ×
             </button>
@@ -423,7 +413,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleAppendSymbol('/')}
-              className="flex-1 py-1.5 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-lg cursor-pointer"
+              className="flex-1 py-2 neu-upper-btn active:scale-95 text-slate-900 font-black text-xs sm:text-sm rounded-xl cursor-pointer"
             >
               ÷
             </button>
@@ -431,7 +421,7 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleApplyCalculation}
-              className="flex-1 py-1.5 bg-[#0052FF] hover:bg-[#0047E0] active:scale-95 text-white font-black text-xs sm:text-sm rounded-lg cursor-pointer shadow-sm"
+              className="flex-1 py-2 bg-[#0052FF] hover:bg-[#0047E0] active:scale-95 text-white font-black text-xs sm:text-sm rounded-xl cursor-pointer shadow-sm"
               title="Calculate"
             >
               =
@@ -440,43 +430,43 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleClearAmount}
-              className="px-2.5 sm:px-3 py-1.5 neu-upper-btn active:scale-95 text-slate-600 font-bold text-[11px] sm:text-xs rounded-lg cursor-pointer"
+              className="px-3 sm:px-4 py-2 neu-upper-btn active:scale-95 text-slate-600 font-bold text-xs rounded-xl cursor-pointer"
             >
               Clear
             </button>
           </div>
 
-          {/* 2. Title / Description */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+          {/* 2. Title / Description - Height Doubled */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
               Title / Item Description *
             </label>
-            <input
-              type="text"
+            <textarea
               required
+              rows={2}
               placeholder={category === 'mess' ? 'e.g., Weekly Groceries & Meat' : 'e.g., Dish Soap & Water Refill'}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 neu-lower-sm rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none"
+              className="w-full px-3.5 py-3.5 neu-lower-sm rounded-2xl text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 focus:outline-none min-h-[72px] resize-none"
             />
           </div>
 
-          {/* 5. Shared With Members */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+          {/* 3. Shared With Members */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                 Shared With ({selectedMembers.length}/{eligibleMembers.length})
               </label>
               <button
                 type="button"
                 onClick={handleSelectAllMembers}
-                className="text-[10px] font-bold text-slate-900 hover:underline cursor-pointer"
+                className="text-xs font-bold text-slate-900 hover:underline cursor-pointer"
               >
                 {selectedMembers.length === eligibleMembers.length ? 'Deselect All' : 'Select All'}
               </button>
             </div>
 
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-28 overflow-y-auto p-1 neu-lower-sm rounded-xl">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-32 overflow-y-auto p-2 neu-lower-sm rounded-2xl">
               {eligibleMembers.map((member) => {
                 const isSelected = selectedMembers.includes(member.id);
                 return (
@@ -484,24 +474,24 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                     type="button"
                     key={member.id}
                     onClick={() => handleMemberToggle(member.id)}
-                    className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all text-left cursor-pointer truncate ${
+                    className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold transition-all text-left cursor-pointer truncate ${
                       isSelected
                         ? 'bg-black text-white shadow-xs'
                         : 'neu-upper-sm text-slate-700'
                     }`}
                   >
                     <div
-                      className={`w-3.5 h-3.5 rounded-xs flex items-center justify-center text-[8px] shrink-0 ${
+                      className={`w-4 h-4 rounded-xs flex items-center justify-center text-[9px] shrink-0 ${
                         isSelected ? 'bg-white text-black font-black' : 'bg-slate-300 text-slate-600'
                       }`}
                     >
-                      {isSelected ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : null}
+                      {isSelected ? <Check className="w-3 h-3 stroke-[3]" /> : null}
                     </div>
                     <MemberAvatar
                       name={member.name}
                       avatar={member.avatar}
                       size="xs"
-                      className="w-4 h-4 text-[7px] shrink-0"
+                      className="w-5 h-5 text-[8px] shrink-0"
                     />
                     <span className="truncate">{member.name}</span>
                   </button>
@@ -510,8 +500,12 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
             </div>
           </div>
 
-          {/* 6. Receipt Attachment - 2 Side-by-Side Icon Buttons: Camera & Gallery */}
-          <div className="space-y-1.5">
+          {/* 4. Receipt Attachment - Restored 2 Wide Buttons */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Attach Receipt (Optional)
+            </label>
+
             {/* Hidden Native File Inputs linked via htmlFor */}
             <input
               id="expense-camera-input"
@@ -531,17 +525,18 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
               className="sr-only"
             />
 
-            {/* 2 Icon-Only Buttons in 1 Line */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* 2 Wide Buttons Side-by-Side */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {/* Camera Button (Take Photo) */}
               <label
                 htmlFor="expense-camera-input"
                 onClick={() => triggerHaptic(hapticPatterns.click)}
                 title="Camera (Take Photo)"
                 aria-label="Camera (Take Photo)"
-                className="h-10 neu-upper-btn active:scale-95 rounded-xl flex items-center justify-center text-slate-900 transition-all cursor-pointer group select-none"
+                className="h-11 sm:h-12 neu-upper-btn active:scale-95 rounded-xl flex items-center justify-center gap-2 text-slate-900 transition-all cursor-pointer group select-none"
               >
-                <Camera className="w-5 h-5 group-hover:scale-110 transition-transform pointer-events-none" />
+                <Camera className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform pointer-events-none" />
+                <span className="text-xs sm:text-sm font-bold">Camera</span>
               </label>
 
               {/* Gallery Button (Photo Library) */}
@@ -550,9 +545,10 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
                 onClick={() => triggerHaptic(hapticPatterns.click)}
                 title="Gallery (Photo Library)"
                 aria-label="Gallery (Photo Library)"
-                className="h-10 neu-upper-btn active:scale-95 rounded-xl flex items-center justify-center text-slate-900 transition-all cursor-pointer group select-none"
+                className="h-11 sm:h-12 neu-upper-btn active:scale-95 rounded-xl flex items-center justify-center gap-2 text-slate-900 transition-all cursor-pointer group select-none"
               >
-                <ImageIcon className="w-5 h-5 group-hover:scale-110 transition-transform pointer-events-none" />
+                <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform pointer-events-none" />
+                <span className="text-xs sm:text-sm font-bold">Gallery</span>
               </label>
             </div>
 
@@ -596,15 +592,15 @@ export const AddExpenseView: React.FC<AddExpenseViewProps> = ({
             </div>
           )}
 
-          {/* 7. Save Button */}
-          <div className="pt-1">
+          {/* 7. Save Button - Double Height with slightly larger SAVE EXPENSE text */}
+          <div className="pt-2">
             <button
               type="submit"
               disabled={!dateValidation.isAllowed}
-              className={`w-full font-black py-2.5 sm:py-3 rounded-xl sm:rounded-2xl transition-all text-xs sm:text-sm flex items-center justify-center gap-2 active:scale-98 tracking-wider uppercase cursor-pointer ${
+              className={`w-full font-black py-5 sm:py-6 rounded-2xl transition-all text-sm sm:text-base flex items-center justify-center gap-2 active:scale-98 tracking-widest uppercase cursor-pointer ${
                 !dateValidation.isAllowed
                   ? 'neu-lower-sm text-slate-400 cursor-not-allowed opacity-70'
-                  : 'bg-[#07193F] hover:bg-[#0B2A66] text-white shadow-md'
+                  : 'bg-[#07193F] hover:bg-[#0B2A66] text-white shadow-lg'
               }`}
             >
               <span>{dateValidation.isAllowed ? 'SAVE EXPENSE' : 'ENTRY LOCKED'}</span>

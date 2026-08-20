@@ -341,26 +341,23 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
       <div
         className="rounded-3xl neu-upper text-slate-900 overflow-hidden"
       >
-        {/* Top Dark Navy Header Band */}
-        <div className="bg-[#07193F] text-white px-5 py-3.5 flex items-center justify-between font-bold text-xs uppercase tracking-wider flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-amber-400" />
-            <span>UTILITIES & LANDLORD RENT (বিল ও রুম ভাড়া)</span>
-          </div>
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer uppercase tracking-wider shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>{showAddForm ? 'Close Add Bill' : '+ Add Utility Bill'}</span>
-          </button>
-        </div>
-
-        <div className="p-5 sm:p-6">
-          <h2 className="text-xl sm:text-2xl font-black text-slate-950">Utilities & Rent Overview</h2>
-          <p className="text-xs text-slate-600 font-medium mt-1">
+        {/* Top Dark Navy Header Band with centered Title & Description */}
+        <div className="bg-[#07193F] text-white px-5 py-5 sm:py-6 text-center space-y-1">
+          <h2 className="text-xl sm:text-2xl font-black text-white">Utilities & Rent Overview</h2>
+          <p className="text-xs text-blue-200 font-medium mt-1">
             Track DEWA Electricity, WiFi Internet, LPG Gas & Landlord Rent per member
           </p>
+        </div>
+
+        {/* Center-aligned Add Utility Bill Button */}
+        <div className="p-5 sm:p-6 flex justify-center items-center">
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-6 py-2.5 rounded-2xl text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer uppercase tracking-wider shadow-md active:scale-95"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>{showAddForm ? 'Close Add Bill' : '+ Add Utility Bill'}</span>
+          </button>
         </div>
       </div>
 

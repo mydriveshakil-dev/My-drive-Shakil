@@ -321,27 +321,24 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       <div
         className="rounded-3xl neu-upper text-slate-900 overflow-hidden"
       >
-        {/* Top Dark Navy Header Band */}
-        <div className="bg-[#07193F] text-white px-5 py-3.5 flex items-center justify-between font-bold text-xs uppercase tracking-wider flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <ChartIcon className="w-4 h-4 text-emerald-400" />
-            <span>SETTLEMENT & AUDIT REPORT (হিসাব ও স্টেটমেন্ট)</span>
-          </div>
+        {/* Top Dark Navy Header Band with centered Title & Description */}
+        <div className="bg-[#07193F] text-white px-5 py-5 sm:py-6 text-center space-y-1">
+          <h2 className="text-xl sm:text-2xl font-black text-white">Report & Member Settlement</h2>
+          <p className="text-xs text-blue-200 font-medium mt-1">
+            Exact meal rates and individual spending balance calculations
+          </p>
+        </div>
+
+        {/* Center-aligned Export PDF Button */}
+        <div className="p-5 sm:p-6 flex justify-center items-center">
           <button
             type="button"
             onClick={() => setIsPdfPreviewOpen(true)}
-            className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer uppercase tracking-wider shadow-xs"
+            className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-6 py-2.5 rounded-2xl text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer uppercase tracking-wider shadow-md active:scale-95"
           >
-            <FileText className="w-3.5 h-3.5 text-white" />
+            <FileText className="w-4 h-4 text-white" />
             <span>Export PDF</span>
           </button>
-        </div>
-
-        <div className="p-5 sm:p-6">
-          <h2 className="text-xl sm:text-2xl font-black text-slate-950">Report & Member Settlement</h2>
-          <p className="text-xs text-slate-600 font-medium mt-1">
-            Exact meal rates and individual spending balance calculations
-          </p>
         </div>
       </div>
 

@@ -59,15 +59,15 @@ interface GroupManagementViewProps {
 }
 
 export const ALL_EXPENSE_OPTIONS = [
-  { id: 'mess', label: 'Mess Food Expense (মেস মিল খরচ)', desc: 'Daily meals & food grocery' },
-  { id: 'general', label: 'General Room Expense (সাধারণ রুম খরচ)', desc: 'Common room items & shopping' },
-  { id: 'electricity', label: 'Electricity Bill (বিদ্যুৎ বিল)', desc: 'DEWA / Power supply' },
-  { id: 'internet', label: 'Internet / Wifi Bill (ওয়াইফাই বিল)', desc: 'Broadband wifi connection' },
-  { id: 'water', label: 'Water Bill (পানি বিল)', desc: 'Water usage & DEWA water' },
-  { id: 'gas', label: 'Gas Bill (গ্যাস বিল)', desc: 'LPG / Central gas supply' },
-  { id: 'cleaner', label: 'House Cleaner (ক্লিনার বিল)', desc: 'Maid & housekeeping fee' },
-  { id: 'rent', label: 'Room Rent / Landlord (রুম ভাড়া)', desc: 'Monthly landlord flat rent' },
-  { id: 'expenses_summary', label: 'Expenses Summary (খরচ সারাংশ)', desc: 'Current Cycle Expenses Summary Report' },
+  { id: 'mess', label: 'Mess Food Expense', desc: 'Daily meals & food grocery' },
+  { id: 'general', label: 'General Room Expense', desc: 'Common room items & shopping' },
+  { id: 'electricity', label: 'Electricity Bill', desc: 'DEWA / Power supply' },
+  { id: 'internet', label: 'Internet / Wifi Bill', desc: 'Broadband wifi connection' },
+  { id: 'water', label: 'Water Bill', desc: 'Water usage & DEWA water' },
+  { id: 'gas', label: 'Gas Bill', desc: 'LPG / Central gas supply' },
+  { id: 'cleaner', label: 'House Cleaner', desc: 'Maid & housekeeping fee' },
+  { id: 'rent', label: 'Room Rent / Landlord', desc: 'Monthly landlord flat rent' },
+  { id: 'expenses_summary', label: 'Expenses Summary', desc: 'Current Cycle Expenses Summary Report' },
 ];
 
 export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
@@ -253,104 +253,83 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       <div
         className="rounded-3xl neu-upper text-slate-900 overflow-hidden"
       >
-        {/* Top Dark Navy Header Band */}
-        <div className="bg-[#07193F] text-white px-5 py-3.5 flex items-center justify-between font-bold text-xs uppercase tracking-wider flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-white" />
-            <span>GROUP & MEMBER MANAGEMENT (গ্রুপ ও সদস্য ম্যানেজমেন্ট)</span>
+        {/* Top Dark Navy Header Band with Left Title and Right Profile Section */}
+        <div className="bg-[#07193F] text-white px-5 sm:px-6 py-5 sm:py-6 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black text-white">
+              Room Members & Group Details
+            </h2>
+            <p className="text-xs text-blue-200 font-medium mt-1">
+              View active room members and personal group transactions
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            {isAdmin ? (
-              <span className="bg-emerald-500/20 text-emerald-300 text-[11px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400/40 flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                ADMIN UNLOCKED
-              </span>
-            ) : (
-              <span className="bg-blue-500/20 text-blue-300 text-[11px] font-black px-2.5 py-0.5 rounded-full border border-blue-400/30">
-                MEMBER VIEW
-              </span>
-            )}
-          </div>
-        </div>
 
-        <div className="p-5 sm:p-6 space-y-4">
-          {/* Badges on Left & Profile Button on Right */}
-          <div className="flex items-center justify-between gap-2.5 w-full flex-wrap">
-            <div className="flex items-center gap-2 flex-wrap">
-              {isAdmin && (
-                <span className="text-[11px] font-bold text-slate-700 bg-slate-200 px-3 py-1 rounded-full">
-                  Single Master Gmail Account Setup
-                </span>
-              )}
-            </div>
-
-            {/* Profile Button - Aligned with Member View text on the Right Corner */}
+          {/* Profile Section: 10mm Circular Avatar with Center-Aligned Name below, clicks to open profile */}
+          <div className="flex flex-col items-center justify-center shrink-0">
             <button
               type="button"
               onClick={() => {
                 triggerHaptic(hapticPatterns.click);
                 setShowProfileModal(true);
               }}
-              className="flex items-center gap-2 p-1.5 pr-3 rounded-2xl neu-upper-btn text-slate-900 transition-all cursor-pointer shadow-xs active:scale-95 group shrink-0 ml-auto"
-              title="Click to view your profile details and update photo"
+              className="relative w-[38px] h-[38px] sm:w-[40px] sm:h-[40px] rounded-full overflow-hidden ring-2 ring-white/50 hover:ring-white active:scale-95 transition-all cursor-pointer shadow-md flex items-center justify-center group"
+              title="Click to view and edit profile"
             >
-              <div className="relative">
-                <MemberAvatar
-                  name={currentUser?.name || loggedInMember?.name || 'User'}
-                  avatar={currentUser?.avatar || loggedInMember?.avatar}
-                  size="xs"
-                  className="w-7 h-7 ring-2 ring-slate-300 shadow-xs group-hover:scale-105 transition-transform"
-                />
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white" />
-              </div>
-              <div className="text-left leading-tight">
-                <span className="text-xs font-black text-slate-900 block leading-tight max-w-[120px] sm:max-w-[160px] truncate">
-                  {currentUser?.name || loggedInMember?.name || 'My Account'}
-                </span>
-              </div>
+              <MemberAvatar
+                name={currentUser?.name || loggedInMember?.name || 'User'}
+                avatar={currentUser?.avatar || loggedInMember?.avatar}
+                size="custom"
+                shape="circle"
+                className="w-[38px] h-[38px] sm:w-[40px] sm:h-[40px] rounded-full object-cover group-hover:scale-105 transition-transform"
+                textClassName="text-xs font-black"
+              />
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(hapticPatterns.click);
+                setShowProfileModal(true);
+              }}
+              className="text-xs font-black text-white text-center mt-1 max-w-[80px] truncate hover:underline cursor-pointer block leading-tight"
+              title="Click to view and edit profile"
+            >
+              {currentUser?.name || loggedInMember?.name || 'My Account'}
             </button>
           </div>
-
-          {/* Title and Subtitle Row */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1 border-t border-slate-300/60">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-950">
-                {isAdmin ? 'Group & Member Settings' : 'Room Members & Group Details'}
-              </h2>
-              <p className="text-xs text-slate-600 font-medium mt-1">
-                {isAdmin
-                  ? 'Manage room members and administrative controls'
-                  : 'View active room members and personal group transactions'}
-              </p>
-            </div>
-
-            {isAdmin && (
-              <button
-                onClick={onOpenArchGuide}
-                className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 self-start md:self-auto cursor-pointer shrink-0 uppercase tracking-wider"
-              >
-                <Code className="w-4 h-4" />
-                <span>Flutter & API Guide</span>
-              </button>
-            )}
-          </div>
         </div>
+
+        {/* Lower container for optional admin tools */}
+        {isAdmin && (
+          <div className="p-4 sm:p-5 flex items-center justify-between gap-3 flex-wrap">
+            <span className="text-[11px] font-bold text-slate-700 bg-slate-200 px-3 py-1 rounded-full">
+              Single Master Gmail Account Setup
+            </span>
+            <button
+              onClick={onOpenArchGuide}
+              className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer shrink-0 uppercase tracking-wider"
+            >
+              <Code className="w-4 h-4" />
+              <span>Flutter & API Guide</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 1st Sub-Component / PAY TO Option Button */}
+      {/* 1st Sub-Component / PAY TO Option Button - Color matched to Save Expense button */}
       <button
         type="button"
         onClick={() => {
           triggerHaptic(hapticPatterns.click);
           if (onOpenPayTo) onOpenPayTo();
         }}
-        className="w-full bg-black hover:bg-slate-800 text-white font-black px-6 py-4 rounded-[24px] text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer uppercase tracking-wider"
+        className="w-full bg-[#07193F] hover:bg-[#0B2A66] text-white font-black px-6 py-4 rounded-[24px] text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer uppercase tracking-wider"
       >
         <HandCoins className="w-5 h-5 stroke-[2.5]" />
         <span>Transaction with Group Member</span>
       </button>
 
-      {/* 2nd Sub-Component / GROUP NOTES Button */}
+      {/* 2nd Sub-Component / GROUP NOTES Button - Color matched to Save Expense button */}
       <button
         type="button"
         id="btn-group-note-open"
@@ -358,7 +337,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
           triggerHaptic(hapticPatterns.click);
           if (onOpenGroupNote) onOpenGroupNote();
         }}
-        className="w-full bg-black hover:bg-slate-800 text-white font-black px-6 py-4 rounded-[24px] text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-lg active:scale-95 transition-all cursor-pointer uppercase tracking-wider relative overflow-hidden"
+        className="w-full bg-[#07193F] hover:bg-[#0B2A66] text-white font-black px-6 py-4 rounded-[24px] text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-lg active:scale-95 transition-all cursor-pointer uppercase tracking-wider relative overflow-hidden"
       >
         <StickyNote className="w-5 h-5 stroke-[2.5] text-white" />
         <span>Group Notes</span>
@@ -992,7 +971,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               {/* Expense Inclusions Checkboxes */}
               <div>
                 <label className="block text-xs font-bold text-slate-900 uppercase mb-1 flex items-center justify-between">
-                  <span>Expense Scope & Inclusions (কোন কোন খরচের আওতায় থাকবে) *</span>
+                  <span>Expense Scope & Inclusions *</span>
                   <span className="text-[10px] text-white font-bold bg-black px-2 py-0.5 rounded-full">
                     {newMemberCategories.length}/{ALL_EXPENSE_OPTIONS.length} Selected
                   </span>
@@ -1111,7 +1090,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               {/* Expense Inclusions Checkboxes */}
               <div>
                 <label className="block text-xs font-bold text-slate-900 uppercase mb-1 flex items-center justify-between">
-                  <span>Expense Inclusions & Scope (খরচের টিক বক্স) *</span>
+                  <span>Expense Inclusions & Scope *</span>
                   <span className="text-[10px] text-white font-bold bg-black px-2 py-0.5 rounded-full">
                     {editMemberCategories.length}/{ALL_EXPENSE_OPTIONS.length} Ticked
                   </span>

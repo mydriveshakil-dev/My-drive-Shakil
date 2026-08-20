@@ -4,6 +4,7 @@ interface MemberAvatarProps {
   name?: string;
   avatar?: string | null;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'custom';
+  shape?: 'circle' | 'square';
   className?: string;
   textClassName?: string;
   alt?: string;
@@ -23,6 +24,7 @@ export const MemberAvatar: React.FC<MemberAvatarProps> = ({
   name = 'User',
   avatar,
   size = 'md',
+  shape = 'circle',
   className = '',
   textClassName = '',
   alt,
@@ -58,18 +60,21 @@ export const MemberAvatar: React.FC<MemberAvatarProps> = ({
 
   const initials = avatar && avatar.length <= 4 && !avatar.startsWith('data:') ? avatar : getInitials(name);
   const dimensionClass = sizeClasses[size] || sizeClasses.md;
+  const roundingClass = shape === 'square' ? 'rounded-2xl' : 'rounded-full';
 
   if (isImage) {
     return (
       <div
-        className={`relative inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-slate-300 shadow-xs bg-slate-100 ${dimensionClass} ${className}`}
+        className={`relative inline-flex items-center justify-center shrink-0 ${roundingClass} overflow-hidden shadow-xs ${
+          shape === 'square' ? 'bg-transparent border-0' : 'border border-slate-300 bg-slate-100'
+        } ${dimensionClass} ${className}`}
       >
         <img
           src={avatar}
           alt={alt || name}
           referrerPolicy="no-referrer"
           onError={() => setImageError(true)}
-          className="w-full h-full object-cover rounded-full"
+          className={`w-full h-full object-cover ${roundingClass}`}
         />
       </div>
     );
@@ -77,7 +82,9 @@ export const MemberAvatar: React.FC<MemberAvatarProps> = ({
 
   return (
     <div
-      className={`relative inline-flex items-center justify-center shrink-0 rounded-full font-black select-none bg-gradient-to-br from-[#07193F] to-[#0A255C] text-white shadow-xs border border-blue-900/30 ${dimensionClass} ${className}`}
+      className={`relative inline-flex items-center justify-center shrink-0 ${roundingClass} font-black select-none bg-gradient-to-br from-[#07193F] to-[#0A255C] text-white shadow-xs ${
+        shape === 'square' ? 'border border-white/20' : 'border border-blue-900/30'
+      } ${dimensionClass} ${className}`}
       title={name}
     >
       <span className={textClassName}>{initials}</span>

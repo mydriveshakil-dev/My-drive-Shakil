@@ -398,10 +398,10 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                       triggerHaptic(hapticPatterns.click);
                       setIsEditing(true);
                     }}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer neu-upper-sm"
+                    className="flex-1 bg-amber-400 hover:bg-amber-500 text-black font-black py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer neu-upper-sm"
                   >
-                    <StickyNote className="w-3.5 h-3.5" />
-                    <span>Edit / Replace Notice</span>
+                    <StickyNote className="w-3.5 h-3.5 text-black" />
+                    <span className="text-black">Edit / Replace Notice</span>
                   </button>
                   <button
                     type="button"

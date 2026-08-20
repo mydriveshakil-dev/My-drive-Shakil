@@ -545,7 +545,7 @@ export const UaeLoginModal: React.FC<UaeLoginModalProps> = ({
               <div className="neu-flat-sm border border-sky-200/60 rounded-2xl p-3 text-xs text-slate-700 font-medium flex items-start gap-2.5">
                 <Info className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
                 <span>
-                  আপনার রেজিস্টার্ড মোবাইল নম্বর দিন এবং নতুন পাসওয়ার্ড সেট করুন। এটি সাথে সাথে অ্যাডমিনের সক্রিয় মেম্বার লিস্টেও আপডেট হয়ে যাবে।
+                  Enter your registered mobile number and set a new password. It will update immediately in the active member directory.
                 </span>
               </div>
 

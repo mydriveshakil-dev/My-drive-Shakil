@@ -37,14 +37,32 @@ export function getMonthYearDisplay(cycleId: string): string {
 }
 
 export function getPreviousCycleOptions(
-  count: number = 24
+  count: number = 24,
+  groupCreatedAt?: string
 ): { cycleId: string; label: string; fullLabel: string }[] {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonthIdx = now.getMonth(); // 0 to 11
 
+  // Parse start date from groupCreatedAt if available
+  let startYear = currentYear;
+  let startMonthIdx = 0; // Default to Jan of current year
+
+  if (groupCreatedAt) {
+    const createdDate = new Date(groupCreatedAt);
+    if (!isNaN(createdDate.getTime())) {
+      startYear = createdDate.getFullYear();
+      startMonthIdx = createdDate.getMonth();
+    }
+  }
+
+  // Calculate total months difference from start to current
+  const totalMonthsDiff = (currentYear - startYear) * 12 + (currentMonthIdx - startMonthIdx);
+  const maxCycles = Math.max(totalMonthsDiff > 0 ? totalMonthsDiff : 0, 1);
+  const cycleCount = Math.min(Math.max(maxCycles, count), 36);
+
   const options = [];
-  for (let i = 1; i <= count; i++) {
+  for (let i = 1; i <= cycleCount; i++) {
     const d = new Date(currentYear, currentMonthIdx - i, 1);
     const year = d.getFullYear();
     const monthStr = String(d.getMonth() + 1).padStart(2, '0');

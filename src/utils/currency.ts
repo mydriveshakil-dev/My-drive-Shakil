@@ -19,6 +19,12 @@ export const DEFAULT_CURRENCIES: CurrencyInfo[] = [
   { code: 'PHP', name: 'Philippine Peso', symbol: '₱', rateFromAED: 15.85 },
 ];
 
+export function getCurrencySymbol(currencyCode: string = 'AED'): string {
+  if (currencyCode === 'AED') return 'AED';
+  const found = DEFAULT_CURRENCIES.find((c) => c.code === currencyCode);
+  return found?.symbol || currencyCode;
+}
+
 export function convertAmount(
   amount: number,
   fromCode: string = 'AED',
@@ -44,8 +50,7 @@ export function formatCurrencyAmount(
   amount: number,
   currencyCode: string
 ): string {
-  const info = DEFAULT_CURRENCIES.find((c) => c.code === currencyCode);
-  const symbol = info?.symbol || currencyCode;
+  const symbol = getCurrencySymbol(currencyCode);
   const formattedNumber = Math.abs(amount).toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,

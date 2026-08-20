@@ -1966,7 +1966,10 @@ export default function App() {
       )}
 
       {/* Main Container with Screen Transitions */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 md:px-8 pt-4 pb-12">
+      <main
+        className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 md:px-8 pt-4 pb-12 bg-white"
+        style={{ backgroundColor: '#ffffff' }}
+      >
         {/* Header Bar (Visible ONLY on Dashboard View when logged in and not adding expense) */}
         {activeTab === 'dashboard' && !isAddExpenseOpen && !isLoginModalOpen && userAuth.isLoggedIn && (
           <HeaderBar
@@ -1976,17 +1979,15 @@ export default function App() {
               setGroup(g);
               triggerHaptic(hapticPatterns.click);
             }}
-            billingCycleType={billingCycleType}
-            onToggleCycle={setBillingCycleType}
-            selectedPreviousCycle={selectedPreviousCycle}
-            onSelectPreviousCycle={setSelectedPreviousCycle}
-            expenses={expenses}
+            expenses={displayedExpenses}
+            utilities={displayedUtilities}
             sheetsConfig={sheetsConfig}
             onSyncNow={() => fetchFromSheet(false)}
             onOpenAddGroup={() => setActiveTab('group')}
             onOpenArchGuide={() => setIsArchGuideOpen(true)}
             isSyncing={isSyncing}
             preferredCurrency={preferredCurrency}
+            customRates={customRates}
             onOpenCurrencySettings={() => setIsCurrencyModalOpen(true)}
             currentUser={userAuth}
             onOpenLoginModal={() => setIsLoginModalOpen(true)}
@@ -2061,6 +2062,7 @@ export default function App() {
                 <DashboardView
                   group={displayedGroup}
                   expenses={displayedExpenses}
+                  allExpenses={expenses}
                   utilities={displayedUtilities}
                   rent={displayedRent}
                   sheetsConfig={sheetsConfig}
@@ -2069,6 +2071,10 @@ export default function App() {
                   preferredCurrency={preferredCurrency}
                   customRates={customRates}
                   currentUser={userAuth}
+                  billingCycleType={billingCycleType}
+                  onToggleCycle={setBillingCycleType}
+                  selectedPreviousCycle={selectedPreviousCycle}
+                  onSelectPreviousCycle={setSelectedPreviousCycle}
                   onNavigateTab={(tab) => {
                     if (tab === 'expenses') {
                       setActiveTab('home');

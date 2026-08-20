@@ -1245,9 +1245,13 @@ export default function App() {
     senderId: string;
     senderName?: string;
     senderAvatar?: string;
-    type?: 'text' | 'voice' | 'expense_added' | 'settlement_update' | 'bill_reminder';
+    type?: 'text' | 'voice' | 'image' | 'file' | 'expense_added' | 'settlement_update' | 'bill_reminder';
     audioUrl?: string;
     audioDuration?: number;
+    fileUrl?: string;
+    fileName?: string;
+    fileType?: 'image' | 'file' | 'pdf';
+    fileSize?: string;
   }) => {
     const sender = group.members.find((m) => m.id === data.senderId) || group.members[0];
     const nameToUse = data.senderName || sender?.name || userAuth?.name || 'User';
@@ -1266,6 +1270,10 @@ export default function App() {
       type: data.type || 'text',
       audioUrl: data.audioUrl,
       audioDuration: data.audioDuration,
+      fileUrl: data.fileUrl,
+      fileName: data.fileName,
+      fileType: data.fileType,
+      fileSize: data.fileSize,
     };
     setChatMessages((prev) => [...prev, newMsg]);
     saveChatMessageToFirestore(group.id, newMsg);

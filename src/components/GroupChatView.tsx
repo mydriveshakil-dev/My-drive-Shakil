@@ -13,6 +13,11 @@ import {
   ArrowLeft,
   Mic,
   Trash2,
+  Paperclip,
+  FileText,
+  Image as ImageIcon,
+  Download,
+  ExternalLink,
 } from 'lucide-react';
 import { MemberAvatar } from './MemberAvatar';
 import { VoiceMessagePlayer } from './VoiceMessagePlayer';
@@ -34,9 +39,13 @@ interface GroupChatViewProps {
     senderId: string;
     senderName?: string;
     senderAvatar?: string;
-    type?: 'text' | 'voice' | 'expense_added' | 'settlement_update' | 'bill_reminder';
+    type?: 'text' | 'voice' | 'image' | 'file' | 'expense_added' | 'settlement_update' | 'bill_reminder';
     audioUrl?: string;
     audioDuration?: number;
+    fileUrl?: string;
+    fileName?: string;
+    fileType?: 'image' | 'file' | 'pdf';
+    fileSize?: string;
   }) => void;
   currentUser?: UserAuthProfile | null;
   activeMemberIds?: string[];
@@ -99,6 +108,16 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<string | null>(null);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
+
+  // File Attachment State
+  const [attachedFile, setAttachedFile] = useState<{
+    name: string;
+    type: 'image' | 'file' | 'pdf';
+    dataUrl: string;
+    size: string;
+  } | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; title?: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Voice recording state (WhatsApp Style)
   const [isRecording, setIsRecording] = useState(false);
@@ -218,18 +237,66 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
     setShowScrollBottomBtn(isScrolledUp);
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Calculate human-readable size
+    const sizeKB = file.size / 1024;
+    const sizeStr = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${Math.round(sizeKB)} KB`;
+
+    const isImg = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      setAttachedFile({
+        name: file.name,
+        type: isImg ? 'image' : isPdf ? 'pdf' : 'file',
+        dataUrl,
+        size: sizeStr,
+      });
+      triggerHaptic(hapticPatterns.click);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAttachment = () => {
+    setAttachedFile(null);
+    triggerHaptic(hapticPatterns.click);
+  };
+
   const handleSend = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!inputText.trim()) return;
+    if (!inputText.trim() && !attachedFile) return;
 
     triggerHaptic(hapticPatterns.success);
 
-    onSendMessage({
-      text: inputText.trim(),
-      senderId: activeSenderId,
-      senderName: activeSenderName,
-      senderAvatar: activeSenderAvatar,
-    });
+    if (attachedFile) {
+      onSendMessage({
+        text: inputText.trim() || (attachedFile.type === 'image' ? '📷 Photo' : `📎 ${attachedFile.name}`),
+        type: attachedFile.type === 'image' ? 'image' : 'file',
+        fileUrl: attachedFile.dataUrl,
+        fileName: attachedFile.name,
+        fileType: attachedFile.type,
+        fileSize: attachedFile.size,
+        senderId: activeSenderId,
+        senderName: activeSenderName,
+        senderAvatar: activeSenderAvatar,
+      });
+      setAttachedFile(null);
+    } else {
+      onSendMessage({
+        text: inputText.trim(),
+        type: 'text',
+        senderId: activeSenderId,
+        senderName: activeSenderName,
+        senderAvatar: activeSenderAvatar,
+      });
+    }
+
     setInputText('');
     setShowEmojiPicker(false);
     setActiveReactionMsgId(null);
@@ -668,13 +735,70 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
                       </div>
                     )}
 
-                    {/* Message Content (Voice Player or Text) */}
+                    {/* Message Content (Voice Player, Image Attachment, File Attachment, or Text) */}
                     {msg.type === 'voice' && msg.audioUrl ? (
                       <VoiceMessagePlayer
                         audioUrl={msg.audioUrl}
                         duration={msg.audioDuration}
                         isMe={isMe}
                       />
+                    ) : (msg.type === 'image' || msg.fileType === 'image') && msg.fileUrl ? (
+                      <div className="space-y-1.5 py-0.5 max-w-[260px] sm:max-w-[300px]">
+                        <div
+                          onClick={() =>
+                            setLightboxImage({
+                              url: msg.fileUrl!,
+                              title: msg.fileName || msg.text || 'Attached Photo',
+                            })
+                          }
+                          className="relative group/img overflow-hidden rounded-xl bg-slate-900/10 cursor-pointer border border-black/10 shadow-xs"
+                        >
+                          <img
+                            src={msg.fileUrl}
+                            alt={msg.fileName || 'Attached Photo'}
+                            className="w-full max-h-56 object-cover hover:scale-102 transition-transform duration-200"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-black/25 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <span className="bg-white/90 text-slate-800 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">
+                              Tap to zoom
+                            </span>
+                          </div>
+                        </div>
+                        {msg.text && msg.text !== '📷 Photo' && (
+                          <p className="text-xs sm:text-[13px] leading-relaxed break-words font-medium select-text pt-0.5">
+                            {msg.text}
+                          </p>
+                        )}
+                      </div>
+                    ) : (msg.type === 'file' || msg.fileType === 'file' || msg.fileType === 'pdf') && msg.fileUrl ? (
+                      <div className="space-y-1.5 py-0.5 max-w-[240px] sm:max-w-[280px]">
+                        <a
+                          href={msg.fileUrl}
+                          download={msg.fileName || 'document'}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-2.5 p-2 rounded-xl bg-white/80 hover:bg-white border border-slate-300/80 shadow-2xs transition-all group/doc"
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                            <FileText className="w-5 h-5 stroke-[2]" />
+                          </div>
+                          <div className="flex-1 min-w-0 text-left">
+                            <p className="text-xs font-bold text-slate-900 truncate group-hover/doc:text-blue-600">
+                              {msg.fileName || 'Attached Document'}
+                            </p>
+                            <p className="text-[10px] font-semibold text-slate-500">
+                              {msg.fileSize || 'Document'} • Tap to download
+                            </p>
+                          </div>
+                          <Download className="w-4 h-4 text-slate-400 group-hover/doc:text-blue-600 shrink-0" />
+                        </a>
+                        {msg.text && !msg.text.startsWith('📎') && (
+                          <p className="text-xs sm:text-[13px] leading-relaxed break-words font-medium select-text pt-0.5">
+                            {msg.text}
+                          </p>
+                        )}
+                      </div>
                     ) : (
                       <p className="text-xs sm:text-[13px] leading-relaxed break-words font-medium select-text">
                         {msg.text}
@@ -772,16 +896,47 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
         </div>
       )}
 
-      {/* 6. WhatsApp / Messenger Styled Bottom Input Bar (with WhatsApp-style Voice Recording) */}
+      {/* 6. WhatsApp Styled Bottom Input Bar with 3 Side-by-Side Action Buttons */}
       <div
         style={{
           paddingBottom: 'max(env(safe-area-inset-bottom, 0px) + 36px, 48px)',
         }}
-        className="shrink-0 w-full z-40 px-3.5 pt-3.5 sm:px-4 sm:pt-4 bg-[#F0F2F5] border-t border-slate-300/80 shadow-[0_-6px_24px_rgba(0,0,0,0.1)]"
+        className="shrink-0 w-full z-40 px-2.5 pt-2.5 sm:px-4 sm:pt-3.5 bg-[#F0F2F5] border-t border-slate-300/80 shadow-[0_-6px_24px_rgba(0,0,0,0.1)]"
       >
         {micError && (
           <div className="mb-2.5 p-2 bg-red-100 text-red-800 text-xs font-bold rounded-xl border border-red-200 text-center animate-in fade-in duration-150">
             {micError}
+          </div>
+        )}
+
+        {/* Selected Attachment Preview Pill */}
+        {attachedFile && !isRecording && (
+          <div className="mb-2 p-2 bg-white rounded-2xl border border-blue-200 shadow-sm flex items-center justify-between gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {attachedFile.type === 'image' ? (
+                <img
+                  src={attachedFile.dataUrl}
+                  alt={attachedFile.name}
+                  className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200 shrink-0">
+                  <FileText className="w-5 h-5 stroke-[2]" />
+                </div>
+              )}
+              <div className="min-w-0 text-left">
+                <p className="text-xs font-bold text-slate-800 truncate">{attachedFile.name}</p>
+                <p className="text-[10px] font-semibold text-slate-500">{attachedFile.size} • Ready to send</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleRemoveAttachment}
+              className="w-7 h-7 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-500 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+              title="Remove attached file"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 
@@ -842,9 +997,9 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
             </button>
           </div>
         ) : (
-          /* Standard Input Bar with Mic / Send Switch */
-          <form onSubmit={handleSend} className="flex items-center gap-1.5 sm:gap-2">
-            {/* Emoji Button */}
+          /* Standard Input Bar: Emoji + Scaled Input + 3 Side-by-Side Action Buttons (Send, Attach, Voice) */
+          <form onSubmit={handleSend} className="flex items-center gap-1 sm:gap-1.5">
+            {/* Emoji Picker Toggle Button */}
             <button
               type="button"
               onClick={() => {
@@ -853,19 +1008,19 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
                 setActiveReactionMsgId(null);
               }}
               aria-label="Emoji picker"
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0 ${
+              className={`w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0 ${
                 showEmojiPicker ? 'bg-slate-300 text-slate-900' : 'text-slate-600 hover:bg-slate-200'
               }`}
             >
-              <Smile className="w-5 h-5 stroke-[2]" />
+              <Smile className="w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[2]" />
             </button>
 
-            {/* Input Field */}
-            <div className="flex-1 relative flex items-center">
+            {/* Message Typing Input Field (horizontally optimized for the 3 action buttons) */}
+            <div className="flex-1 min-w-0 relative flex items-center">
               <input
                 ref={inputRef}
                 type="text"
-                placeholder={`Message as ${activeSenderName.split(' ')[0]}...`}
+                placeholder={attachedFile ? 'Add a caption...' : `Message as ${activeSenderName.split(' ')[0]}...`}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onFocus={() => {
@@ -879,33 +1034,117 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
                     handleSend();
                   }
                 }}
-                className="w-full bg-white rounded-full px-4 py-2.5 text-xs sm:text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none shadow-2xs border border-slate-200"
+                className="w-full bg-white rounded-full px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none shadow-2xs border border-slate-200"
               />
             </div>
 
-            {/* Mic / Send Button */}
-            {inputText.trim() ? (
+            {/* Hidden Native File Input for Attachment */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileSelect}
+              className="hidden"
+              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+            />
+
+            {/* 3 Action Buttons Side-by-Side in Exact Same Alignment */}
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+              {/* Button 1: Message Send Button */}
               <button
                 type="submit"
-                aria-label="Send text message"
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0052FF] active:scale-95 text-white flex items-center justify-center shadow-md shrink-0 transition-all cursor-pointer"
+                disabled={!inputText.trim() && !attachedFile}
+                aria-label="Send message"
+                className={`w-8.5 h-8.5 sm:w-9.5 sm:h-9.5 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                  inputText.trim() || attachedFile
+                    ? 'bg-[#0052FF] hover:bg-[#0043D1] active:scale-95 text-white shadow-md cursor-pointer'
+                    : 'bg-slate-200/90 text-slate-400 cursor-not-allowed opacity-60'
+                }`}
+                title="Send message"
               >
-                <Send className="w-4 h-4 ml-0.5" />
+                <Send className="w-4 h-4 ml-0.5 stroke-[2.2]" />
               </button>
-            ) : (
+
+              {/* Button 2: File Attachment Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic(hapticPatterns.click);
+                  fileInputRef.current?.click();
+                }}
+                aria-label="Attach file or photo"
+                className={`w-8.5 h-8.5 sm:w-9.5 sm:h-9.5 rounded-full flex items-center justify-center shrink-0 transition-all cursor-pointer ${
+                  attachedFile
+                    ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-500 border border-blue-400'
+                    : 'bg-white hover:bg-slate-100 active:scale-95 text-slate-700 border border-slate-300/80 shadow-2xs'
+                }`}
+                title="Attach photo, bill receipt or document"
+              >
+                <Paperclip className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2] text-slate-700" />
+              </button>
+
+              {/* Button 3: Voice Note Recording Button */}
               <button
                 type="button"
                 onClick={startVoiceRecording}
                 aria-label="Record voice message"
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#00A884] hover:bg-[#008f6f] active:scale-95 text-white flex items-center justify-center shadow-md shrink-0 transition-all cursor-pointer"
-                title="Tap to record voice message (WhatsApp style)"
+                className="w-8.5 h-8.5 sm:w-9.5 sm:h-9.5 rounded-full bg-[#00A884] hover:bg-[#008f6f] active:scale-95 text-white flex items-center justify-center shadow-md shrink-0 transition-all cursor-pointer"
+                title="Record voice note (WhatsApp style)"
               >
-                <Mic className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2]" />
+                <Mic className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
               </button>
-            )}
+            </div>
           </form>
         )}
       </div>
+
+      {/* Full-Screen Lightbox Modal for Attached Image Previews */}
+      {lightboxImage && (
+        <div
+          onClick={() => setLightboxImage(null)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in duration-200"
+        >
+          {/* Header Controls */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-2xl flex items-center justify-between text-white pb-3"
+          >
+            <span className="text-sm font-bold truncate max-w-[200px] sm:max-w-md">
+              {lightboxImage.title || 'Photo View'}
+            </span>
+            <div className="flex items-center gap-2">
+              <a
+                href={lightboxImage.url}
+                download="photo.jpg"
+                className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-xs font-bold transition-all flex items-center gap-1.5"
+                title="Download original image"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Save</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setLightboxImage(null)}
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all cursor-pointer"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Full Resolution Image */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-2xl max-h-[80vh] flex items-center justify-center overflow-hidden rounded-2xl shadow-2xl border border-white/10"
+          >
+            <img
+              src={lightboxImage.url}
+              alt="Full view"
+              className="max-h-[78vh] w-auto object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

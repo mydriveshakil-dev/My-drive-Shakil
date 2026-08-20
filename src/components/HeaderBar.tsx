@@ -128,17 +128,17 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
         {/* Center Container with 3 Vertically Spaced Sections */}
         <div className="w-full flex-1 flex flex-col justify-between items-center text-center pt-0 z-10 px-16 sm:px-24">
-          {/* Section 1: Logo Top Center + "UAE MESS SYSTEM" text directly below, positioned right at top */}
+          {/* Section 1: Logo Top Center + "UAE MESS" text directly below, positioned right at top */}
           <div className="flex flex-col items-center justify-center pt-0">
             <div className="p-0.5 bg-white rounded-2xl shadow-md border-2 border-white/80 shrink-0">
               <img
                 src={uaeMessLogo}
-                alt="UAE MESS SYSTEM Logo"
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover"
+                alt="UAE MESS Logo"
+                className="w-[65px] h-[65px] rounded-xl object-cover"
               />
             </div>
             <h1 className="text-sm sm:text-base font-black tracking-tight text-white uppercase mt-1">
-              UAE MESS SYSTEM
+              UAE MESS
             </h1>
           </div>
 

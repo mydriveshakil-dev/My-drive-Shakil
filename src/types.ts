@@ -170,9 +170,13 @@ export interface ChatMessage {
   timestamp: string;
   createdMs?: number;
   createdAt?: string;
-  type?: 'text' | 'voice' | 'expense_added' | 'settlement_update' | 'bill_reminder';
+  type?: 'text' | 'voice' | 'image' | 'file' | 'expense_added' | 'settlement_update' | 'bill_reminder';
   audioUrl?: string;
   audioDuration?: number;
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: 'image' | 'file' | 'pdf';
+  fileSize?: string;
   amount?: number;
   reactions?: Record<string, string[]>;
 }

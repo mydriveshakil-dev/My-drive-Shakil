@@ -1240,7 +1240,15 @@ export default function App() {
     triggerSheetsSync(false, updatedExpenses);
   };
 
-  const handleSendMessage = (data: { text: string; senderId: string; senderName?: string; senderAvatar?: string }) => {
+  const handleSendMessage = (data: {
+    text: string;
+    senderId: string;
+    senderName?: string;
+    senderAvatar?: string;
+    type?: 'text' | 'voice' | 'expense_added' | 'settlement_update' | 'bill_reminder';
+    audioUrl?: string;
+    audioDuration?: number;
+  }) => {
     const sender = group.members.find((m) => m.id === data.senderId) || group.members[0];
     const nameToUse = data.senderName || sender?.name || userAuth?.name || 'User';
     const avatarToUse = data.senderAvatar || userAuth?.avatar || userAuth?.identity?.photoUrl || sender?.avatar || nameToUse.slice(0, 2).toUpperCase();
@@ -1255,7 +1263,9 @@ export default function App() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       createdMs: nowMs,
       createdAt: new Date(nowMs).toISOString(),
-      type: 'text',
+      type: data.type || 'text',
+      audioUrl: data.audioUrl,
+      audioDuration: data.audioDuration,
     };
     setChatMessages((prev) => [...prev, newMsg]);
     saveChatMessageToFirestore(group.id, newMsg);

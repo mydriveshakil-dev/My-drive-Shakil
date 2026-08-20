@@ -19,3 +19,4 @@ export * from './GroupNoteModal';
 export * from './GroupNoticePopupModal';
 export * from './MemberAvatar';
 export * from './UserProfileModal';
+export * from './VoiceMessagePlayer';

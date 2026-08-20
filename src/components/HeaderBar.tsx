@@ -161,6 +161,9 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
           {/* Section 3: Group Name "ROOM NO 3" with equal spacing, aligned horizontally with Logout & Profile buttons */}
           <div className="w-full text-center pb-0.5 mt-auto">
+            <span className="text-[10px] sm:text-[11px] font-black text-white/90 uppercase tracking-widest block mb-0.5">
+              GROUP NAME
+            </span>
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-wider text-white uppercase drop-shadow-sm inline-flex items-center justify-center gap-2">
               <span>{group.name}</span>
               {group.isHeld && (

@@ -170,7 +170,9 @@ export interface ChatMessage {
   timestamp: string;
   createdMs?: number;
   createdAt?: string;
-  type?: 'text' | 'expense_added' | 'settlement_update' | 'bill_reminder';
+  type?: 'text' | 'voice' | 'expense_added' | 'settlement_update' | 'bill_reminder';
+  audioUrl?: string;
+  audioDuration?: number;
   amount?: number;
   reactions?: Record<string, string[]>;
 }

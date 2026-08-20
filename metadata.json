@@ -1,6 +1,6 @@
 {
   "name": "UAE MESS SYSTEM",
   "description": "Official UAE Room & Mess Expense Tracker & Settlement Portal with GDRFA Visa validation, PDF statements, and group expense management.",
-  "requestFramePermissions": ["camera"],
+  "requestFramePermissions": ["camera", "microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -11,8 +11,11 @@ import {
   Clock,
   Radio,
   ArrowLeft,
+  Mic,
+  Trash2,
 } from 'lucide-react';
 import { MemberAvatar } from './MemberAvatar';
+import { VoiceMessagePlayer } from './VoiceMessagePlayer';
 import {
   getMessageTimestampMs,
   getStartOfCurrentMonthMs,
@@ -26,7 +29,15 @@ import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 interface GroupChatViewProps {
   group: Group;
   messages: ChatMessage[];
-  onSendMessage: (msg: { text: string; senderId: string; senderName?: string; senderAvatar?: string }) => void;
+  onSendMessage: (msg: {
+    text: string;
+    senderId: string;
+    senderName?: string;
+    senderAvatar?: string;
+    type?: 'text' | 'voice' | 'expense_added' | 'settlement_update' | 'bill_reminder';
+    audioUrl?: string;
+    audioDuration?: number;
+  }) => void;
   currentUser?: UserAuthProfile | null;
   activeMemberIds?: string[];
   onToggleReaction?: (messageId: string, emoji: string) => void;
@@ -89,6 +100,18 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
 
+  // Voice recording state (WhatsApp Style)
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [micError, setMicError] = useState<string | null>(null);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const isDiscardingRef = useRef(false);
+  const recordingSecondsRef = useRef(0);
+
   // Dynamic visualViewport height for seamless mobile keyboard support (iOS & Android)
   const [viewportHeight, setViewportHeight] = useState<string>('100%');
 
@@ -97,6 +120,19 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Clean up audio recording on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach((t) => t.stop());
+      }
+    };
+  }, []);
 
   // Lock body scrolling while full-screen group chat is active
   useEffect(() => {
@@ -198,6 +234,131 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
     setShowEmojiPicker(false);
     setActiveReactionMsgId(null);
     setTimeout(() => scrollToBottom('smooth'), 50);
+  };
+
+  // WhatsApp-style voice recording handlers
+  const startVoiceRecording = async () => {
+    try {
+      setMicError(null);
+      triggerHaptic(hapticPatterns.click);
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setMicError('Microphone not supported on this browser.');
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioStreamRef.current = stream;
+      audioChunksRef.current = [];
+      isDiscardingRef.current = false;
+      recordingSecondsRef.current = 0;
+      setRecordingSeconds(0);
+
+      // Determine supported mimeType
+      let mimeType = '';
+      if (typeof MediaRecorder !== 'undefined') {
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+          mimeType = 'audio/ogg';
+        } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+          mimeType = 'audio/webm';
+        }
+      }
+
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        // Stop all audio tracks
+        stream.getTracks().forEach((track) => track.stop());
+        if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+
+        if (isDiscardingRef.current) {
+          setIsRecording(false);
+          setRecordingSeconds(0);
+          return;
+        }
+
+        const duration = recordingSecondsRef.current;
+        if (duration < 1 && audioChunksRef.current.length === 0) {
+          setIsRecording(false);
+          setRecordingSeconds(0);
+          return;
+        }
+
+        const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          const base64Audio = reader.result as string;
+          triggerHaptic(hapticPatterns.success);
+
+          onSendMessage({
+            text: '🎤 Voice message',
+            type: 'voice',
+            audioUrl: base64Audio,
+            audioDuration: Math.max(1, duration),
+            senderId: activeSenderId,
+            senderName: activeSenderName,
+            senderAvatar: activeSenderAvatar,
+          });
+
+          setIsRecording(false);
+          setRecordingSeconds(0);
+          setTimeout(() => scrollToBottom('smooth'), 60);
+        };
+      };
+
+      recorder.start(100);
+      setIsRecording(true);
+
+      recordingTimerRef.current = setInterval(() => {
+        recordingSecondsRef.current += 1;
+        setRecordingSeconds(recordingSecondsRef.current);
+      }, 1000);
+    } catch (err: any) {
+      console.error('Microphone error:', err);
+      setIsRecording(false);
+      setMicError('Microphone permission required for voice notes.');
+      setTimeout(() => setMicError(null), 4000);
+    }
+  };
+
+  const cancelVoiceRecording = () => {
+    triggerHaptic(hapticPatterns.click);
+    isDiscardingRef.current = true;
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    if (audioStreamRef.current) {
+      audioStreamRef.current.getTracks().forEach((t) => t.stop());
+    }
+    setIsRecording(false);
+    setRecordingSeconds(0);
+  };
+
+  const sendVoiceRecording = () => {
+    triggerHaptic(hapticPatterns.click);
+    isDiscardingRef.current = false;
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  const formatRecordingTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
   const handleAddEmoji = (emoji: string) => {
@@ -507,10 +668,18 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
                       </div>
                     )}
 
-                    {/* Message Content */}
-                    <p className="text-xs sm:text-[13px] leading-relaxed break-words font-medium select-text">
-                      {msg.text}
-                    </p>
+                    {/* Message Content (Voice Player or Text) */}
+                    {msg.type === 'voice' && msg.audioUrl ? (
+                      <VoiceMessagePlayer
+                        audioUrl={msg.audioUrl}
+                        duration={msg.audioDuration}
+                        isMe={isMe}
+                      />
+                    ) : (
+                      <p className="text-xs sm:text-[13px] leading-relaxed break-words font-medium select-text">
+                        {msg.text}
+                      </p>
+                    )}
 
                     {/* Bottom Row: Timestamp + Checkmarks */}
                     <div className="flex items-center justify-end gap-1 text-[10px] text-slate-500 font-medium select-none pt-0.5">
@@ -603,67 +772,139 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
         </div>
       )}
 
-      {/* 6. WhatsApp / Messenger Styled Bottom Input Bar (Raised higher with generous bottom clearance) */}
+      {/* 6. WhatsApp / Messenger Styled Bottom Input Bar (with WhatsApp-style Voice Recording) */}
       <div
         style={{
           paddingBottom: 'max(env(safe-area-inset-bottom, 0px) + 36px, 48px)',
         }}
         className="shrink-0 w-full z-40 px-3.5 pt-3.5 sm:px-4 sm:pt-4 bg-[#F0F2F5] border-t border-slate-300/80 shadow-[0_-6px_24px_rgba(0,0,0,0.1)]"
       >
-        <form onSubmit={handleSend} className="flex items-center gap-1.5 sm:gap-2">
-          {/* Emoji Button */}
-          <button
-            type="button"
-            onClick={() => {
-              triggerHaptic(hapticPatterns.click);
-              setShowEmojiPicker(!showEmojiPicker);
-              setActiveReactionMsgId(null);
-            }}
-            aria-label="Emoji picker"
-            className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0 ${
-              showEmojiPicker ? 'bg-slate-300 text-slate-900' : 'text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <Smile className="w-5 h-5 stroke-[2]" />
-          </button>
-
-          {/* Input Field (WhatsApp Capsule Style matching attached image) */}
-          <div className="flex-1 relative flex items-center">
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder={`Message as ${activeSenderName.split(' ')[0]}...`}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onFocus={() => {
-                setShowEmojiPicker(false);
-                setActiveReactionMsgId(null);
-                setTimeout(() => scrollToBottom('smooth'), 120);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              className="w-full bg-white rounded-full px-4 py-2.5 text-xs sm:text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none shadow-2xs border border-slate-200"
-            />
+        {micError && (
+          <div className="mb-2.5 p-2 bg-red-100 text-red-800 text-xs font-bold rounded-xl border border-red-200 text-center animate-in fade-in duration-150">
+            {micError}
           </div>
+        )}
 
-          {/* Send Button (matching attached image) */}
-          <button
-            type="submit"
-            disabled={!inputText.trim()}
-            aria-label="Send message"
-            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 cursor-pointer ${
-              inputText.trim()
-                ? 'bg-[#0052FF] active:scale-95 text-white shadow-md'
-                : 'bg-[#E1E8F5] text-slate-400'
-            }`}
-          >
-            <Send className="w-4 h-4 ml-0.5" />
-          </button>
-        </form>
+        {isRecording ? (
+          /* WhatsApp Voice Recording Active Tray */
+          <div className="flex items-center justify-between gap-2 w-full animate-in fade-in duration-200">
+            {/* Trash / Cancel Button */}
+            <button
+              type="button"
+              onClick={cancelVoiceRecording}
+              aria-label="Discard recording"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-red-500 hover:bg-red-100/80 active:scale-90 transition-all cursor-pointer shrink-0 bg-white border border-red-200 shadow-2xs"
+              title="Cancel and discard voice recording"
+            >
+              <Trash2 className="w-5 h-5 stroke-[2.2]" />
+            </button>
+
+            {/* Waveform & Timer Capsule */}
+            <div className="flex-1 bg-white rounded-full px-4 py-2.5 flex items-center justify-between shadow-2xs border border-red-200">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+                </span>
+                <span className="font-mono text-xs sm:text-sm font-bold text-red-600">
+                  {formatRecordingTime(recordingSeconds)}
+                </span>
+              </div>
+
+              {/* Animated Waveform Visualizer */}
+              <div className="flex items-center gap-1">
+                {[10, 18, 14, 24, 16, 20, 12, 18, 22, 14, 18].map((height, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      height: `${height}px`,
+                      animationDelay: `${i * 0.08}s`,
+                    }}
+                    className="w-1 bg-red-500 rounded-full animate-pulse inline-block"
+                  />
+                ))}
+              </div>
+
+              <span className="text-[11px] font-semibold text-slate-500 hidden sm:inline">
+                Recording...
+              </span>
+            </div>
+
+            {/* Send Voice Recording Button */}
+            <button
+              type="button"
+              onClick={sendVoiceRecording}
+              aria-label="Send voice message"
+              className="w-10 h-10 rounded-full bg-[#00A884] hover:bg-[#008f6f] active:scale-95 text-white flex items-center justify-center shadow-md transition-all cursor-pointer shrink-0"
+              title="Send voice message"
+            >
+              <Send className="w-4 h-4 ml-0.5" />
+            </button>
+          </div>
+        ) : (
+          /* Standard Input Bar with Mic / Send Switch */
+          <form onSubmit={handleSend} className="flex items-center gap-1.5 sm:gap-2">
+            {/* Emoji Button */}
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(hapticPatterns.click);
+                setShowEmojiPicker(!showEmojiPicker);
+                setActiveReactionMsgId(null);
+              }}
+              aria-label="Emoji picker"
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0 ${
+                showEmojiPicker ? 'bg-slate-300 text-slate-900' : 'text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              <Smile className="w-5 h-5 stroke-[2]" />
+            </button>
+
+            {/* Input Field */}
+            <div className="flex-1 relative flex items-center">
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder={`Message as ${activeSenderName.split(' ')[0]}...`}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onFocus={() => {
+                  setShowEmojiPicker(false);
+                  setActiveReactionMsgId(null);
+                  setTimeout(() => scrollToBottom('smooth'), 120);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                className="w-full bg-white rounded-full px-4 py-2.5 text-xs sm:text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none shadow-2xs border border-slate-200"
+              />
+            </div>
+
+            {/* Mic / Send Button */}
+            {inputText.trim() ? (
+              <button
+                type="submit"
+                aria-label="Send text message"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0052FF] active:scale-95 text-white flex items-center justify-center shadow-md shrink-0 transition-all cursor-pointer"
+              >
+                <Send className="w-4 h-4 ml-0.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={startVoiceRecording}
+                aria-label="Record voice message"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#00A884] hover:bg-[#008f6f] active:scale-95 text-white flex items-center justify-center shadow-md shrink-0 transition-all cursor-pointer"
+                title="Tap to record voice message (WhatsApp style)"
+              >
+                <Mic className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2]" />
+              </button>
+            )}
+          </form>
+        )}
       </div>
     </div>
   );

@@ -178,11 +178,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   />
                 )}
               </div>
-
-              {/* Status Indicator */}
-              <span className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white shadow-xs flex items-center justify-center" title="Active">
-                <Check className="w-3 h-3 text-white stroke-[3]" />
-              </span>
             </div>
 
             {/* Photo Action Buttons */}

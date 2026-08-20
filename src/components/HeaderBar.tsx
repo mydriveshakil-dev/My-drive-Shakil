@@ -77,11 +77,11 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
   return (
     <header className="mb-4 z-30 relative w-full">
-      {/* Curved Deep Navy Header Card matching requested banner shape & equal spacing between 3 center blocks */}
-      <div className="bg-gradient-to-b from-[#07193F] via-[#06163A] to-[#041029] text-white rounded-[32px] sm:rounded-[40px] p-5 sm:p-6 shadow-2xl border border-blue-900/40 relative overflow-hidden flex flex-col justify-between min-h-[310px]">
-        {/* Top-Left: Logout Button on top, "Logout" text below with matching alignment & font size */}
+      {/* Curved Deep Navy Header Card matching requested banner shape */}
+      <div className="bg-gradient-to-b from-[#07193F] via-[#06163A] to-[#041029] text-white rounded-[32px] sm:rounded-[40px] pt-3.5 pb-4 px-4 sm:pt-4 sm:pb-5 sm:px-6 shadow-2xl border border-blue-900/40 relative overflow-hidden flex flex-col justify-between min-h-[310px] sm:min-h-[320px]">
+        {/* Bottom-Left: Logout Button on top, "Logout" text below, aligned with Group Name row */}
         {onLogout && (
-          <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 flex flex-col items-center gap-1">
+          <div className="absolute bottom-3.5 left-3.5 sm:bottom-4 sm:left-5 z-20 flex flex-col items-center gap-1">
             <button
               onClick={onLogout}
               className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#0A204C]/95 hover:bg-rose-600 active:scale-95 text-white flex items-center justify-center transition-all border border-blue-400/40 cursor-pointer shadow-md shrink-0"
@@ -89,14 +89,14 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             >
               <LogOut className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2]" />
             </button>
-            <span className="text-center text-xs sm:text-sm font-bold text-white max-w-[90px] truncate leading-tight">
+            <span className="text-center text-xs sm:text-sm font-bold text-white max-w-[80px] sm:max-w-[90px] truncate leading-tight">
               Logout
             </span>
           </div>
         )}
 
-        {/* Top-Right: Profile Image on top, User Name below with matching alignment */}
-        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex flex-col items-center gap-1">
+        {/* Bottom-Right: Profile Image on top, User Name below, aligned with Group Name row */}
+        <div className="absolute bottom-3.5 right-3.5 sm:bottom-4 sm:right-5 z-20 flex flex-col items-center gap-1">
           {/* Profile Image */}
           <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-transparent border-0 flex items-center justify-center shrink-0 overflow-hidden">
             <MemberAvatar
@@ -110,7 +110,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           </div>
 
           {/* User Name */}
-          <span className="text-center text-xs sm:text-sm font-bold text-white max-w-[90px] sm:max-w-[120px] truncate leading-tight">
+          <span className="text-center text-xs sm:text-sm font-bold text-white max-w-[80px] sm:max-w-[110px] truncate leading-tight">
             {userName}
           </span>
 
@@ -126,25 +126,25 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           )}
         </div>
 
-        {/* Center Container with 3 Vertically Equal Spaced Sections */}
-        <div className="w-full flex-1 flex flex-col justify-between items-center text-center py-1 z-10 px-16 sm:px-24">
-          {/* Section 1: Logo Top Center + "UAE MESS SYSTEM" text directly below */}
-          <div className="flex flex-col items-center justify-center">
+        {/* Center Container with 3 Vertically Spaced Sections */}
+        <div className="w-full flex-1 flex flex-col justify-between items-center text-center pt-0 z-10 px-16 sm:px-24">
+          {/* Section 1: Logo Top Center + "UAE MESS SYSTEM" text directly below, positioned right at top */}
+          <div className="flex flex-col items-center justify-center pt-0">
             <div className="p-0.5 bg-white rounded-2xl shadow-md border-2 border-white/80 shrink-0">
               <img
                 src={uaeMessLogo}
                 alt="UAE MESS SYSTEM Logo"
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-cover"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover"
               />
             </div>
-            <h1 className="text-sm sm:text-base md:text-lg font-black tracking-tight text-white uppercase mt-1">
+            <h1 className="text-sm sm:text-base font-black tracking-tight text-white uppercase mt-1">
               UAE MESS SYSTEM
             </h1>
           </div>
 
-          {/* Section 2: TOTAL EXPENSES + Amount */}
-          <div className="flex flex-col items-center justify-center space-y-1">
-            <span className="text-[11px] sm:text-xs font-black text-white/90 uppercase tracking-widest block">
+          {/* Section 2: TOTAL EXPENSES + Amount centered in middle */}
+          <div className="flex flex-col items-center justify-center space-y-1 my-auto py-2">
+            <span className="text-xs sm:text-sm font-black text-white/90 uppercase tracking-widest block">
               TOTAL EXPENSES
             </span>
             <div className="flex items-baseline justify-center gap-2">
@@ -154,13 +154,13 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 preferredCurrency={preferredCurrency}
                 customRates={customRates}
                 layout="hero"
-                baseClassName="text-[36px] sm:text-[40px] font-black tracking-tight text-white font-[system-ui] leading-none"
+                baseClassName="text-[34px] sm:text-[38px] font-black tracking-tight text-white font-[system-ui] leading-none"
               />
             </div>
           </div>
 
-          {/* Section 3: Group Name "ROOM NO 3" with equal spacing */}
-          <div className="w-full text-center">
+          {/* Section 3: Group Name "ROOM NO 3" with equal spacing, aligned horizontally with Logout & Profile buttons */}
+          <div className="w-full text-center pb-0.5 mt-auto">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-wider text-white uppercase drop-shadow-sm inline-flex items-center justify-center gap-2">
               <span>{group.name}</span>
               {group.isHeld && (

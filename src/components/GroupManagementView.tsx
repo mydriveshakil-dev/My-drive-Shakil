@@ -253,18 +253,9 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       <div
         className="rounded-3xl neu-upper text-slate-900 overflow-hidden"
       >
-        {/* Top Dark Navy Header Band with Left Title and Right Profile Section */}
-        <div className="bg-[#07193F] text-white px-5 sm:px-6 py-5 sm:py-6 flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-white">
-              Room Members & Group Details
-            </h2>
-            <p className="text-xs text-blue-200 font-medium mt-1">
-              View active room members and personal group transactions
-            </p>
-          </div>
-
-          {/* Profile Section: 10mm Circular Avatar with Center-Aligned Name below, clicks to open profile */}
+        {/* Top Dark Navy Header Band with Centered Profile Section and Centered Titles */}
+        <div className="bg-[#07193F] text-white px-5 sm:px-6 py-6 sm:py-7 flex flex-col items-center justify-center text-center space-y-3">
+          {/* Profile Section: Double Sized Circular Avatar with Center-Aligned Name below, clicks to open profile */}
           <div className="flex flex-col items-center justify-center shrink-0">
             <button
               type="button"
@@ -272,7 +263,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 triggerHaptic(hapticPatterns.click);
                 setShowProfileModal(true);
               }}
-              className="relative w-[38px] h-[38px] sm:w-[40px] sm:h-[40px] rounded-full overflow-hidden ring-2 ring-white/50 hover:ring-white active:scale-95 transition-all cursor-pointer shadow-md flex items-center justify-center group"
+              className="relative w-20 h-20 rounded-full overflow-hidden ring-4 ring-white/50 hover:ring-white active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center group"
               title="Click to view and edit profile"
             >
               <MemberAvatar
@@ -280,10 +271,9 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 avatar={currentUser?.avatar || loggedInMember?.avatar}
                 size="custom"
                 shape="circle"
-                className="w-[38px] h-[38px] sm:w-[40px] sm:h-[40px] rounded-full object-cover group-hover:scale-105 transition-transform"
-                textClassName="text-xs font-black"
+                className="w-20 h-20 rounded-full object-cover group-hover:scale-105 transition-transform"
+                textClassName="text-xl font-black"
               />
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white" />
             </button>
             <button
               type="button"
@@ -291,11 +281,21 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 triggerHaptic(hapticPatterns.click);
                 setShowProfileModal(true);
               }}
-              className="text-xs font-black text-white text-center mt-1 max-w-[80px] truncate hover:underline cursor-pointer block leading-tight"
+              className="text-xs sm:text-sm font-black text-white text-center mt-2 max-w-[160px] truncate hover:underline cursor-pointer block leading-tight"
               title="Click to view and edit profile"
             >
               {currentUser?.name || loggedInMember?.name || 'My Account'}
             </button>
+          </div>
+
+          {/* Centered Title and Subtitle */}
+          <div className="space-y-1">
+            <h2 className="text-xl sm:text-2xl font-black text-white">
+              Room Members & Group Details
+            </h2>
+            <p className="text-xs text-blue-200 font-medium max-w-md mx-auto">
+              View active room members and personal group transactions
+            </p>
           </div>
         </div>
 

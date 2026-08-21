@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Group, UtilityBill, RentContribution, UserAuthProfile } from '../types';
-import { Zap, Home as HomeIcon, Plus, CheckCircle2, Clock, Edit2, AlertCircle, DollarSign, Calculator, Trash2, Lock, Unlock, X, Users, CheckSquare, Square } from 'lucide-react';
+import { Group, UtilityBill, RentContribution, UserAuthProfile, LaundryBill } from '../types';
+import { Zap, Home as HomeIcon, Plus, CheckCircle2, Clock, Edit2, AlertCircle, DollarSign, Calculator, Trash2, Lock, Unlock, X, Users, CheckSquare, Square, Shirt, Sparkles, Filter, Calendar } from 'lucide-react';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 import { GlassContainer } from './GlassContainer';
 import { MemberAvatar } from './MemberAvatar';
 import { evaluateMathExpression } from '../utils/mathEvaluator';
 import { isCategoryPermittedForUser } from '../utils/permissionUtils';
-import { isPhoneMatch } from '../lib/firebase';
+import { isPhoneMatch, saveLaundryBillToFirestore, deleteLaundryBillFromFirestore, subscribeToLaundryBills } from '../lib/firebase';
+import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 
 interface UtilitiesAndRentViewProps {
   group: Group;
@@ -335,6 +336,143 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
     setShowAddForm(false);
   };
 
+  // ==========================================
+  // PERSONAL LAUNDRY BILL STATE & SYNC (Strictly private per user)
+  // ==========================================
+  const userKey =
+    currentUser?.email ||
+    currentUser?.mobileNumber ||
+    currentUser?.name ||
+    loggedInMember?.id ||
+    'default_user';
+  const sanitizedUserKey = userKey.replace(/[^a-zA-Z0-9_]/g, '_');
+  const laundryStorageKey = `personal_laundry_${sanitizedUserKey}`;
+
+  const [laundryBills, setLaundryBills] = useState<LaundryBill[]>(() => {
+    const saved = localStorage.getItem(laundryStorageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  // Sync with Firestore & localStorage
+  useEffect(() => {
+    if (!sanitizedUserKey) return;
+    const unsub = subscribeToLaundryBills(sanitizedUserKey, (bills) => {
+      if (bills && Array.isArray(bills)) {
+        setLaundryBills(bills);
+        localStorage.setItem(laundryStorageKey, JSON.stringify(bills));
+      }
+    });
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [sanitizedUserKey, laundryStorageKey]);
+
+  const persistLaundryBills = (updated: LaundryBill[]) => {
+    setLaundryBills(updated);
+    localStorage.setItem(laundryStorageKey, JSON.stringify(updated));
+  };
+
+  // Laundry Form State
+  const [showLaundryForm, setShowLaundryForm] = useState(false);
+  const [laundryDate, setLaundryDate] = useState(() => {
+    const d = new Date();
+    const YYYY = d.getFullYear();
+    const MM = String(d.getMonth() + 1).padStart(2, '0');
+    const DD = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${YYYY}-${MM}-${DD} ${hh}:${mm}`;
+  });
+  const [laundryGiveTo, setLaundryGiveTo] = useState('');
+  const [laundryTotalItems, setLaundryTotalItems] = useState('');
+  const [laundryPrice, setLaundryPrice] = useState('');
+
+  // Auto calculate: (Total Item) * (Price)
+  const numItems = parseInt(laundryTotalItems, 10) || 0;
+  const numPrice = parseFloat(laundryPrice) || 0;
+  const calculatedLaundryTotal = numItems * numPrice;
+
+  const handleSaveLaundry = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!laundryGiveTo.trim()) {
+      alert('Please enter who the laundry was given to.');
+      return;
+    }
+    if (numItems <= 0) {
+      alert('Please enter a valid Total Item count (at least 1).');
+      return;
+    }
+    if (numPrice <= 0) {
+      alert('Please enter a valid Price per item.');
+      return;
+    }
+
+    const dateVal = laundryDate.trim() || new Date().toISOString().substring(0, 16).replace('T', ' ');
+    const billMonth = dateVal.substring(0, 7) || currentMonthCycle;
+
+    const newBill: LaundryBill = {
+      id: `laundry_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      userId: userKey,
+      groupId: group.id,
+      date: dateVal,
+      giveTo: laundryGiveTo.trim(),
+      totalItems: numItems,
+      pricePerItem: numPrice,
+      totalAmount: calculatedLaundryTotal,
+      status: 'pending',
+      createdAtMs: Date.now(),
+      monthCycle: billMonth,
+    };
+
+    const updated = [newBill, ...laundryBills];
+    persistLaundryBills(updated);
+    saveLaundryBillToFirestore(sanitizedUserKey, newBill);
+    triggerHaptic(hapticPatterns.success);
+
+    // Reset Form
+    setLaundryGiveTo('');
+    setLaundryTotalItems('');
+    setLaundryPrice('');
+    setShowLaundryForm(false);
+    alert('Personal Laundry bill saved successfully!');
+  };
+
+  const handleMarkLaundryReceived = (billId: string) => {
+    triggerHaptic(hapticPatterns.success);
+    const updated = laundryBills.map((b) => {
+      if (b.id === billId) {
+        const receivedBill: LaundryBill = {
+          ...b,
+          status: 'received',
+          receivedAt: new Date().toISOString(),
+        };
+        saveLaundryBillToFirestore(sanitizedUserKey, receivedBill);
+        return receivedBill;
+      }
+      return b;
+    });
+    persistLaundryBills(updated);
+  };
+
+  const handleDeleteLaundry = (billId: string) => {
+    if (!window.confirm('Are you sure you want to delete this personal laundry record?')) {
+      return;
+    }
+    triggerHaptic(hapticPatterns.click);
+    const updated = laundryBills.filter((b) => b.id !== billId);
+    persistLaundryBills(updated);
+    deleteLaundryBillFromFirestore(sanitizedUserKey, billId);
+  };
+
+  // Pending laundry bills (Notice section)
+  const pendingLaundryBills = laundryBills.filter((b) => b.status === 'pending');
+
   return (
     <div className="space-y-6 pb-28">
       {/* Header Banner - Dark Navy Luxury Theme matching Dashboard */}
@@ -349,15 +487,43 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
           </p>
         </div>
 
-        {/* Center-aligned Add Utility Bill Button */}
-        <div className="p-5 sm:p-6 flex justify-center items-center">
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-6 py-2.5 rounded-2xl text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer uppercase tracking-wider shadow-md active:scale-95"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>{showAddForm ? 'Close Add Bill' : '+ Add Utility Bill'}</span>
-          </button>
+        {/* Center-aligned Action Buttons: Add Utility Bill + Add Laundry Bill */}
+        <div className="p-4 sm:p-5">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full max-w-xl mx-auto">
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(hapticPatterns.click);
+                setShowAddForm(!showAddForm);
+                if (!showAddForm) setShowLaundryForm(false);
+              }}
+              className={`w-full py-3 px-3 sm:px-5 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer uppercase tracking-wider shadow-md active:scale-95 text-center ${
+                showAddForm
+                  ? 'bg-[#07193F] hover:bg-[#051330] text-white ring-2 ring-white/40 shadow-inner'
+                  : 'bg-[#0052FF] hover:bg-[#0047E0] text-white'
+              }`}
+            >
+              <Plus className="w-4 h-4 stroke-[3] shrink-0" />
+              <span className="truncate">{showAddForm ? 'Close Utility Bill' : '+ Add Utility Bill'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(hapticPatterns.click);
+                setShowLaundryForm(!showLaundryForm);
+                if (!showLaundryForm) setShowAddForm(false);
+              }}
+              className={`w-full py-3 px-3 sm:px-5 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer uppercase tracking-wider shadow-md active:scale-95 text-center ${
+                showLaundryForm
+                  ? 'bg-[#07193F] hover:bg-[#051330] text-white ring-2 ring-white/40 shadow-inner'
+                  : 'bg-[#0052FF] hover:bg-[#0047E0] text-white'
+              }`}
+            >
+              <Shirt className="w-4 h-4 stroke-[2.5] shrink-0" />
+              <span className="truncate">{showLaundryForm ? 'Close Laundry Bill' : '+ Add Laundry Bill'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -693,6 +859,205 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* PERSONAL LAUNDRY BILL ENTRY FORM (Private to user) */}
+      {showLaundryForm && (
+        <div className="p-5 sm:p-6 neu-upper rounded-3xl text-slate-900 border-2 border-rose-200 bg-rose-50/40">
+          <div className="flex items-center justify-between border-b border-rose-200 pb-3 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-rose-500 text-white rounded-xl">
+                <Shirt className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-950 uppercase tracking-wide">
+                  Add Laundry Bill
+                </h3>
+                <p className="text-[11px] text-slate-600 font-medium">
+                  Private record • Only visible to you ({loggedInMember?.name || 'You'})
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowLaundryForm(false)}
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSaveLaundry} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* Date */}
+              <div>
+                <label className="block text-xs font-black text-slate-800 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-rose-600" />
+                  Date
+                </label>
+                <input
+                  type="text"
+                  value={laundryDate}
+                  onChange={(e) => setLaundryDate(e.target.value)}
+                  placeholder="YYYY-MM-DD HH:mm"
+                  className="w-full px-3.5 py-2.5 rounded-2xl neu-lower-sm text-slate-900 text-xs font-bold focus:outline-none"
+                  required
+                />
+              </div>
+
+              {/* Give To */}
+              <div>
+                <label className="block text-xs font-black text-slate-800 uppercase tracking-wider mb-1.5">
+                  Give To
+                </label>
+                <input
+                  type="text"
+                  value={laundryGiveTo}
+                  onChange={(e) => setLaundryGiveTo(e.target.value)}
+                  placeholder="e.g. Al Madina Laundry / Kazi Mahadi"
+                  className="w-full px-3.5 py-2.5 rounded-2xl neu-lower-sm text-slate-900 text-xs font-bold focus:outline-none"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Total Item, Price, Total Amount in ONE row / line with same alignment */}
+            <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5 items-end">
+              {/* Total Item */}
+              <div>
+                <label className="block text-xs font-black text-slate-800 uppercase tracking-wider mb-1.5">
+                  Total Item
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={laundryTotalItems}
+                  onChange={(e) => setLaundryTotalItems(e.target.value)}
+                  placeholder="e.g. 4"
+                  className="w-full px-3.5 py-2.5 rounded-2xl neu-lower-sm text-slate-900 text-xs font-bold focus:outline-none font-mono"
+                  required
+                />
+              </div>
+
+              {/* Price */}
+              <div>
+                <label className="block text-xs font-black text-slate-800 uppercase tracking-wider mb-1.5">
+                  Price
+                </label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="any"
+                  value={laundryPrice}
+                  onChange={(e) => setLaundryPrice(e.target.value)}
+                  placeholder="e.g. 2.00"
+                  className="w-full px-3.5 py-2.5 rounded-2xl neu-lower-sm text-slate-900 text-xs font-bold focus:outline-none font-mono"
+                  required
+                />
+              </div>
+
+              {/* Total Amount */}
+              <div>
+                <label className="block text-xs font-black text-slate-800 uppercase tracking-wider mb-1.5">
+                  Total Amount
+                </label>
+                <div className="w-full px-3.5 py-2.5 rounded-2xl neu-lower-sm bg-white/70 text-slate-950 text-xs sm:text-sm font-black flex items-center justify-between h-[38px] border border-slate-200">
+                  <span className="font-mono">{calculatedLaundryTotal.toFixed(2)}</span>
+                  <span className="text-[10px] text-slate-500 font-bold ml-1">{group.currency || 'AED'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLaundryForm(false)}
+                className="w-1/2 py-3 rounded-xl neu-upper-btn text-xs font-bold text-slate-900 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="w-1/2 py-3 rounded-[24px] bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white text-xs font-black shadow-md cursor-pointer uppercase tracking-wider active:scale-98"
+              >
+                SAVE
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* PENDING LAUNDRY NOTICE CARDS (Based on attached IMG_8304.jpeg) */}
+      {pendingLaundryBills.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+            </span>
+            <h3 className="text-sm font-black text-rose-600 uppercase tracking-wide">
+              Laundry Pending ({pendingLaundryBills.length})
+            </h3>
+          </div>
+
+          <div className="space-y-3">
+            {pendingLaundryBills.map((bill) => (
+              <div
+                key={bill.id}
+                className="border-2 border-rose-300 rounded-3xl p-4 sm:p-5 neu-upper bg-white/70 space-y-3 text-slate-900 shadow-sm"
+              >
+                {/* Top Row: Badge + Given To */}
+                <div className="flex items-center justify-between gap-2 border-b border-rose-100 pb-2.5">
+                  <span className="bg-rose-600 text-white font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider shadow-xs">
+                    PENDING LAUNDRY NOTICE
+                  </span>
+                  <div className="text-right">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">Give To: </span>
+                    <span className="font-black text-slate-950 underline decoration-1 text-xs sm:text-sm">
+                      {bill.giveTo}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Middle Row: Total Cost + Items breakdown */}
+                <div className="flex items-baseline justify-between py-1">
+                  <div>
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
+                      Total Cost
+                    </span>
+                    <span className="text-2xl sm:text-3xl font-black text-slate-950 underline decoration-2">
+                      {bill.totalAmount.toFixed(2)} {group.currency || 'AED'}
+                    </span>
+                  </div>
+                  <div className="text-right space-y-0.5 text-xs font-bold text-slate-700">
+                    <div>
+                      <span className="text-slate-500 text-[11px]">Items: </span>
+                      <span className="font-black text-slate-900">{bill.totalItems} pcs</span>
+                      <span className="text-slate-500 text-[10px]"> (@ {bill.pricePerItem.toFixed(2)} {group.currency || 'AED'})</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      <span>Date: </span>
+                      <span className="font-semibold text-slate-800">{bill.date}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Received Item Action Button (matching IMG_8304.jpeg) */}
+                <div className="pt-2 border-t border-slate-200/80">
+                  <button
+                    type="button"
+                    onClick={() => handleMarkLaundryReceived(bill.id)}
+                    className="w-full py-2.5 rounded-2xl neu-upper-sm hover:neu-lower-sm font-black text-xs text-slate-900 flex items-center justify-center gap-2 border border-slate-300 transition-all cursor-pointer active:scale-98"
+                  >
+                    <Clock className="w-4 h-4 text-slate-800" />
+                    <span>Received Item</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

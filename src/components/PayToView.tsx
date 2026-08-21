@@ -87,9 +87,6 @@ export const PayToView: React.FC<PayToViewProps> = ({
   const [editingAmountTxId, setEditingAmountTxId] = useState<string | null>(null);
   const [tempEditAmount, setTempEditAmount] = useState<string>('');
 
-  // Filter state for Previous Record table
-  const [previousRecordNameFilter, setPreviousRecordNameFilter] = useState<string>('all');
-
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const numAmount = parseFloat(amount);
@@ -158,18 +155,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
     return tx.payById === currentMember.id || tx.payToId === currentMember.id;
   });
 
-  // Filtered Previous Records
-  const filteredPreviousRecords = previousRecords.filter((tx) => {
-    if (previousRecordNameFilter === 'all') return true;
-    return (
-      tx.payById === previousRecordNameFilter ||
-      tx.payToId === previousRecordNameFilter ||
-      tx.payByName === previousRecordNameFilter ||
-      tx.payToName === previousRecordNameFilter
-    );
-  });
-
-  const previousGrandTotal = filteredPreviousRecords.reduce((sum, tx) => sum + tx.amount, 0);
+  const previousGrandTotal = previousRecords.reduce((sum, tx) => sum + tx.amount, 0);
 
   return (
     <div className="space-y-6 pb-28 pt-2 px-3 sm:px-6 max-w-7xl mx-auto w-full overflow-hidden">
@@ -341,219 +327,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
         </form>
       </div>
 
-      {/* 2. Borrower Notices Section ("PAY TO" User Notice Boxes) */}
-      {borrowerActiveNotices.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 px-1">
-            <span className="w-3 h-3 rounded-full bg-rose-500 animate-pulse" />
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-              Borrower Notices ({borrowerActiveNotices.length})
-            </h3>
-          </div>
-
-          <div className="space-y-3">
-            {borrowerActiveNotices.map((tx) => (
-              <div
-                key={tx.id}
-                className="bg-[#ffcbd1] border-2 border-rose-400 text-slate-900 rounded-3xl p-4 sm:p-5 shadow-lg neu-upper-sm relative overflow-hidden"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                        Pending Loan Notice
-                      </span>
-                      <span className="text-xs font-black text-slate-900">
-                        Lender: <strong className="underline">{tx.payByName}</strong>
-                      </span>
-                    </div>
-
-                    <div className="text-lg font-black text-slate-950 flex items-center gap-2 mt-1">
-                      <span>Borrowed: {tx.amount.toFixed(2)} {group.currency || preferredCurrency}</span>
-                    </div>
-
-                    <p className="text-xs font-bold text-slate-800">
-                      <strong>Purpose:</strong> {tx.purpose}
-                    </p>
-
-                    <div className="flex items-center gap-3 text-[11px] font-medium text-slate-800 flex-wrap pt-1">
-                      <span><strong>Date:</strong> {tx.date}</span>
-                      {tx.returnDate && (
-                        <span className="bg-white/80 px-2 py-0.5 rounded-md font-bold">
-                          <strong>Promised Return:</strong> {tx.returnDate}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-2xl shrink-0 self-start sm:self-auto neu-upper-sm">
-                    <Clock className="w-4 h-4 text-rose-600 animate-spin" />
-                    <span className="text-xs font-black text-rose-900">Pending Repayment</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 3. Lender Active Summaries Section ("PAY BY" User Light Green Boxes) */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            Active Loan Summaries ({lenderActiveSummaries.length})
-          </h3>
-          <span className="text-[11px] font-bold text-slate-600">
-            Categorized by Borrower
-          </span>
-        </div>
-
-        {lenderActiveSummaries.length === 0 ? (
-          <div className="neu-lower-sm rounded-3xl p-6 text-center text-slate-500 text-xs font-bold">
-            No active pending loan summaries currently.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {lenderActiveSummaries.map((tx) => {
-              const isEditing = editingAmountTxId === tx.id;
-
-              return (
-                <div
-                  key={tx.id}
-                  className="bg-emerald-50 text-slate-900 rounded-3xl p-4 sm:p-5 neu-upper-sm flex flex-col justify-between space-y-4"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2 border-b border-emerald-200 pb-2">
-                      <div>
-                        <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider">
-                          Paid To (Borrower)
-                        </span>
-                        <h4 className="text-base font-black text-slate-950">
-                          {tx.payToName}
-                        </h4>
-                      </div>
-
-                      <div className="text-right">
-                        <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider">
-                          Paid By (Lender)
-                        </span>
-                        <p className="text-xs font-bold text-slate-900">
-                          {tx.payByName}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-slate-800">
-                        <strong>Purpose:</strong> {tx.purpose}
-                      </p>
-                      <p className="text-[11px] font-medium text-slate-700">
-                        <strong>Date:</strong> {tx.date}
-                      </p>
-                      {tx.returnDate && (
-                        <p className="text-[11px] font-bold text-emerald-900">
-                          <strong>Return Date:</strong> {tx.returnDate}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Amount Block (Editable ONLY by Lender & Admin) */}
-                    <div className="bg-white p-3 rounded-2xl flex items-center justify-between gap-2 neu-lower-sm">
-                      <span className="text-xs font-extrabold text-slate-800 uppercase">
-                        Loan Amount:
-                      </span>
-
-                      {isEditing ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            step="any"
-                            value={tempEditAmount}
-                            onChange={(e) => setTempEditAmount(e.target.value)}
-                            className="w-24 px-2 py-1 neu-lower-sm rounded-xl text-xs font-black text-slate-900 focus:outline-none"
-                          />
-                          <button
-                            onClick={() => {
-                              const newNum = parseFloat(tempEditAmount);
-                              if (!isNaN(newNum) && newNum > 0) {
-                                onUpdateAmount(tx.id, newNum);
-                                triggerHaptic(hapticPatterns.success);
-                              }
-                              setEditingAmountTxId(null);
-                            }}
-                            className="bg-black text-white text-[10px] font-black px-2.5 py-1 rounded-xl cursor-pointer"
-                          >
-                            Save
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <span className="text-base font-black text-slate-950">
-                            {tx.amount.toFixed(2)} {group.currency || preferredCurrency}
-                          </span>
-                          <button
-                            onClick={() => {
-                              setEditingAmountTxId(tx.id);
-                              setTempEditAmount(String(tx.amount));
-                            }}
-                            className="text-[10px] neu-upper-btn text-slate-900 font-extrabold px-2 py-0.5 rounded-lg cursor-pointer"
-                            title="Edit Amount"
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Actions: Payment Received & Delete */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-emerald-200">
-                    <button
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `Confirm payment received from ${tx.payToName} for ${tx.amount.toFixed(
-                              2
-                            )} ${group.currency}? This moves the transaction to PREVIOUS RECORD.`
-                          )
-                        ) {
-                          triggerHaptic(hapticPatterns.success);
-                          onMarkReceived(tx.id);
-                        }
-                      }}
-                      className="flex-1 bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black text-xs py-2.5 px-3 rounded-[24px] neu-upper-sm transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider"
-                    >
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      <span>Payment Received</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `Are you sure you want to delete/settle active transaction with ${tx.payToName}?`
-                          )
-                        ) {
-                          triggerHaptic(hapticPatterns.error);
-                          onDeleteTransaction(tx.id);
-                        }
-                      }}
-                      className="bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black text-xs py-2.5 px-3 rounded-[24px] neu-upper-sm transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer uppercase tracking-wider"
-                      title="Delete/Clear Active Transaction"
-                    >
-                      <Trash2 className="w-4 h-4 text-rose-400" />
-                      <span>Delete</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* 4. PREVIOUS RECORD Table (Frozen History Table) */}
+      {/* 2. PREVIOUS RECORD Table (Frozen History Table) */}
       <div
         className="p-5 sm:p-6 rounded-3xl neu-upper border-none text-slate-900"
       >
@@ -570,33 +344,16 @@ export const PayToView: React.FC<PayToViewProps> = ({
               Frozen settlement records.
             </p>
           </div>
-
-          {/* Name Filter Dropdown */}
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-900" />
-            <select
-              value={previousRecordNameFilter}
-              onChange={(e) => setPreviousRecordNameFilter(e.target.value)}
-              className="neu-lower-sm text-slate-900 font-bold text-xs px-3 py-2 rounded-2xl focus:outline-none cursor-pointer"
-            >
-              <option value="all">Filter: All Names</option>
-              {allMembers.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
         {/* PREVIOUS RECORD View - Mobile Stacked Cards (Fits 100% Mobile Screen Width) */}
         <div className="block sm:hidden space-y-3">
-          {filteredPreviousRecords.length === 0 ? (
+          {previousRecords.length === 0 ? (
             <div className="p-6 text-center text-slate-500 font-medium italic rounded-2xl neu-lower-sm text-xs">
               No previous record entries found.
             </div>
           ) : (
-            filteredPreviousRecords.map((tx) => (
+            previousRecords.map((tx) => (
               <div
                 key={`mob_${tx.id}`}
                 className="neu-upper-sm rounded-2xl p-3.5 space-y-2"
@@ -671,7 +428,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
 
           {/* Mobile Grand Total Card */}
           <div className="neu-lower-sm rounded-2xl p-3.5 flex items-center justify-between font-black text-xs text-slate-950">
-            <span className="uppercase tracking-wider">Grand Total ({previousRecordNameFilter === 'all' ? 'All' : 'Filtered'}):</span>
+            <span className="uppercase tracking-wider">Grand Total (All):</span>
             <span className="text-sm underline decoration-2">{previousGrandTotal.toFixed(2)} {group.currency || preferredCurrency}</span>
           </div>
         </div>
@@ -691,7 +448,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-300/60 font-bold text-slate-900">
-              {filteredPreviousRecords.length === 0 ? (
+              {previousRecords.length === 0 ? (
                 <tr>
                   <td
                     colSpan={isAdmin ? 7 : 6}
@@ -701,7 +458,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredPreviousRecords.map((tx) => (
+                previousRecords.map((tx) => (
                   <tr key={tx.id} className="hover:bg-slate-200/50 transition-colors">
                     <td className="p-3 whitespace-nowrap text-slate-700 font-medium">
                       {tx.date}
@@ -765,7 +522,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
             <tfoot>
               <tr className="bg-slate-200/80 border-t-2 border-slate-300 font-black text-slate-950 text-xs">
                 <td colSpan={4} className="p-3 text-right uppercase tracking-wider">
-                  Grand Total ({previousRecordNameFilter === 'all' ? 'All' : 'Filtered'}):
+                  Grand Total (All):
                 </td>
                 <td className="p-3 text-right text-sm underline decoration-2 underline-offset-2">
                   {previousGrandTotal.toFixed(2)} {group.currency || preferredCurrency}

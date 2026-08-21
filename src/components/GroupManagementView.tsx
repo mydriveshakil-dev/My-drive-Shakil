@@ -56,6 +56,8 @@ interface GroupManagementViewProps {
   onOpenPayTo?: () => void;
   onOpenGroupNote?: () => void;
   onSaveUserProfile?: (data: { name: string; avatar: string }) => Promise<void> | void;
+  onOpenProfile?: () => void;
+  onRestoreExpenses?: () => void;
 }
 
 export const ALL_EXPENSE_OPTIONS = [
@@ -93,6 +95,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   onOpenPayTo,
   onOpenGroupNote,
   onSaveUserProfile,
+  onOpenProfile,
 }) => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
@@ -261,7 +264,11 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               type="button"
               onClick={() => {
                 triggerHaptic(hapticPatterns.click);
-                setShowProfileModal(true);
+                if (onOpenProfile) {
+                  onOpenProfile();
+                } else {
+                  setShowProfileModal(true);
+                }
               }}
               className="relative w-20 h-20 rounded-full overflow-hidden ring-4 ring-white/50 hover:ring-white active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center group"
               title="Click to view and edit profile"
@@ -279,7 +286,11 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               type="button"
               onClick={() => {
                 triggerHaptic(hapticPatterns.click);
-                setShowProfileModal(true);
+                if (onOpenProfile) {
+                  onOpenProfile();
+                } else {
+                  setShowProfileModal(true);
+                }
               }}
               className="text-xs sm:text-sm font-black text-white text-center mt-2 max-w-[160px] truncate hover:underline cursor-pointer block leading-tight"
               title="Click to view and edit profile"

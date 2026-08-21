@@ -23,7 +23,7 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
-import { Group, Expense, UtilityBill, RentContribution, ChatMessage, UserAuthProfile, PayToTransaction } from '../types';
+import { Group, Expense, UtilityBill, RentContribution, ChatMessage, UserAuthProfile, PayToTransaction, LaundryBill } from '../types';
 
 // Silence verbose internal backoff logging on quota limits
 try {
@@ -1000,4 +1000,61 @@ export function subscribeToUserPresences(groupId: string, onUpdate: (activeMembe
     return () => {};
   }
 }
+
+// 8. Personal Laundry Ledger Firestore Cloud Sync (Strictly private per user)
+export async function saveLaundryBillToFirestore(userId: string, bill: LaundryBill) {
+  if (isQuotaExceeded || !userId) return;
+  try {
+    const sanitizedUser = userId.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    const docRef = doc(db, `laundry_${sanitizedUser}`, bill.id);
+    const payload = removeUndefinedFields({ ...bill, updatedAtMs: Date.now() });
+    await setDoc(docRef, payload, { merge: true });
+  } catch (err) {
+    if (!isQuotaError(err)) {
+      console.warn('Warning saving laundry bill to Firestore:', err);
+    }
+  }
+}
+
+export async function deleteLaundryBillFromFirestore(userId: string, billId: string) {
+  if (isQuotaExceeded || !userId || !billId) return;
+  try {
+    const sanitizedUser = userId.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    const docRef = doc(db, `laundry_${sanitizedUser}`, billId);
+    await deleteDoc(docRef);
+  } catch (err) {
+    if (!isQuotaError(err)) {
+      console.warn('Warning deleting laundry bill from Firestore:', err);
+    }
+  }
+}
+
+export function subscribeToLaundryBills(userId: string, onUpdate: (bills: LaundryBill[]) => void) {
+  if (!userId || isQuotaExceeded) return () => {};
+  try {
+    const sanitizedUser = userId.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    const colRef = collection(db, `laundry_${sanitizedUser}`);
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const items: LaundryBill[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push({ ...docSnap.data(), id: docSnap.id } as LaundryBill);
+        });
+        // Sort newest first
+        items.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+        onUpdate(items);
+      },
+      (err) => {
+        if (!isQuotaError(err)) {
+          console.warn('Firestore laundry listener warning:', err);
+        }
+      }
+    );
+  } catch (e) {
+    isQuotaError(e);
+    return () => {};
+  }
+}
+
 

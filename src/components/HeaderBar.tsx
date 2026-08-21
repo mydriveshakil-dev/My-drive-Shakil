@@ -23,6 +23,7 @@ interface HeaderBarProps {
   currentUser?: UserAuthProfile | null;
   onOpenLoginModal?: () => void;
   onLogout?: () => void;
+  onOpenProfile?: () => void;
   onOpenInstallPwa?: () => void;
   customRates?: Record<string, number>;
 }
@@ -41,6 +42,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   currentUser,
   onOpenLoginModal,
   onLogout,
+  onOpenProfile,
   customRates,
 }) => {
   const isAdmin = currentUser?.role === 'admin';
@@ -97,8 +99,13 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
         {/* Bottom-Right: Profile Image on top, User Name below, aligned with Group Name row */}
         <div className="absolute bottom-3.5 right-3.5 sm:bottom-4 sm:right-5 z-20 flex flex-col items-center gap-1">
-          {/* Profile Image */}
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-transparent border-0 flex items-center justify-center shrink-0 overflow-hidden">
+          {/* Profile Image button */}
+          <button
+            type="button"
+            onClick={onOpenProfile}
+            className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-transparent border-0 flex items-center justify-center shrink-0 overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 active:scale-95 transition-all shadow-md"
+            title="View and edit profile picture"
+          >
             <MemberAvatar
               name={userName}
               avatar={userAvatar}
@@ -107,12 +114,17 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl object-cover"
               textClassName="text-xs font-black"
             />
-          </div>
+          </button>
 
           {/* User Name */}
-          <span className="text-center text-xs sm:text-sm font-bold text-white max-w-[80px] sm:max-w-[110px] truncate leading-tight">
+          <button
+            type="button"
+            onClick={onOpenProfile}
+            className="text-center text-xs sm:text-sm font-bold text-white max-w-[80px] sm:max-w-[110px] truncate leading-tight hover:underline cursor-pointer bg-transparent border-0 p-0"
+            title="View and edit profile picture"
+          >
             {userName}
-          </span>
+          </button>
 
           {isAdmin && onOpenLoginModal && (
             <button

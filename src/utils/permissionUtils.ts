@@ -59,3 +59,41 @@ export function getUserPermittedCategories(
   }
   return member.includedCategories;
 }
+
+/**
+ * Checks if an avatar string contains an actual uploaded image (data URL, web url, file path)
+ * rather than simple placeholder initials (e.g. 'MB', 'AD', etc.)
+ */
+export function isProfileImageSet(avatar?: string | null): boolean {
+  if (!avatar || typeof avatar !== 'string') return false;
+  const trimmed = avatar.trim();
+  if (trimmed.length < 4) return false;
+  return (
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('blob:') ||
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('./') ||
+    trimmed.includes('.jpg') ||
+    trimmed.includes('.jpeg') ||
+    trimmed.includes('.png') ||
+    trimmed.includes('.webp') ||
+    trimmed.includes('.gif') ||
+    trimmed.length > 30
+  );
+}
+
+/**
+ * Checks if the logged in user or linked member has a real profile photo uploaded
+ */
+export function hasUserSetProfilePicture(
+  currentUser?: UserAuthProfile | null,
+  member?: Member | null
+): boolean {
+  if (!currentUser && !member) return true; // not logged in or empty
+  if (isProfileImageSet(currentUser?.avatar)) return true;
+  if (isProfileImageSet(currentUser?.identity?.photoUrl)) return true;
+  if (isProfileImageSet(member?.avatar)) return true;
+  return false;
+}

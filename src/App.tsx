@@ -59,6 +59,8 @@ import { UaeLoginModal } from './components/UaeLoginModal';
 import { InstallPwaModal } from './components/InstallPwaModal';
 import { GroupNoteModal } from './components/GroupNoteModal';
 import { GroupNoticePopupModal } from './components/GroupNoticePopupModal';
+import { UserProfileModal } from './components/UserProfileModal';
+import { getLoggedInMember, hasUserSetProfilePicture } from './utils/permissionUtils';
 import { GlassContainer } from './components/GlassContainer';
 import { BottomNavBar, AppTabType } from './components/BottomNavBar';
 import { CheckCircle2, MessageCircle, Plus, AlertCircle } from 'lucide-react';
@@ -537,6 +539,24 @@ export default function App() {
   const [activePopupNotice, setActivePopupNotice] = useState<GroupNotice | null>(null);
   const [isNoticePopupOpen, setIsNoticePopupOpen] = useState<boolean>(false);
 
+  // Determine matching logged-in member and whether profile picture is set
+  const loggedInMember = useMemo(() => {
+    return getLoggedInMember(group, userAuth);
+  }, [group, userAuth]);
+
+  const hasProfilePic = useMemo(() => {
+    return hasUserSetProfilePicture(userAuth, loggedInMember);
+  }, [userAuth, loggedInMember]);
+
+  const [isManualProfileModalOpen, setIsManualProfileModalOpen] = useState<boolean>(false);
+
+  // Mandatory profile picture modal: active for new or existing users without an uploaded profile picture once splash is finished
+  const isMandatoryProfileModalOpen = useMemo(() => {
+    return Boolean(userAuth.isLoggedIn && !isLoginModalOpen && !isLoginSuccessAnimActive && !hasProfilePic);
+  }, [userAuth.isLoggedIn, isLoginModalOpen, isLoginSuccessAnimActive, hasProfilePic]);
+
+  const isProfileModalOpen = isMandatoryProfileModalOpen || isManualProfileModalOpen;
+
   // Trigger logo zoom animation on every app open / reload for logged-in users
   useEffect(() => {
     if (userAuth.isLoggedIn) {
@@ -908,6 +928,7 @@ export default function App() {
   const touchStartYRef = useRef<number | null>(null);
 
   const handleNavigateNextTab = () => {
+    if (isMandatoryProfileModalOpen) return;
     triggerHaptic(hapticPatterns.click);
     if (isAddExpenseOpen) {
       setIsAddExpenseOpen(false);
@@ -927,6 +948,7 @@ export default function App() {
   };
 
   const handleNavigatePrevTab = () => {
+    if (isMandatoryProfileModalOpen) return;
     triggerHaptic(hapticPatterns.click);
     if (isAddExpenseOpen) {
       setIsAddExpenseOpen(false);
@@ -2011,6 +2033,7 @@ export default function App() {
             onOpenLoginModal={() => setIsLoginModalOpen(true)}
             onLogout={handleLogout}
             onOpenInstallPwa={() => setIsInstallPwaOpen(true)}
+            onOpenProfile={() => setIsManualProfileModalOpen(true)}
           />
         )}
         {userAuth.isLoggedIn && userAuth.role === 'user' && !userAuth.linkedGroupId ? (
@@ -2111,6 +2134,14 @@ export default function App() {
                   }}
                   onDeleteExpense={handleDeleteExpense}
                   onRestoreExpenses={handleRestoreExpenses}
+                  payToTransactions={payToTransactions}
+                  onMarkPayToReceived={handleMarkPayToReceived}
+                  onUpdatePayToAmount={handleUpdatePayToAmount}
+                  onDeletePayToTransaction={handleDeletePayToTransaction}
+                  onOpenPayTo={() => {
+                    setActiveTab('payto');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                 />
               )}
 
@@ -2171,6 +2202,7 @@ export default function App() {
                   }}
                   preferredCurrency={preferredCurrency}
                   customRates={customRates}
+                  currentUser={userAuth}
                 />
               )}
 
@@ -2199,6 +2231,7 @@ export default function App() {
                   onOpenGroupNote={() => setIsGroupNoteModalOpen(true)}
                   onRestoreExpenses={handleRestoreExpenses}
                   onSaveUserProfile={handleSaveUserProfile}
+                  onOpenProfile={() => setIsManualProfileModalOpen(true)}
                 />
               )}
 
@@ -2232,6 +2265,23 @@ export default function App() {
           </AnimatePresence>
         )}
       </main>
+
+      {/* User Profile Modal - Both for mandatory first-time photo setup and regular profile management */}
+      {isProfileModalOpen && (
+        <UserProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => {
+            if (!isMandatoryProfileModalOpen) {
+              setIsManualProfileModalOpen(false);
+            }
+          }}
+          currentUser={userAuth}
+          group={group}
+          loggedInMember={loggedInMember}
+          onSaveProfile={handleSaveUserProfile}
+          isMandatory={isMandatoryProfileModalOpen}
+        />
+      )}
 
       {/* Architecture & Flutter Code Guide Modal */}
       <ArchitectureGuideModal
@@ -2299,7 +2349,7 @@ export default function App() {
       />
 
       {/* Floating Action Button (FAB) for Room Group Chat - Shown across all main tabs (Bill/rent, report, group, dashboard) and opens Chat directly on the main page */}
-      {activeTab !== 'chat' && !isLoginModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && (
+      {activeTab !== 'chat' && !isLoginModalOpen && !isMandatoryProfileModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && (
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.92 }}
@@ -2331,12 +2381,22 @@ export default function App() {
         <BottomNavBar
           activeTab={activeTab}
           onSelectTab={(tab) => {
+            if (isMandatoryProfileModalOpen) {
+              triggerHaptic(hapticPatterns.error);
+              return;
+            }
             setIsAddExpenseOpen(false);
             setActiveTab(tab);
           }}
-          onOpenAddExpense={() => setIsAddExpenseOpen(true)}
+          onOpenAddExpense={() => {
+            if (isMandatoryProfileModalOpen) {
+              triggerHaptic(hapticPatterns.error);
+              return;
+            }
+            setIsAddExpenseOpen(true);
+          }}
           isAddExpenseOpen={isAddExpenseOpen}
-          isHidden={activeTab === 'chat' || isAddExpenseOpen || isTyping}
+          isHidden={activeTab === 'chat' || isAddExpenseOpen || isTyping || isMandatoryProfileModalOpen}
         />
       )}
 

@@ -196,3 +196,19 @@ export interface PayToTransaction {
   createdAtMs: number;   // Timestamp for sorting (oldest first)
   updatedAtMs?: number;
 }
+
+export interface LaundryBill {
+  id: string;
+  userId: string;        // Strict personal user identification (email / mobile / name)
+  groupId?: string;      // Current group id context
+  date: string;          // YYYY-MM-DD HH:mm or YYYY-MM-DD
+  giveTo: string;        // Laundry shop / person name
+  totalItems: number;    // Manual count of items (e.g. 4)
+  pricePerItem: number;  // Manual price per item (e.g. 2.00)
+  totalAmount: number;   // Auto-calculated: (totalItems * pricePerItem)
+  status: 'pending' | 'received'; // 'pending' (shows Notice card) vs 'received'
+  createdAtMs: number;
+  monthCycle: string;    // e.g. "2026-08" for monthly grouping and Pre.Due calculation
+  receivedAt?: string;
+}
+

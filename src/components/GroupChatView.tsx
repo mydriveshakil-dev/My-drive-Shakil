@@ -18,6 +18,7 @@ import {
   Image as ImageIcon,
   Download,
   ExternalLink,
+  Loader2,
 } from 'lucide-react';
 import { MemberAvatar } from './MemberAvatar';
 import { VoiceMessagePlayer } from './VoiceMessagePlayer';
@@ -30,6 +31,7 @@ import {
   getIsQuotaExceeded,
 } from '../lib/firebase';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
+import { compressChatImage } from '../utils/imageCompressor';
 
 interface GroupChatViewProps {
   group: Group;
@@ -116,6 +118,7 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
     dataUrl: string;
     size: string;
   } | null>(null);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<{ url: string; title?: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -237,30 +240,74 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
     setShowScrollBottomBtn(isScrolledUp);
   };
 
+  const processFileAttachment = async (file: File) => {
+    try {
+      setIsProcessingFile(true);
+      const isImg = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif|bmp|heic)$/i.test(file.name);
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+      if (isImg) {
+        // High quality client-side compression for instant upload & guaranteed Firestore sync (<200KB)
+        const { dataUrl, sizeKB } = await compressChatImage(file, 1200, 1200, 0.78);
+        const sizeStr = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`;
+        setAttachedFile({
+          name: file.name || 'photo.jpg',
+          type: 'image',
+          dataUrl,
+          size: sizeStr,
+        });
+        triggerHaptic(hapticPatterns.click);
+      } else {
+        // PDF or Document Attachment (keep under 750KB for reliable Firestore persistence)
+        if (file.size > 750 * 1024) {
+          alert('Please attach files under 750 KB for instant real-time chat delivery.');
+          setIsProcessingFile(false);
+          return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const dataUrl = reader.result as string;
+          const sizeKB = Math.round(file.size / 1024);
+          const sizeStr = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`;
+          setAttachedFile({
+            name: file.name,
+            type: isPdf ? 'pdf' : 'file',
+            dataUrl,
+            size: sizeStr,
+          });
+          triggerHaptic(hapticPatterns.click);
+          setIsProcessingFile(false);
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+    } catch (err) {
+      console.error('Error processing attachment:', err);
+    } finally {
+      setIsProcessingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    processFileAttachment(file);
+  };
 
-    // Calculate human-readable size
-    const sizeKB = file.size / 1024;
-    const sizeStr = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${Math.round(sizeKB)} KB`;
-
-    const isImg = file.type.startsWith('image/');
-    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const dataUrl = reader.result as string;
-      setAttachedFile({
-        name: file.name,
-        type: isImg ? 'image' : isPdf ? 'pdf' : 'file',
-        dataUrl,
-        size: sizeStr,
-      });
-      triggerHaptic(hapticPatterns.click);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-    reader.readAsDataURL(file);
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          e.preventDefault();
+          processFileAttachment(file);
+          break;
+        }
+      }
+    }
   };
 
   const handleRemoveAttachment = () => {
@@ -275,9 +322,10 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
     triggerHaptic(hapticPatterns.success);
 
     if (attachedFile) {
+      const isImg = attachedFile.type === 'image';
       onSendMessage({
-        text: inputText.trim() || (attachedFile.type === 'image' ? '📷 Photo' : `📎 ${attachedFile.name}`),
-        type: attachedFile.type === 'image' ? 'image' : 'file',
+        text: inputText.trim() || (isImg ? '📷 Photo' : `📎 ${attachedFile.name}`),
+        type: isImg ? 'image' : 'file',
         fileUrl: attachedFile.dataUrl,
         fileName: attachedFile.name,
         fileType: attachedFile.type,
@@ -742,7 +790,7 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
                         duration={msg.audioDuration}
                         isMe={isMe}
                       />
-                    ) : (msg.type === 'image' || msg.fileType === 'image') && msg.fileUrl ? (
+                    ) : (msg.type === 'image' || msg.fileType === 'image' || (msg.fileUrl && (msg.fileUrl.startsWith('data:image/') || /\.(jpeg|jpg|gif|png|webp|bmp|heic)/i.test(msg.fileUrl)))) ? (
                       <div className="space-y-1.5 py-0.5 max-w-[260px] sm:max-w-[300px]">
                         <div
                           onClick={() =>
@@ -940,6 +988,14 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
           </div>
         )}
 
+        {/* Image / File Compressing Loading State */}
+        {isProcessingFile && (
+          <div className="mb-2 p-2 bg-blue-50 text-blue-800 text-xs font-bold rounded-xl border border-blue-200 flex items-center justify-center gap-2 animate-in fade-in duration-150">
+            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+            <span>Optimizing image for fast delivery...</span>
+          </div>
+        )}
+
         {isRecording ? (
           /* WhatsApp Voice Recording Active Tray */
           <div className="flex items-center justify-between gap-2 w-full animate-in fade-in duration-200">
@@ -1023,6 +1079,7 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
                 placeholder={attachedFile ? 'Add a caption...' : `Message as ${activeSenderName.split(' ')[0]}...`}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
+                onPaste={handlePaste}
                 onFocus={() => {
                   setShowEmojiPicker(false);
                   setActiveReactionMsgId(null);

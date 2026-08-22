@@ -291,26 +291,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* BORROWER NOTICES (Shown when active loan notices exist for the current user/admin) */}
+      {/* PENDING LOAN NOTES (Shown when active loan notices exist for the current user/admin) */}
       {borrowerActiveNotices.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-rose-500 animate-pulse shrink-0" />
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-                Borrower Notices ({borrowerActiveNotices.length})
-              </h3>
-            </div>
-            {onOpenPayTo && (
-              <button
-                type="button"
-                onClick={onOpenPayTo}
-                className="text-[11px] font-black text-slate-700 hover:text-slate-950 flex items-center gap-1 hover:underline cursor-pointer"
-              >
-                <span>Transaction Page</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
+          <div className="flex items-center gap-2 px-1">
+            <span className="w-3 h-3 rounded-full bg-rose-500 animate-pulse shrink-0" />
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              PENDING LOAN NOTES ({borrowerActiveNotices.length})
+            </h3>
           </div>
 
           <div className="space-y-3">
@@ -319,38 +307,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 key={tx.id}
                 className="bg-[#ffcbd1] border-2 border-rose-400 text-slate-900 rounded-3xl p-4 sm:p-5 shadow-lg neu-upper-sm relative overflow-hidden"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                        Pending Loan Notice
-                      </span>
-                      <span className="text-xs font-black text-slate-900">
-                        Lender: <strong className="underline">{tx.payByName}</strong>
-                      </span>
-                    </div>
-
-                    <div className="text-lg font-black text-slate-950 flex items-center gap-2 mt-1">
-                      <span>Borrowed: {tx.amount.toFixed(2)} {group.currency || 'AED'}</span>
-                    </div>
-
-                    <p className="text-xs font-bold text-slate-800">
-                      <strong>Purpose:</strong> {tx.purpose}
-                    </p>
-
-                    <div className="flex items-center gap-3 text-[11px] font-medium text-slate-800 flex-wrap pt-1">
-                      <span><strong>Date:</strong> {tx.date}</span>
-                      {tx.returnDate && (
-                        <span className="bg-white/80 px-2 py-0.5 rounded-md font-bold">
-                          <strong>Promised Return:</strong> {tx.returnDate}
-                        </span>
-                      )}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2 border-b border-rose-300/60 pb-2">
+                    <span className="text-xs font-black text-slate-900">
+                      From: <strong className="underline font-black">{tx.payByName}</strong>
+                    </span>
+                    <div className="text-[20px] font-black text-slate-950 font-sans">
+                      <span>Amount: {tx.amount.toFixed(2)} {group.currency || 'AED'}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-2xl shrink-0 self-start sm:self-auto neu-upper-sm">
-                    <Clock className="w-4 h-4 text-rose-600 animate-spin" />
-                    <span className="text-xs font-black text-rose-900">Pending Repayment</span>
+                  {/* Horizontal row with Purpose & Date on left */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-1 text-left">
+                      <p className="text-xs font-bold text-slate-800">
+                        <strong>Purpose:</strong> {tx.purpose}
+                      </p>
+                      <div className="flex items-center gap-3 text-[11px] font-medium text-slate-800 flex-wrap">
+                        <span><strong>Date:</strong> {tx.date}</span>
+                        {tx.returnDate && (
+                          <span className="bg-white/80 px-2 py-0.5 rounded-md font-bold text-slate-900">
+                            <strong>Promised Return:</strong> {tx.returnDate}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -362,148 +343,125 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* ACTIVE LOAN SUMMARIES (Shown when active loan summaries exist for the current user/admin) */}
       {lenderActiveSummaries.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-                Active Loan Summaries ({lenderActiveSummaries.length})
-              </h3>
-            </div>
-            <span className="text-[11px] font-bold text-slate-600">
-              Categorized by Borrower
-            </span>
+          <div className="flex items-center gap-2 px-1">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              Active Loan Summaries ({lenderActiveSummaries.length})
+            </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
             {lenderActiveSummaries.map((tx) => {
               const isEditing = editingAmountTxId === tx.id;
 
               return (
                 <div
                   key={tx.id}
-                  className="bg-emerald-50 text-slate-900 rounded-3xl p-4 sm:p-5 neu-upper-sm flex flex-col justify-between space-y-4 border border-emerald-200 shadow-sm"
+                  className="bg-emerald-50 border-2 border-emerald-300 text-slate-900 rounded-3xl p-4 sm:p-5 shadow-lg neu-upper-sm relative overflow-hidden"
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2 border-b border-emerald-200 pb-2">
-                      <div>
-                        <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider">
-                          Paid To (Borrower)
-                        </span>
-                        <h4 className="text-base font-black text-slate-950">
-                          {tx.payToName}
-                        </h4>
-                      </div>
-
-                      <div className="text-right">
-                        <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider">
-                          Paid By (Lender)
-                        </span>
-                        <p className="text-xs font-bold text-slate-900">
-                          {tx.payByName}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-slate-800">
-                        <strong>Purpose:</strong> {tx.purpose}
-                      </p>
-                      <p className="text-[11px] font-medium text-slate-700">
-                        <strong>Date:</strong> {tx.date}
-                      </p>
-                      {tx.returnDate && (
-                        <p className="text-[11px] font-bold text-emerald-900">
-                          <strong>Return Date:</strong> {tx.returnDate}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Amount Block (Editable by Lender & Admin) */}
-                    <div className="bg-white p-3 rounded-2xl flex items-center justify-between gap-2 neu-lower-sm">
-                      <span className="text-xs font-extrabold text-slate-800 uppercase">
-                        Loan Amount:
+                      <span className="text-xs font-black text-slate-900">
+                        Pay To: <strong className="underline font-black">{tx.payToName}</strong>
+                        {isAdmin && (
+                          <span className="text-[11px] text-slate-600 font-bold ml-2">
+                            (From: {tx.payByName})
+                          </span>
+                        )}
                       </span>
 
-                      {isEditing ? (
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="number"
-                            step="any"
-                            value={editAmountValue}
-                            onChange={(e) => setEditAmountValue(e.target.value)}
-                            className="w-24 bg-slate-100 text-slate-900 font-black text-xs px-2 py-1 rounded-lg border border-slate-300 focus:outline-none focus:border-blue-600"
-                            autoFocus
-                          />
-                          <button
-                            onClick={() => handleSaveEditAmount(tx.id)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white p-1 rounded-lg cursor-pointer"
-                            title="Save Amount"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setEditingAmountTxId(null)}
-                            className="bg-slate-400 hover:bg-slate-500 text-white p-1 rounded-lg cursor-pointer"
-                            title="Cancel"
-                          >
-                            <XIcon className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm sm:text-base font-black text-slate-950 font-mono">
-                            {tx.amount.toFixed(2)} {group.currency || 'AED'}
-                          </span>
-                          <button
-                            onClick={() => handleStartEditAmount(tx)}
-                            className="text-slate-500 hover:text-slate-900 p-1 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
-                            title="Edit loan amount"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
+                      <div className="text-[20px] font-black text-slate-950 font-sans flex items-center gap-1.5">
+                        {isEditing ? (
+                          <div className="flex items-center gap-1.5 font-sans">
+                            <input
+                              type="number"
+                              step="any"
+                              value={editAmountValue}
+                              onChange={(e) => setEditAmountValue(e.target.value)}
+                              className="w-20 bg-slate-100 text-slate-900 font-black text-xs px-2 py-1 rounded-lg border border-slate-300 focus:outline-none focus:border-blue-600"
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEditAmount(tx.id)}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white p-1 rounded-lg cursor-pointer"
+                              title="Save Amount"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingAmountTxId(null)}
+                              className="bg-slate-400 hover:bg-slate-500 text-white p-1 rounded-lg cursor-pointer"
+                              title="Cancel"
+                            >
+                              <XIcon className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <span>Loan: {tx.amount.toFixed(2)} {group.currency || 'AED'}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditAmount(tx)}
+                              className="text-slate-500 hover:text-slate-900 p-1 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+                              title="Edit loan amount"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Actions: Payment Received & Delete */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-emerald-200">
-                    <button
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `Confirm payment received from ${tx.payToName} for ${tx.amount.toFixed(
-                              2
-                            )} ${group.currency || 'AED'}? This marks the transaction as paid.`
-                          )
-                        ) {
+                    {/* Horizontal row with Purpose & Date on left */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="space-y-1 text-left">
+                        <p className="text-xs font-bold text-slate-800">
+                          <strong>Purpose:</strong> {tx.purpose}
+                        </p>
+                        <div className="flex items-center gap-3 text-[11px] font-medium text-slate-800 flex-wrap">
+                          <span><strong>Date:</strong> {tx.date}</span>
+                          {tx.returnDate && (
+                            <span className="bg-white/80 px-2 py-0.5 rounded-md font-bold text-slate-900">
+                              <strong>Return Date:</strong> {tx.returnDate}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions: Payment Received & Delete with BLACK text */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-emerald-200">
+                      <button
+                        type="button"
+                        onClick={() => {
                           triggerHaptic(hapticPatterns.success);
-                          if (onMarkPayToReceived) onMarkPayToReceived(tx.id);
-                        }
-                      }}
-                      className="flex-1 bg-[#07193F] hover:bg-[#0B2A66] text-white font-black text-xs py-2.5 px-3 rounded-[24px] neu-upper-sm transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider"
-                    >
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      <span>Payment Received</span>
-                    </button>
+                          if (onMarkPayToReceived) {
+                            onMarkPayToReceived(tx.id);
+                          }
+                        }}
+                        className="flex-1 bg-white hover:bg-slate-100 text-black border border-slate-300 font-black text-xs py-2.5 px-3 rounded-[24px] neu-upper-btn transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer uppercase tracking-wider shadow-sm"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="text-black font-black">Payment Received</span>
+                      </button>
 
-                    <button
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `Are you sure you want to delete/settle active transaction with ${tx.payToName}?`
-                          )
-                        ) {
+                      <button
+                        type="button"
+                        onClick={() => {
                           triggerHaptic(hapticPatterns.error);
-                          if (onDeletePayToTransaction) onDeletePayToTransaction(tx.id);
-                        }
-                      }}
-                      className="bg-[#07193F] hover:bg-[#0B2A66] text-white font-black text-xs py-2.5 px-3 rounded-[24px] neu-upper-sm transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer uppercase tracking-wider"
-                      title="Delete/Clear Active Transaction"
-                    >
-                      <Trash2 className="w-4 h-4 text-rose-400" />
-                      <span>Delete</span>
-                    </button>
+                          if (onDeletePayToTransaction) {
+                            onDeletePayToTransaction(tx.id);
+                          }
+                        }}
+                        className="bg-white hover:bg-slate-100 text-black border border-slate-300 font-black text-xs py-2.5 px-4 rounded-[24px] neu-upper-btn transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer uppercase tracking-wider shadow-sm"
+                        title="Delete/Clear Active Transaction"
+                      >
+                        <Trash2 className="w-4 h-4 text-rose-600 shrink-0" />
+                        <span className="text-black font-black">Delete</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

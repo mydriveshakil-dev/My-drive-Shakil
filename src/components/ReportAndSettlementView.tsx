@@ -3,40 +3,24 @@ import { createPortal } from 'react-dom';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import uaeMessLogo from '../assets/images/uae_mess_logo_1785022712689.jpg';
-import { Group, Expense, UtilityBill, RentContribution, LaundryBill, UserAuthProfile } from '../types';
+import { Group, Expense, UtilityBill, RentContribution, UserAuthProfile } from '../types';
 import { calculateSettlement } from '../utils/settlementCalculator';
 import { sanitizeDocumentForHtml2Canvas } from '../utils/pdfColorSanitizer';
 import { GlassContainer } from './GlassContainer';
 import {
-  PieChart as ChartIcon,
   FileText,
-  Printer,
   Share2,
-  CheckCircle,
   ArrowRight,
   User,
   Calendar,
-  DollarSign,
-  Info,
   CheckSquare,
   Square,
-  Sparkles,
   X,
   Check,
-  ShieldCheck,
-  Building2,
-  Receipt,
-  Download,
   Loader2,
-  MessageSquare,
-  Clock,
-  Filter,
-  Trash2,
-  Shirt,
 } from 'lucide-react';
-import { isPhoneMatch, deleteLaundryBillFromFirestore, subscribeToLaundryBills } from '../lib/firebase';
+import { isPhoneMatch } from '../lib/firebase';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
-import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 import { MemberAvatar } from './MemberAvatar';
 
 interface ReportAndSettlementViewProps {
@@ -79,7 +63,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   const [isSharingPdf, setIsSharingPdf] = useState(false);
   const cachedPdfFileRef = useRef<File | null>(null);
 
-  // User identity & personal laundry records
+  // User identity
   const loggedInMember = group.members.find((m) => {
     if (!currentUser) return false;
     if (currentUser.memberId && m.id === currentUser.memberId) return true;
@@ -87,101 +71,6 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
     if (currentUser.name && m.name.trim().toLowerCase() === currentUser.name.trim().toLowerCase()) return true;
     return false;
   });
-
-  const activeUserPhoneOrId =
-    currentUser?.phoneNumber ||
-    loggedInMember?.phoneNumber ||
-    currentUser?.memberId ||
-    loggedInMember?.id ||
-    'anonymous_user';
-
-  const sanitizedUserKey = activeUserPhoneOrId.replace(/[^a-zA-Z0-9_-]/g, '_');
-
-  const currentMonthCycle = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
-
-  const [laundryBills, setLaundryBills] = useState<LaundryBill[]>(() => {
-    try {
-      const local = localStorage.getItem(`personal_laundry_${sanitizedUserKey}`);
-      if (local) {
-        return JSON.parse(local);
-      }
-    } catch {
-      // ignore
-    }
-    return [];
-  });
-
-  // Selected Month for Laundry Report Table (default is currentMonthCycle)
-  const [selectedLaundryMonth, setSelectedLaundryMonth] = useState<string>(currentMonthCycle);
-
-  // Sync personal laundry records from Firestore & local storage
-  useEffect(() => {
-    try {
-      const local = localStorage.getItem(`personal_laundry_${sanitizedUserKey}`);
-      if (local) {
-        setLaundryBills(JSON.parse(local));
-      }
-    } catch {
-      // ignore
-    }
-
-    const unsubscribe = subscribeToLaundryBills(sanitizedUserKey, (remoteBills) => {
-      if (remoteBills && remoteBills.length > 0) {
-        setLaundryBills(remoteBills);
-        try {
-          localStorage.setItem(`personal_laundry_${sanitizedUserKey}`, JSON.stringify(remoteBills));
-        } catch {
-          // ignore
-        }
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [sanitizedUserKey]);
-
-  const persistLaundryBills = (updated: LaundryBill[]) => {
-    setLaundryBills(updated);
-    try {
-      localStorage.setItem(`personal_laundry_${sanitizedUserKey}`, JSON.stringify(updated));
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleDeleteLaundry = (billId: string) => {
-    if (!window.confirm('Are you sure you want to delete this personal laundry record?')) {
-      return;
-    }
-    triggerHaptic(hapticPatterns.click);
-    const updated = laundryBills.filter((b) => b.id !== billId);
-    persistLaundryBills(updated);
-    deleteLaundryBillFromFirestore(sanitizedUserKey, billId);
-  };
-
-  // Available distinct months for Laundry History
-  const availableLaundryMonths = Array.from(
-    new Set([currentMonthCycle, ...laundryBills.map((b) => b.monthCycle).filter(Boolean)])
-  ).sort().reverse();
-
-  // Filtered laundry bills for report
-  const filteredLaundryBills =
-    selectedLaundryMonth === 'all'
-      ? laundryBills
-      : laundryBills.filter((b) => b.monthCycle === selectedLaundryMonth);
-
-  const selectedMonthLaundryTotal = filteredLaundryBills.reduce((sum, b) => sum + b.totalAmount, 0);
-
-  // Pre.Due (Previous Months Due/Pending): Any pending/unpaid laundry bill from earlier months
-  const laundryPreDue = laundryBills
-    .filter((b) => {
-      if (selectedLaundryMonth === 'all') return false;
-      return b.monthCycle < selectedLaundryMonth && b.status === 'pending';
-    })
-    .reduce((sum, b) => sum + b.totalAmount, 0);
-
-  const totalLaundryPayable = selectedMonthLaundryTotal + laundryPreDue;
 
   // Category filter checkboxes (Room rent is excluded from settlement breakdown as per landlord rent box rule)
   const [includeCategories, setIncludeCategories] = useState({
@@ -455,36 +344,36 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       </div>
 
       {/* Date Picker & Compact Include Categories in 1 Line */}
-      <div className="p-4 neu-upper text-slate-900 space-y-3 rounded-2xl">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-300/60 pb-2.5">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900">
-            <Calendar className="w-3.5 h-3.5 text-black" />
+      <div className="p-4 neu-upper text-slate-900 space-y-3 rounded-2xl text-center">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 border-b border-slate-300/60 pb-2.5 text-center">
+          <div className="flex items-center justify-center gap-1.5 text-[12pt] font-bold text-slate-900 text-center">
+            <Calendar className="w-4 h-4 text-black" />
             <span>Settlement Period Range:</span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs">
+          <div className="flex items-center justify-center gap-1.5 text-xs text-center">
             <input
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className="px-2.5 py-1 neu-lower-sm rounded-lg font-semibold text-slate-900 focus:outline-none"
+              className="px-2.5 py-1 neu-lower-sm rounded-lg font-semibold text-slate-900 focus:outline-none text-center"
             />
             <span className="text-slate-500 font-bold">to</span>
             <input
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className="px-2.5 py-1 neu-lower-sm rounded-lg font-semibold text-slate-900 focus:outline-none"
+              className="px-2.5 py-1 neu-lower-sm rounded-lg font-semibold text-slate-900 focus:outline-none text-center"
             />
           </div>
         </div>
 
-        {/* Category Checkboxes in 1 compact line */}
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider shrink-0">
+        {/* Category Checkboxes in 1 compact center-aligned line */}
+        <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-center">
+          <span className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider shrink-0 text-center">
             Include Categories:
           </span>
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 text-center">
             {[
               { key: 'mess', label: 'Mess' },
               { key: 'general', label: 'General' },
@@ -573,243 +462,6 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* LAUNDRY PREVIOUS RECORD TABLE (Moved to report page last) */}
-      <div className="p-5 sm:p-6 rounded-3xl neu-upper border-none text-slate-900 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-300 pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-rose-500 text-white rounded-xl">
-              <Shirt className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest block">
-                PERSONAL LAUNDRY ARCHIVE • {loggedInMember?.name || 'YOU'}
-              </span>
-              <h3 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-wide flex items-center gap-2">
-                <Clock className="w-5 h-5 text-slate-900" />
-                PREVIOUS RECORD TABLE
-              </h3>
-              <p className="text-xs text-slate-600 font-medium">
-                Personal laundry settlement records.
-              </p>
-            </div>
-          </div>
-
-          {/* Month Filter Dropdown */}
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-900 shrink-0" />
-            <select
-              value={selectedLaundryMonth}
-              onChange={(e) => setSelectedLaundryMonth(e.target.value)}
-              className="neu-lower-sm text-slate-900 font-bold text-xs px-3 py-2 rounded-2xl focus:outline-none cursor-pointer"
-            >
-              <option value="all">Filter: All Months</option>
-              {availableLaundryMonths.map((m) => {
-                const [year, month] = m.split('-');
-                const dateObj = new Date(parseInt(year), parseInt(month) - 1, 1);
-                const monthName = dateObj.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-                return (
-                  <option key={m} value={m}>
-                    {monthName} {m === currentMonthCycle ? '(Current)' : ''}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-        </div>
-
-        {/* Mobile View: Cards */}
-        <div className="block sm:hidden space-y-3">
-          {filteredLaundryBills.length === 0 ? (
-            <div className="p-6 text-center text-slate-500 font-medium italic rounded-2xl neu-lower-sm text-xs">
-              No laundry records found for this period.
-            </div>
-          ) : (
-            filteredLaundryBills.map((bill) => (
-              <div
-                key={`mob_${bill.id}`}
-                className="neu-upper-sm rounded-2xl p-3.5 space-y-2 bg-white/50"
-              >
-                {/* Date & Status */}
-                <div className="flex items-center justify-between border-b border-slate-300/60 pb-2">
-                  <span className="text-[11px] font-bold text-slate-600">{bill.date}</span>
-                  {bill.status === 'received' ? (
-                    <span className="inline-flex items-center gap-1.5 text-emerald-700 font-black bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-300 text-[10px]">
-                      <span className="relative flex h-2 w-2 shrink-0">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                      </span>
-                      Received
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 text-rose-600 font-black bg-rose-50 px-2 py-0.5 rounded-full border border-rose-300 text-[10px]">
-                      <span className="relative flex h-2 w-2 shrink-0">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-                      </span>
-                      Pending
-                    </span>
-                  )}
-                </div>
-
-                {/* Details Grid */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-[10px] font-extrabold text-slate-500 uppercase block">
-                      GIVE TO
-                    </span>
-                    <span className="font-black text-slate-900 break-words">{bill.giveTo}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-extrabold text-slate-500 uppercase block">
-                      TOTAL ITEMS
-                    </span>
-                    <span className="font-black text-slate-900">
-                      {bill.totalItems} pcs (@ {bill.pricePerItem.toFixed(2)})
-                    </span>
-                  </div>
-                </div>
-
-                {/* Amount & Delete */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-300/60">
-                  <button
-                    onClick={() => handleDeleteLaundry(bill.id)}
-                    className="text-rose-600 hover:text-rose-700 font-bold text-[11px] flex items-center gap-1 cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Delete</span>
-                  </button>
-                  <div className="text-right">
-                    <span className="text-[10px] font-extrabold text-slate-500 uppercase block">
-                      AMOUNT
-                    </span>
-                    <span className="text-sm font-black text-slate-950 underline decoration-1">
-                      {bill.totalAmount.toFixed(2)} {group.currency || 'AED'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-
-          {/* Mobile Grand Total Summary Card */}
-          <div className="neu-lower-sm rounded-2xl p-4 space-y-2 text-xs text-slate-950 font-bold">
-            <div className="flex items-center justify-between">
-              <span className="uppercase text-slate-600">This Month Total:</span>
-              <span className="font-black">{selectedMonthLaundryTotal.toFixed(2)} {group.currency || 'AED'}</span>
-            </div>
-            {laundryPreDue > 0 && (
-              <div className="flex items-center justify-between text-rose-600">
-                <span className="uppercase">Pre.Due (Previous Months):</span>
-                <span className="font-black">{laundryPreDue.toFixed(2)} {group.currency || 'AED'}</span>
-              </div>
-            )}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-300/60 font-black text-sm text-slate-950">
-              <span className="uppercase tracking-wider">Grand Total:</span>
-              <span className="underline decoration-2 text-base">
-                {totalLaundryPayable.toFixed(2)} {group.currency || 'AED'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop View: Full Table */}
-        <div className="hidden sm:block overflow-x-auto w-full neu-lower-sm rounded-2xl p-2">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-800 text-white font-black uppercase tracking-wider text-[11px]">
-                <th className="p-3 rounded-l-xl">Date</th>
-                <th className="p-3">Give To</th>
-                <th className="p-3">Total Items</th>
-                <th className="p-3">Price</th>
-                <th className="p-3 text-right">Amount ({group.currency || 'AED'})</th>
-                <th className="p-3 text-center">Status</th>
-                <th className="p-3 text-center rounded-r-xl">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-300/60 font-bold text-slate-900">
-              {filteredLaundryBills.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-6 text-center text-slate-500 font-medium italic">
-                    No laundry records found for this period.
-                  </td>
-                </tr>
-              ) : (
-                filteredLaundryBills.map((bill) => (
-                  <tr key={bill.id} className="hover:bg-slate-200/50 transition-colors">
-                    <td className="p-3 whitespace-nowrap text-slate-700 font-medium">{bill.date}</td>
-                    <td className="p-3 whitespace-nowrap font-black text-slate-900">{bill.giveTo}</td>
-                    <td className="p-3 whitespace-nowrap text-slate-800">{bill.totalItems} pcs</td>
-                    <td className="p-3 whitespace-nowrap text-slate-800 font-mono">{bill.pricePerItem.toFixed(2)}</td>
-                    <td className="p-3 text-right font-black text-slate-950 whitespace-nowrap underline decoration-1">
-                      {bill.totalAmount.toFixed(2)}
-                    </td>
-                    <td className="p-3 text-center whitespace-nowrap">
-                      {bill.status === 'received' ? (
-                        <span className="inline-flex items-center gap-1.5 text-emerald-700 font-black bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-300 text-[10px]">
-                          <span className="relative flex h-2 w-2 shrink-0">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                          </span>
-                          Received
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 text-rose-600 font-black bg-rose-50 px-2.5 py-1 rounded-full border border-rose-300 text-[10px]">
-                          <span className="relative flex h-2 w-2 shrink-0">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-                          </span>
-                          Pending
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3 text-center whitespace-nowrap">
-                      <button
-                        onClick={() => handleDeleteLaundry(bill.id)}
-                        className="text-rose-600 hover:text-rose-800 p-1.5 rounded-lg transition-colors cursor-pointer"
-                        title="Delete record"
-                      >
-                        <Trash2 className="w-4 h-4 mx-auto" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-            <tfoot>
-              <tr className="bg-slate-200/80 border-t-2 border-slate-300 font-black text-slate-950 text-xs">
-                <td colSpan={4} className="p-3 text-right uppercase tracking-wider">
-                  Total (This Month):
-                </td>
-                <td className="p-3 text-right text-sm underline decoration-1">
-                  {selectedMonthLaundryTotal.toFixed(2)} {group.currency || 'AED'}
-                </td>
-                <td colSpan={2}></td>
-              </tr>
-              {laundryPreDue > 0 && (
-                <tr className="bg-rose-50 border-t border-rose-200 font-black text-rose-700 text-xs">
-                  <td colSpan={4} className="p-2.5 text-right uppercase tracking-wider">
-                    Pre.Due (Previous Months Unpaid):
-                  </td>
-                  <td className="p-2.5 text-right text-sm underline decoration-1">
-                    {laundryPreDue.toFixed(2)} {group.currency || 'AED'}
-                  </td>
-                  <td colSpan={2}></td>
-                </tr>
-              )}
-              <tr className="bg-slate-300/80 border-t-2 border-slate-400 font-black text-slate-950 text-xs">
-                <td colSpan={4} className="p-3 text-right uppercase tracking-wider">
-                  Grand Total Payable:
-                </td>
-                <td className="p-3 text-right text-base underline decoration-2">
-                  {totalLaundryPayable.toFixed(2)} {group.currency || 'AED'}
-                </td>
-                <td colSpan={2}></td>
-              </tr>
-            </tfoot>
-          </table>
         </div>
       </div>
 

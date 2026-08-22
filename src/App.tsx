@@ -1507,6 +1507,24 @@ export default function App() {
     triggerHaptic(hapticPatterns.click);
   };
 
+  const handleUpdateGroupName = (groupId: string, newName: string) => {
+    if (userAuth.role !== 'admin') {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    const updatedAll = allGroups.map((g) => (g.id === groupId ? { ...g, name: trimmed } : g));
+    setAllGroups(updatedAll);
+    if (group.id === groupId) {
+      const updatedG = { ...group, name: trimmed };
+      setGroup(updatedG);
+      saveGroupToFirestore(updatedG);
+    }
+    localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
+    triggerHaptic(hapticPatterns.success);
+  };
+
   const handleLogout = () => {
     const loggedOutAuth: UserAuthProfile = {
       email: 'mydriveshakil@gmail.com',
@@ -2257,6 +2275,10 @@ export default function App() {
                   onRestoreExpenses={handleRestoreExpenses}
                   onSaveUserProfile={handleSaveUserProfile}
                   onOpenProfile={() => setIsManualProfileModalOpen(true)}
+                  onSelectGroup={(targetGroup) => {
+                    setGroup(targetGroup);
+                  }}
+                  onUpdateGroupName={handleUpdateGroupName}
                 />
               )}
 
@@ -2492,11 +2514,11 @@ export default function App() {
               >
                 <div>
                   <span className="inline-block bg-black text-white text-xs sm:text-sm font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-black shadow-md">
-                    Portal Access Granted
+                    Access Granted
                   </span>
                 </div>
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-950 tracking-tight leading-tight">
-                  Welcome to Mess Portal
+                  Welcome to UAE MESS
                 </h2>
                 <p className="text-base sm:text-lg md:text-xl font-extrabold text-slate-800 max-w-sm mx-auto">
                   Welcome back, <span className="text-emerald-600 font-black underline decoration-emerald-500/40">{userAuth.name || 'Member'}</span>

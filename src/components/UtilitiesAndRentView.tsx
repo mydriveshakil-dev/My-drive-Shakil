@@ -68,7 +68,11 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
   const visibleUtilities = utilities.filter((u) => isCategoryPermittedForUser(u.category, group, currentUser));
 
+  // Toggles for sections and forms
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showLaundryForm, setShowLaundryForm] = useState(false);
+  const [showUtilityBills, setShowUtilityBills] = useState(false);
+  const [showRoomRent, setShowRoomRent] = useState(false);
   const [newUtilNameOption, setNewUtilNameOption] = useState(UTILITY_NAME_OPTIONS[0]);
   const [customUtilName, setCustomUtilName] = useState('');
   const [newUtilAmount, setNewUtilAmount] = useState('');
@@ -379,7 +383,6 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
   };
 
   // Laundry Form State
-  const [showLaundryForm, setShowLaundryForm] = useState(false);
   const [laundryDate, setLaundryDate] = useState(() => {
     const d = new Date();
     const YYYY = d.getFullYear();
@@ -470,8 +473,9 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
     deleteLaundryBillFromFirestore(sanitizedUserKey, billId);
   };
 
-  // Pending laundry bills (Notice section)
+  // Pending & Received laundry bills
   const pendingLaundryBills = laundryBills.filter((b) => b.status === 'pending');
+  const receivedLaundryBills = laundryBills.filter((b) => b.status === 'received');
 
   return (
     <div className="space-y-6 pb-28">
@@ -487,9 +491,10 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
           </p>
         </div>
 
-        {/* Center-aligned Action Buttons: Add Utility Bill + Add Laundry Bill */}
+        {/* 4 Clean Action Buttons with exact short names and NO icons */}
         <div className="p-4 sm:p-5">
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full max-w-xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 w-full max-w-2xl mx-auto">
+            {/* 1. Add Utility */}
             <button
               type="button"
               onClick={() => {
@@ -497,16 +502,16 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 setShowAddForm(!showAddForm);
                 if (!showAddForm) setShowLaundryForm(false);
               }}
-              className={`w-full py-3 px-3 sm:px-5 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer uppercase tracking-wider shadow-md active:scale-95 text-center ${
+              className={`w-full py-3 px-3 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center transition-all cursor-pointer uppercase tracking-wider shadow-md active:scale-95 text-center ${
                 showAddForm
                   ? 'bg-[#07193F] hover:bg-[#051330] text-white ring-2 ring-white/40 shadow-inner'
                   : 'bg-[#0052FF] hover:bg-[#0047E0] text-white'
               }`}
             >
-              <Plus className="w-4 h-4 stroke-[3] shrink-0" />
-              <span className="truncate">{showAddForm ? 'Close Utility Bill' : '+ Add Utility Bill'}</span>
+              <span>Add Utility</span>
             </button>
 
+            {/* 2. Add Laundry */}
             <button
               type="button"
               onClick={() => {
@@ -514,14 +519,45 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 setShowLaundryForm(!showLaundryForm);
                 if (!showLaundryForm) setShowAddForm(false);
               }}
-              className={`w-full py-3 px-3 sm:px-5 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer uppercase tracking-wider shadow-md active:scale-95 text-center ${
+              className={`w-full py-3 px-3 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center transition-all cursor-pointer uppercase tracking-wider shadow-md active:scale-95 text-center ${
                 showLaundryForm
                   ? 'bg-[#07193F] hover:bg-[#051330] text-white ring-2 ring-white/40 shadow-inner'
                   : 'bg-[#0052FF] hover:bg-[#0047E0] text-white'
               }`}
             >
-              <Shirt className="w-4 h-4 stroke-[2.5] shrink-0" />
-              <span className="truncate">{showLaundryForm ? 'Close Laundry Bill' : '+ Add Laundry Bill'}</span>
+              <span>Add Laundry</span>
+            </button>
+
+            {/* 3. Utility Bills */}
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(hapticPatterns.click);
+                setShowUtilityBills(!showUtilityBills);
+              }}
+              className={`w-full py-3 px-3 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center transition-all cursor-pointer uppercase tracking-wider shadow-md active:scale-95 text-center ${
+                showUtilityBills
+                  ? 'bg-[#07193F] hover:bg-[#051330] text-white ring-2 ring-white/40 shadow-inner'
+                  : 'bg-[#0052FF] hover:bg-[#0047E0] text-white'
+              }`}
+            >
+              <span>Utility Bills</span>
+            </button>
+
+            {/* 4. Room Rent */}
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(hapticPatterns.click);
+                setShowRoomRent(!showRoomRent);
+              }}
+              className={`w-full py-3 px-3 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center transition-all cursor-pointer uppercase tracking-wider shadow-md active:scale-95 text-center ${
+                showRoomRent
+                  ? 'bg-[#07193F] hover:bg-[#051330] text-white ring-2 ring-white/40 shadow-inner'
+                  : 'bg-[#0052FF] hover:bg-[#0047E0] text-white'
+              }`}
+            >
+              <span>Room Rent</span>
             </button>
           </div>
         </div>
@@ -1061,448 +1097,544 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         </div>
       )}
 
-      {/* SECTION 1: Utility Bills List */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Zap className="w-4 h-4 text-slate-900" />
-            Active Utility Bills ({utilities.length})
-          </h3>
-          <span className="text-xs text-slate-600">Tracked & split per member inclusion</span>
-        </div>
+      {/* LAUNDRY PREVIOUS RECORDS SECTION (Shows all received laundry history & summary table) */}
+      {receivedLaundryBills.length > 0 && (
+        <div className="p-5 neu-upper rounded-3xl text-slate-900 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-300/60 pb-3 gap-2">
+            <div className="flex items-center gap-2">
+              <Shirt className="w-5 h-5 text-slate-900" />
+              <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase tracking-wide">
+                Laundry Previous Records ({receivedLaundryBills.length})
+              </h3>
+            </div>
+            <span className="text-xs text-slate-600 font-medium">
+              Completed & received laundry delivery logs
+            </span>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {utilities.map((util) => {
-            const payer = group.members.find((m) => m.id === util.paidById);
-            const isPaid = util.status === 'paid';
-            const isAdmin = currentUser?.role === 'admin';
-            const isPayer = loggedInMember?.id === util.paidById;
-            const canToggle = isAdmin || isPayer;
-            const canDelete = isAdmin || isPayer;
-
-            const sharedWithIds = util.sharedWithIds && util.sharedWithIds.length > 0
-              ? util.sharedWithIds
-              : group.members.map((m) => m.id);
-            const sharedMembers = group.members.filter((m) => sharedWithIds.includes(m.id));
-            const perMemberUtilCost = util.amount / (sharedWithIds.length || 1);
-
-            return (
-              <div
-                key={util.id}
-                className="neu-upper rounded-3xl p-4 transition-all flex flex-col justify-between text-slate-900"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900">{util.name}</h4>
-                      <p className="text-xs text-slate-600 mt-0.5">
-                        Due: {util.dueDate} • Paid by{' '}
-                        <strong className="text-slate-950">{payer?.name || util.paidById}</strong>
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        if (canToggle) {
-                          onUpdateUtilityStatus(util.id, isPaid ? 'pending' : 'paid');
-                        }
-                      }}
-                      disabled={!canToggle}
-                      title={!canToggle ? 'Only bill creator or App Admin can toggle bill status' : ''}
-                      className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${
-                        isPaid
-                          ? 'bg-black text-white'
-                          : 'neu-upper-sm text-slate-900'
-                      } ${!canToggle ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-                    >
-                      {isPaid ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
-                      <span>{isPaid ? 'Paid' : 'Pending'}</span>
-                    </button>
-                  </div>
-
-                  <div className="neu-lower-sm rounded-2xl p-3 flex items-center justify-between mt-3">
-                    <span className="text-xs font-semibold text-slate-700">Total Bill Amount</span>
-                    <span className="text-lg font-black text-slate-950">{util.amount.toFixed(2)} AED</span>
-                  </div>
-                </div>
-
-                <div className="mt-3 pt-2 border-t border-slate-300/60 space-y-1.5 text-xs text-slate-700">
-                  <div className="flex items-center justify-between">
-                    <span>Shared cost per member ({sharedWithIds.length}):</span>
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold text-slate-950">
-                        {perMemberUtilCost.toFixed(2)} AED
-                      </span>
-                      {onDeleteUtility && canDelete && (
-                        <div>
-                          {deleteConfirmUtilId === util.id ? (
-                            <div className="flex items-center gap-1 p-1 rounded-xl neu-upper-sm shadow-md">
-                              <span className="text-[10px] text-slate-900 font-bold px-1">Delete?</span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  onDeleteUtility(util.id);
-                                  setDeleteConfirmUtilId(null);
-                                }}
-                                className="px-2 py-0.5 bg-black text-white font-black text-[10px] rounded-lg cursor-pointer"
-                              >
-                                Yes
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeleteConfirmUtilId(null)}
-                                className="px-1.5 py-0.5 neu-upper-sm text-slate-900 font-bold text-[10px] rounded-lg cursor-pointer"
-                              >
-                                No
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setDeleteConfirmUtilId(util.id)}
-                              className="p-1 text-slate-900 neu-upper-sm rounded-lg transition-all flex items-center gap-1 cursor-pointer font-bold text-[10px]"
-                              title="Delete utility bill"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-slate-900" />
-                              <span>Delete</span>
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Shared With Badge Pills */}
-                  <div className="text-[11px] font-medium text-slate-600 flex items-center gap-1 flex-wrap">
-                    <span className="font-bold text-slate-800">Shared with:</span>
-                    {sharedMembers.length === group.members.length ? (
-                      <span className="neu-upper-sm text-slate-800 font-bold px-2 py-0.5 rounded">
-                        All Members
-                      </span>
-                    ) : (
-                      sharedMembers.map((m) => (
-                        <span key={m.id} className="bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded">
-                          {m.name}
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* SECTION 2: Room Rent Contribution Card */}
-      <div className="p-5 neu-upper text-slate-900 rounded-3xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-300/60 pb-3 gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold shrink-0">
-              <HomeIcon className="w-5 h-5" />
+          {/* Summary Stat Strip */}
+          <div className="grid grid-cols-3 gap-2.5 neu-lower-sm p-3 rounded-2xl text-center">
+            <div>
+              <span className="text-[10px] text-slate-500 font-bold uppercase block">Deliveries</span>
+              <span className="text-sm sm:text-base font-black text-slate-950">{receivedLaundryBills.length}</span>
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Landlord Monthly Rent</h3>
-              <p className="text-xs text-slate-600">
-                Main Landlord Payment by:{' '}
-                <strong className="text-slate-950">
-                  {group.members.find((m) => m.id === rent.paidById)?.name || rent.paidById}
-                </strong>
-              </p>
+              <span className="text-[10px] text-slate-500 font-bold uppercase block">Items Washed</span>
+              <span className="text-sm sm:text-base font-black text-slate-950">
+                {receivedLaundryBills.reduce((sum, b) => sum + b.totalItems, 0)} pcs
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-500 font-bold uppercase block">Total Spent</span>
+              <span className="text-sm sm:text-base font-black text-slate-950">
+                {receivedLaundryBills.reduce((sum, b) => sum + b.totalAmount, 0).toFixed(2)} {group.currency || 'AED'}
+              </span>
             </div>
           </div>
 
-          <div className="flex flex-col sm:items-end gap-1.5">
-            <button
-              type="button"
-              onClick={handleToggleRentToLandlord}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-95 ${
-                isRentPaidLocked
-                  ? 'bg-emerald-700 text-white hover:bg-emerald-800'
-                  : isRentPaidToLandlord
-                  ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                  : 'bg-rose-600 text-white hover:bg-rose-700'
-              }`}
-              title={
-                isRentPaidLocked
-                  ? `Rent paid & locked for ${currentMonthCycle}. Automatically unlocks on 1st of next month.`
-                  : 'Click to mark Rent as Paid to Landlord and lock for this month'
-              }
-            >
-              {isRentPaidLocked ? (
-                <>
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Rent Paid to Landlord</span>
-                </>
-              ) : isRentPaidToLandlord ? (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Rent Paid to Landlord</span>
-                </>
-              ) : (
-                <>
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Rent Pending (Click to Pay)</span>
-                </>
-              )}
-            </button>
-
-            {isRentPaidLocked ? (
-              <span className="text-[10px] font-black text-emerald-900 bg-emerald-100/90 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 self-start sm:self-auto shadow-2xs">
-                <Lock className="w-2.5 h-2.5" /> Locked for this month • Unlocks 1st next month
-              </span>
-            ) : (
-              <span className="text-[10px] font-bold text-slate-500 self-start sm:self-auto">
-                Click once to pay & lock for current month
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Total Rent Input Field & Per-Member Share Calculation */}
-        <div className="neu-lower-sm p-4 rounded-2xl space-y-3">
-          {/* Top Row: Label, Lock/Unlock Button on right side of text & Status Badge */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2 flex-wrap">
-              <label className="block text-xs font-black text-slate-900 uppercase tracking-wider">
-                Total Rent Amount ({group.currency || 'AED'})
-              </label>
-
-              {/* Lock / Unlock Toggle Button placed on the right side of Total Rent Amount text */}
-              {isRentInputLocked ? (
-                <button
-                  type="button"
-                  onClick={handleUnlockRent}
-                  disabled={!isAdmin}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-black flex items-center gap-1 shrink-0 ${
-                    isAdmin
-                      ? 'bg-amber-400 text-slate-950 hover:bg-amber-500 cursor-pointer shadow-2xs active:scale-95'
-                      : 'neu-lower-sm text-slate-500 cursor-not-allowed'
-                  }`}
-                  title={isAdmin ? 'Click to Unlock Rent' : 'Only Admin can unlock'}
-                >
-                  <Unlock className="w-3.5 h-3.5" />
-                  <span>{isAdmin ? 'Unlock' : 'Locked'}</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleLockRent}
-                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-lg flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs active:scale-95 transition-all"
-                  title="Lock Rent Amount for this Month"
-                >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>LOCK</span>
-                </button>
-              )}
-
-              {isRentInputLocked ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full shadow-2xs">
-                  Locked for {rent.cycle || currentMonthCycle}
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-white/80 px-2 py-0.5 rounded-full">
-                  Type amount and click LOCK
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Bottom Row: Room rent amount box and Each member share box side-by-side in 1 line */}
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-            {/* Box 1: Room rent amount box */}
-            <div className="p-3 neu-upper-sm rounded-xl flex flex-col justify-between">
-              <span className="text-[10px] text-slate-600 font-extrabold uppercase block mb-1">
-                Room Rent Amount
-              </span>
-              <div className="flex items-center">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={totalRentInput}
-                  onChange={handleRentInputChange}
-                  disabled={isRentInputLocked}
-                  placeholder="e.g. 3500"
-                  className={`w-full neu-lower-sm rounded-lg px-2.5 py-1.5 text-sm sm:text-base font-black text-slate-900 focus:outline-none ${
-                    isRentInputLocked ? 'text-slate-700 cursor-not-allowed opacity-90' : ''
-                  }`}
-                />
-                <span className="ml-2 text-xs font-black text-slate-700 shrink-0">AED</span>
-              </div>
-            </div>
-
-            {/* Box 2: Each member share box */}
-            <div className="p-3 neu-upper-sm rounded-xl flex flex-col justify-between text-right">
-              <span className="text-[10px] text-slate-600 font-extrabold uppercase block mb-1">
-                Each Member Share
-              </span>
-              <span className="text-sm sm:text-base font-black text-slate-950 block">
-                {currentMemberRentShare.toFixed(2)} AED
-              </span>
-              <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
-                ({rentParticipatingCount} members {tempMembersCount > 0 ? `+ ${tempMembersCount} temp` : ''})
-              </span>
-            </div>
+          {/* Laundry Records Table */}
+          <div className="overflow-x-auto neu-lower-sm rounded-2xl">
+            <table className="w-full text-left text-xs text-slate-900 border-collapse">
+              <thead>
+                <tr className="border-b border-slate-300 text-[11px] font-black uppercase text-slate-700 bg-slate-100/60">
+                  <th className="p-3">Date</th>
+                  <th className="p-3">Given To</th>
+                  <th className="p-3 text-center">Items</th>
+                  <th className="p-3 text-right">Price</th>
+                  <th className="p-3 text-right">Total</th>
+                  <th className="p-3 text-center">Status</th>
+                  <th className="p-3 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200/80">
+                {receivedLaundryBills.map((bill) => (
+                  <tr key={bill.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="p-3 whitespace-nowrap">
+                      <div className="font-bold text-slate-950">{bill.date}</div>
+                      {bill.receivedAt && (
+                        <div className="text-[10px] text-emerald-700 font-medium">
+                          Recv: {new Date(bill.receivedAt).toLocaleDateString()}
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-3 font-black text-slate-900">{bill.giveTo}</td>
+                    <td className="p-3 text-center font-bold">{bill.totalItems} pcs</td>
+                    <td className="p-3 text-right font-mono font-bold">
+                      {bill.pricePerItem.toFixed(2)} {group.currency || 'AED'}
+                    </td>
+                    <td className="p-3 text-right font-black font-mono text-slate-950">
+                      {bill.totalAmount.toFixed(2)} {group.currency || 'AED'}
+                    </td>
+                    <td className="p-3 text-center">
+                      <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-2xs">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                        Received
+                      </span>
+                    </td>
+                    <td className="p-3 text-center">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteLaundry(bill.id)}
+                        className="p-1 text-slate-500 hover:text-rose-600 cursor-pointer transition-colors"
+                        title="Delete laundry record"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
+      )}
 
-        {/* Temporary Member Box */}
-        <div className="p-3 neu-lower-sm rounded-2xl space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
-              Temporary Member ({tempMembers.length})
-            </span>
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={() => setShowAddTempInput(!showAddTempInput)}
-                className="px-2.5 py-1 bg-black text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all cursor-pointer flex items-center gap-1"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Add Temp. Member</span>
-              </button>
-            )}
+      {/* SECTION 1: Utility Bills List (Toggled by Utility Bills button) */}
+      {showUtilityBills && (
+        <div className="space-y-3 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-slate-900" />
+              Active Utility Bills ({utilities.length})
+            </h3>
+            <span className="text-xs text-slate-600">Tracked & split per member inclusion</span>
           </div>
 
-          {/* Inline Add Temporary Member Input Form */}
-          {isAdmin && showAddTempInput && (
-            <div className="p-2.5 neu-upper-sm rounded-xl flex items-center gap-2 animate-in fade-in">
-              <input
-                type="text"
-                placeholder="e.g. Guest Roommate (Rahat)"
-                value={newTempName}
-                onChange={(e) => setNewTempName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddTempMember();
-                  }
-                }}
-                className="flex-1 px-3 py-1.5 neu-lower-sm rounded-lg text-xs font-bold text-slate-900 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleAddTempMember}
-                className="px-3 py-1.5 bg-black text-white text-xs font-black rounded-lg hover:bg-slate-800 cursor-pointer"
-              >
-                Add
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setNewTempName('');
-                  setShowAddTempInput(false);
-                }}
-                className="px-2.5 py-1.5 neu-upper-btn text-slate-800 text-xs font-bold rounded-lg cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {utilities.map((util) => {
+              const payer = group.members.find((m) => m.id === util.paidById);
+              const isPaid = util.status === 'paid';
+              const isAdmin = currentUser?.role === 'admin';
+              const isPayer = loggedInMember?.id === util.paidById;
+              const canToggle = isAdmin || isPayer;
+              const canDelete = isAdmin || isPayer;
 
-          {/* List of active temporary members */}
-          {tempMembers.length > 0 ? (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {tempMembers.map((name, idx) => (
-                <div
-                  key={`temp-${idx}`}
-                  className="neu-upper-sm px-3 py-1 rounded-xl text-xs font-black text-slate-900 flex items-center gap-2"
-                >
-                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
-                  <span>{name} (Temp)</span>
-                  <span className="text-[10px] text-slate-500 font-normal">({currentMemberRentShare.toFixed(0)} AED)</span>
-                  {isAdmin && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTempMember(idx)}
-                      className="text-slate-400 hover:text-rose-600 transition-colors p-0.5 ml-1 cursor-pointer"
-                      title="Remove temporary member"
-                    >
-                      <X className="w-3.5 h-3.5 stroke-[3]" />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[11px] text-slate-500 italic">No temporary members added for this cycle.</p>
-          )}
-        </div>
-
-        {/* Member rent status list with checkboxes */}
-        <div>
-          <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              Member Rent Payment Status ({currentMemberRentShare.toFixed(2)} AED / person)
-            </h4>
-            <span className="text-[10px] text-slate-600 font-bold neu-upper-sm px-2.5 py-0.5 rounded-full">
-              1-Time Lock per month • Auto-resets on 1st of next month
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-            {group.members.map((member) => {
-              const isPaid = paidRentMembers.includes(member.id);
-              const isUntickDisabled = isPaid && !isAdmin;
+              const sharedWithIds = util.sharedWithIds && util.sharedWithIds.length > 0
+                ? util.sharedWithIds
+                : group.members.map((m) => m.id);
+              const sharedMembers = group.members.filter((m) => sharedWithIds.includes(m.id));
+              const perMemberUtilCost = util.amount / (sharedWithIds.length || 1);
 
               return (
                 <div
-                  key={member.id}
-                  className={`p-3 rounded-2xl flex items-center justify-between text-xs font-semibold transition-all ${
-                    isPaid
-                      ? 'bg-emerald-100 text-emerald-950 neu-upper-sm'
-                      : 'neu-upper-sm text-slate-900'
-                  }`}
+                  key={util.id}
+                  className="neu-upper rounded-3xl p-4 transition-all flex flex-col justify-between text-slate-900"
                 >
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={isPaid}
-                      disabled={isUntickDisabled}
-                      onChange={() => toggleMemberRentPaid(member.id)}
-                      className={`w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 ${
-                        isUntickDisabled ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
-                      }`}
-                      title={
-                        isUntickDisabled
-                          ? 'Payment status locked for current month. Resets on 1st of next month.'
-                          : 'Click to mark rent paid'
-                      }
-                    />
-                    <MemberAvatar
-                      name={member.name}
-                      avatar={member.avatar}
-                      size="xs"
-                      className="w-6 h-6 text-[10px] shrink-0"
-                    />
-                    <span className="truncate max-w-[90px]">{member.name}</span>
+                  <div>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900">{util.name}</h4>
+                        <p className="text-xs text-slate-600 mt-0.5">
+                          Due: {util.dueDate} • Paid by{' '}
+                          <strong className="text-slate-950">{payer?.name || util.paidById}</strong>
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          if (canToggle) {
+                            onUpdateUtilityStatus(util.id, isPaid ? 'pending' : 'paid');
+                          }
+                        }}
+                        disabled={!canToggle}
+                        title={!canToggle ? 'Only bill creator or App Admin can toggle bill status' : ''}
+                        className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${
+                          isPaid
+                            ? 'bg-black text-white'
+                            : 'neu-upper-sm text-slate-900'
+                        } ${!canToggle ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                      >
+                        {isPaid ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                        <span>{isPaid ? 'Paid' : 'Pending'}</span>
+                      </button>
+                    </div>
+
+                    <div className="neu-lower-sm rounded-2xl p-3 flex items-center justify-between mt-3">
+                      <span className="text-xs font-semibold text-slate-700">Total Bill Amount</span>
+                      <span className="text-lg font-black text-slate-950">{util.amount.toFixed(2)} AED</span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-[11px] font-mono">
-                      {currentMemberRentShare.toFixed(0)} AED
-                    </span>
-                    <span className="text-xs font-extrabold flex items-center gap-1">
-                      {isPaid ? (
-                        <>
-                          <span className="text-emerald-700">Paid</span>
-                          {isUntickDisabled ? (
-                            <span title="Locked for current month">🔒</span>
-                          ) : (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                          )}
-                        </>
+                  <div className="mt-3 pt-2 border-t border-slate-300/60 space-y-1.5 text-xs text-slate-700">
+                    <div className="flex items-center justify-between">
+                      <span>Shared cost per member ({sharedWithIds.length}):</span>
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold text-slate-950">
+                          {perMemberUtilCost.toFixed(2)} AED
+                        </span>
+                        {onDeleteUtility && canDelete && (
+                          <div>
+                            {deleteConfirmUtilId === util.id ? (
+                              <div className="flex items-center gap-1 p-1 rounded-xl neu-upper-sm shadow-md">
+                                <span className="text-[10px] text-slate-900 font-bold px-1">Delete?</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onDeleteUtility(util.id);
+                                    setDeleteConfirmUtilId(null);
+                                  }}
+                                  className="px-2 py-0.5 bg-black text-white font-black text-[10px] rounded-lg cursor-pointer"
+                                >
+                                  Yes
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDeleteConfirmUtilId(null)}
+                                  className="px-1.5 py-0.5 neu-upper-sm text-slate-900 font-bold text-[10px] rounded-lg cursor-pointer"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setDeleteConfirmUtilId(util.id)}
+                                className="p-1 text-slate-900 neu-upper-sm rounded-lg transition-all flex items-center gap-1 cursor-pointer font-bold text-[10px]"
+                                title="Delete utility bill"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-slate-900" />
+                                <span>Delete</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Shared With Badge Pills */}
+                    <div className="text-[11px] font-medium text-slate-600 flex items-center gap-1 flex-wrap">
+                      <span className="font-bold text-slate-800">Shared with:</span>
+                      {sharedMembers.length === group.members.length ? (
+                        <span className="neu-upper-sm text-slate-800 font-bold px-2 py-0.5 rounded">
+                          All Members
+                        </span>
                       ) : (
-                        'Pending'
+                        sharedMembers.map((m) => (
+                          <span key={m.id} className="bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded">
+                            {m.name}
+                          </span>
+                        ))
                       )}
-                    </span>
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* SECTION 2: Room Rent Contribution Card (Toggled by Room Rent button) */}
+      {showRoomRent && (
+        <div className="p-5 neu-upper text-slate-900 rounded-3xl space-y-4 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-300/60 pb-3 gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold shrink-0">
+                <HomeIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Landlord Monthly Rent</h3>
+                <p className="text-xs text-slate-600">
+                  Main Landlord Payment by:{' '}
+                  <strong className="text-slate-950">
+                    {group.members.find((m) => m.id === rent.paidById)?.name || rent.paidById}
+                  </strong>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:items-end gap-1.5">
+              <button
+                type="button"
+                onClick={handleToggleRentToLandlord}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-95 ${
+                  isRentPaidLocked
+                    ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+                    : isRentPaidToLandlord
+                    ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                    : 'bg-rose-600 text-white hover:bg-rose-700'
+                }`}
+                title={
+                  isRentPaidLocked
+                    ? `Rent paid & locked for ${currentMonthCycle}. Automatically unlocks on 1st of next month.`
+                    : 'Click to mark Rent as Paid to Landlord and lock for this month'
+                }
+              >
+                {isRentPaidLocked ? (
+                  <>
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Rent Paid to Landlord</span>
+                  </>
+                ) : isRentPaidToLandlord ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Rent Paid to Landlord</span>
+                  </>
+                ) : (
+                  <>
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Rent Pending (Click to Pay)</span>
+                  </>
+                )}
+              </button>
+
+              {isRentPaidLocked ? (
+                <span className="text-[10px] font-black text-emerald-900 bg-emerald-100/90 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 self-start sm:self-auto shadow-2xs">
+                  <Lock className="w-2.5 h-2.5" /> Locked for this month • Unlocks 1st next month
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold text-slate-500 self-start sm:self-auto">
+                  Click once to pay & lock for current month
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Total Rent Input Field & Per-Member Share Calculation */}
+          <div className="neu-lower-sm p-4 rounded-2xl space-y-3">
+            {/* Top Row: Label, Lock/Unlock Button on right side of text & Status Badge */}
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <label className="block text-xs font-black text-slate-900 uppercase tracking-wider">
+                  Total Rent Amount ({group.currency || 'AED'})
+                </label>
+
+                {/* Lock / Unlock Toggle Button placed on the right side of Total Rent Amount text */}
+                {isRentInputLocked ? (
+                  <button
+                    type="button"
+                    onClick={handleUnlockRent}
+                    disabled={!isAdmin}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-black flex items-center gap-1 shrink-0 ${
+                      isAdmin
+                        ? 'bg-amber-400 text-slate-950 hover:bg-amber-500 cursor-pointer shadow-2xs active:scale-95'
+                        : 'neu-lower-sm text-slate-500 cursor-not-allowed'
+                    }`}
+                    title={isAdmin ? 'Click to Unlock Rent' : 'Only Admin can unlock'}
+                  >
+                    <Unlock className="w-3.5 h-3.5" />
+                    <span>{isAdmin ? 'Unlock' : 'Locked'}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleLockRent}
+                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-lg flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs active:scale-95 transition-all"
+                    title="Lock Rent Amount for this Month"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>LOCK</span>
+                  </button>
+                )}
+
+                {isRentInputLocked ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full shadow-2xs">
+                    Locked for {rent.cycle || currentMonthCycle}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-white/80 px-2 py-0.5 rounded-full">
+                    Type amount and click LOCK
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom Row: Room rent amount box and Each member share box side-by-side in 1 line */}
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+              {/* Box 1: Room rent amount box */}
+              <div className="p-3 neu-upper-sm rounded-xl flex flex-col justify-between">
+                <span className="text-[10px] text-slate-600 font-extrabold uppercase block mb-1">
+                  Room Rent Amount
+                </span>
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={totalRentInput}
+                    onChange={handleRentInputChange}
+                    disabled={isRentInputLocked}
+                    placeholder="e.g. 3500"
+                    className={`w-full neu-lower-sm rounded-lg px-2.5 py-1.5 text-sm sm:text-base font-black text-slate-900 focus:outline-none ${
+                      isRentInputLocked ? 'text-slate-700 cursor-not-allowed opacity-90' : ''
+                    }`}
+                  />
+                  <span className="ml-2 text-xs font-black text-slate-700 shrink-0">AED</span>
+                </div>
+              </div>
+
+              {/* Box 2: Each member share box */}
+              <div className="p-3 neu-upper-sm rounded-xl flex flex-col justify-between text-right">
+                <span className="text-[10px] text-slate-600 font-extrabold uppercase block mb-1">
+                  Each Member Share
+                </span>
+                <span className="text-sm sm:text-base font-black text-slate-950 block">
+                  {currentMemberRentShare.toFixed(2)} AED
+                </span>
+                <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
+                  ({rentParticipatingCount} members {tempMembersCount > 0 ? `+ ${tempMembersCount} temp` : ''})
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Temporary Member Box */}
+          <div className="p-3 neu-lower-sm rounded-2xl space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                Temporary Member ({tempMembers.length})
+              </span>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddTempInput(!showAddTempInput)}
+                  className="px-2.5 py-1 bg-black text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Add Temp. Member</span>
+                </button>
+              )}
+            </div>
+
+            {/* Inline Add Temporary Member Input Form */}
+            {isAdmin && showAddTempInput && (
+              <div className="p-2.5 neu-upper-sm rounded-xl flex items-center gap-2 animate-in fade-in">
+                <input
+                  type="text"
+                  placeholder="e.g. Guest Roommate (Rahat)"
+                  value={newTempName}
+                  onChange={(e) => setNewTempName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddTempMember();
+                    }
+                  }}
+                  className="flex-1 px-3 py-1.5 neu-lower-sm rounded-lg text-xs font-bold text-slate-900 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTempMember}
+                  className="px-3 py-1.5 bg-black text-white text-xs font-black rounded-lg hover:bg-slate-800 cursor-pointer"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewTempName('');
+                    setShowAddTempInput(false);
+                  }}
+                  className="px-2.5 py-1.5 neu-upper-btn text-slate-800 text-xs font-bold rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {/* List of active temporary members */}
+            {tempMembers.length > 0 ? (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {tempMembers.map((name, idx) => (
+                  <div
+                    key={`temp-${idx}`}
+                    className="neu-upper-sm px-3 py-1 rounded-xl text-xs font-black text-slate-900 flex items-center gap-2"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                    <span>{name} (Temp)</span>
+                    <span className="text-[10px] text-slate-500 font-normal">({currentMemberRentShare.toFixed(0)} AED)</span>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTempMember(idx)}
+                        className="text-slate-400 hover:text-rose-600 transition-colors p-0.5 ml-1 cursor-pointer"
+                        title="Remove temporary member"
+                      >
+                        <X className="w-3.5 h-3.5 stroke-[3]" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[11px] text-slate-500 italic">No temporary members added for this cycle.</p>
+            )}
+          </div>
+
+          {/* Member rent status list with checkboxes */}
+          <div>
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Member Rent Payment Status ({currentMemberRentShare.toFixed(2)} AED / person)
+              </h4>
+              <span className="text-[10px] text-slate-600 font-bold neu-upper-sm px-2.5 py-0.5 rounded-full">
+                1-Time Lock per month • Auto-resets on 1st of next month
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              {group.members.map((member) => {
+                const isPaid = paidRentMembers.includes(member.id);
+                const isUntickDisabled = isPaid && !isAdmin;
+
+                return (
+                  <div
+                    key={member.id}
+                    className={`p-3 rounded-2xl flex items-center justify-between text-xs font-semibold transition-all ${
+                      isPaid
+                        ? 'bg-emerald-100 text-emerald-950 neu-upper-sm'
+                        : 'neu-upper-sm text-slate-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={isPaid}
+                        disabled={isUntickDisabled}
+                        onChange={() => toggleMemberRentPaid(member.id)}
+                        className={`w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 ${
+                          isUntickDisabled ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
+                        }`}
+                        title={
+                          isUntickDisabled
+                            ? 'Payment status locked for current month. Resets on 1st of next month.'
+                            : 'Click to mark rent paid'
+                        }
+                      />
+                      <MemberAvatar
+                        name={member.name}
+                        avatar={member.avatar}
+                        size="xs"
+                        className="w-6 h-6 text-[10px] shrink-0"
+                      />
+                      <span className="truncate max-w-[90px]">{member.name}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[11px] font-mono">
+                        {currentMemberRentShare.toFixed(0)} AED
+                      </span>
+                      <span className="text-xs font-extrabold flex items-center gap-1">
+                        {isPaid ? (
+                          <>
+                            <span className="text-emerald-700">Paid</span>
+                            {isUntickDisabled ? (
+                              <span title="Locked for current month">🔒</span>
+                            ) : (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                            )}
+                          </>
+                        ) : (
+                          'Pending'
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

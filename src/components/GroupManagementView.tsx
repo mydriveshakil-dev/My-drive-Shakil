@@ -58,6 +58,8 @@ interface GroupManagementViewProps {
   onSaveUserProfile?: (data: { name: string; avatar: string }) => Promise<void> | void;
   onOpenProfile?: () => void;
   onRestoreExpenses?: () => void;
+  onSelectGroup?: (group: Group) => void;
+  onUpdateGroupName?: (groupId: string, newName: string) => void;
 }
 
 export const ALL_EXPENSE_OPTIONS = [
@@ -96,6 +98,8 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   onOpenGroupNote,
   onSaveUserProfile,
   onOpenProfile,
+  onSelectGroup,
+  onUpdateGroupName,
 }) => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
@@ -103,6 +107,13 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   const [newMemberPhone, setNewMemberPhone] = useState('');
   const [newMemberPassword, setNewMemberPassword] = useState('');
   const [newMemberCategories, setNewMemberCategories] = useState<string[]>(ALL_EXPENSE_OPTIONS.map((o) => o.id));
+
+  const [isEditingGroupName, setIsEditingGroupName] = useState(false);
+  const [editGroupNameInput, setEditGroupNameInput] = useState(group.name);
+
+  useEffect(() => {
+    setEditGroupNameInput(group.name);
+  }, [group.name]);
 
   const loggedInMember = (group?.members || []).find(
     (m) =>
@@ -327,37 +338,36 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
         )}
       </div>
 
-      {/* 1st Sub-Component / PAY TO Option Button - Color matched to Save Expense button */}
-      <button
-        type="button"
-        onClick={() => {
-          triggerHaptic(hapticPatterns.click);
-          if (onOpenPayTo) onOpenPayTo();
-        }}
-        className="w-full bg-[#07193F] hover:bg-[#0B2A66] text-white font-black px-6 py-4 rounded-[24px] text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer uppercase tracking-wider"
-      >
-        <HandCoins className="w-5 h-5 stroke-[2.5]" />
-        <span>Transaction with Group Member</span>
-      </button>
+      {/* Sub-Components / Action Buttons: Private Truns. & Group Notes (Side by Side, Same Alignment, No Icons) */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            triggerHaptic(hapticPatterns.click);
+            if (onOpenPayTo) onOpenPayTo();
+          }}
+          className="w-full bg-[#07193F] hover:bg-[#0B2A66] text-white font-black px-4 py-4 rounded-[20px] text-xs sm:text-sm flex items-center justify-center text-center shadow-lg active:scale-95 transition-all cursor-pointer uppercase tracking-wider"
+        >
+          <span>Private Truns.</span>
+        </button>
 
-      {/* 2nd Sub-Component / GROUP NOTES Button - Color matched to Save Expense button */}
-      <button
-        type="button"
-        id="btn-group-note-open"
-        onClick={() => {
-          triggerHaptic(hapticPatterns.click);
-          if (onOpenGroupNote) onOpenGroupNote();
-        }}
-        className="w-full bg-[#07193F] hover:bg-[#0B2A66] text-white font-black px-6 py-4 rounded-[24px] text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-lg active:scale-95 transition-all cursor-pointer uppercase tracking-wider relative overflow-hidden"
-      >
-        <StickyNote className="w-5 h-5 stroke-[2.5] text-white" />
-        <span>Group Notes</span>
-        {group.notice && group.notice.expiresAtMs && Date.now() < group.notice.expiresAtMs && (
-          <span className="ml-1 bg-white text-black text-[10px] font-black px-2.5 py-0.5 rounded-full lowercase tracking-normal shadow-xs">
-            Active Notice
-          </span>
-        )}
-      </button>
+        <button
+          type="button"
+          id="btn-group-note-open"
+          onClick={() => {
+            triggerHaptic(hapticPatterns.click);
+            if (onOpenGroupNote) onOpenGroupNote();
+          }}
+          className="w-full bg-[#07193F] hover:bg-[#0B2A66] text-white font-black px-4 py-4 rounded-[20px] text-xs sm:text-sm flex items-center justify-center text-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer uppercase tracking-wider relative overflow-hidden"
+        >
+          <span>Group Notes</span>
+          {group.notice && group.notice.expiresAtMs && Date.now() < group.notice.expiresAtMs && (
+            <span className="ml-1 bg-white text-black text-[9px] font-black px-2 py-0.5 rounded-full lowercase tracking-normal shadow-xs shrink-0">
+              Active
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* ADMIN PERMISSION CONTROL SECTION (Visible ONLY to App Admin) */}
       {isAdmin && (
@@ -381,6 +391,42 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             </div>
           </div>
 
+          {/* Admin Group Switcher & Active Group Quick Actions */}
+          {allGroups && allGroups.length > 1 && (
+            <div className="neu-lower-sm p-3.5 rounded-2xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-800 tracking-wider">
+                  Switch Active Group ({allGroups.length} Groups Available)
+                </span>
+                <span className="text-[10px] font-bold text-slate-600">Admin Multi-Group Selector</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {allGroups.map((g) => {
+                  const isActive = g.id === group.id;
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => {
+                        if (onSelectGroup) onSelectGroup(g);
+                        triggerHaptic(hapticPatterns.click);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                        isActive
+                          ? 'bg-black text-white shadow-md'
+                          : 'neu-upper-btn text-slate-800 hover:text-black'
+                      }`}
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      <span>{g.name}</span>
+                      {g.isHeld && <span className="text-[9px] bg-rose-500 text-white px-1 rounded-sm">Paused</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Group Held Status Warning Banner */}
           {group.isHeld && (
             <div className="bg-black text-white p-3.5 rounded-2xl flex items-center justify-between text-xs">
@@ -400,7 +446,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
           )}
 
           {/* Admin Action Buttons Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
             {/* Action 1: Create New Group */}
             <div className="neu-lower-sm p-3.5 rounded-2xl flex flex-col justify-between space-y-2">
               <div>
@@ -419,7 +465,25 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               </button>
             </div>
 
-            {/* Action 2: Hold / Pause Group */}
+            {/* Action 2: Edit Group Name */}
+            <div className="neu-lower-sm p-3.5 rounded-2xl flex flex-col justify-between space-y-2">
+              <div>
+                <span className="text-slate-900 font-extrabold uppercase text-[10px]">Rename Group</span>
+                <div className="text-slate-900 font-bold text-xs mt-0.5 truncate">{group.name}</div>
+              </div>
+              <button
+                onClick={() => {
+                  triggerHaptic(hapticPatterns.click);
+                  setIsEditingGroupName(!isEditingGroupName);
+                }}
+                className="w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer neu-upper-btn text-slate-900 shadow-md"
+              >
+                <Edit className="w-4 h-4" />
+                <span>{isEditingGroupName ? 'Close Rename' : 'Edit Name'}</span>
+              </button>
+            </div>
+
+            {/* Action 3: Hold / Pause Group */}
             <div className="neu-lower-sm p-3.5 rounded-2xl flex flex-col justify-between space-y-2">
               <div>
                 <span className="text-slate-900 font-extrabold uppercase text-[10px]">Group Status</span>
@@ -442,7 +506,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               </button>
             </div>
 
-            {/* Action 3: Change Base Currency */}
+            {/* Action 4: Change Base Currency */}
             <div className="neu-lower-sm p-3.5 rounded-2xl flex flex-col justify-between space-y-2">
               <div>
                 <span className="text-slate-900 font-extrabold uppercase text-[10px]">Base Currency</span>
@@ -467,21 +531,65 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
               </select>
             </div>
 
-            {/* Action 4: Delete / Remove Group */}
+            {/* Action 5: Delete / Remove Group */}
             <div className="neu-lower-sm p-3.5 rounded-2xl flex flex-col justify-between space-y-2">
               <div>
-                <span className="text-slate-900 font-extrabold uppercase text-[10px]">Delete Group</span>
-                <div className="text-slate-900 font-bold text-xs mt-0.5">Remove Room Group</div>
+                <span className="text-slate-900 font-extrabold uppercase text-[10px]">Hard Delete Group</span>
+                <div className="text-slate-900 font-bold text-xs mt-0.5">Permanent Remove</div>
               </div>
               <button
                 onClick={() => setDeleteConfirmGroup(group)}
                 className="w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer neu-upper-btn text-rose-600 shadow-md"
               >
                 <Trash2 className="w-4 h-4 text-rose-600" />
-                <span>Delete Group</span>
+                <span>Hard Delete</span>
               </button>
             </div>
           </div>
+
+          {/* EDIT GROUP NAME INLINE PANEL */}
+          {isEditingGroupName && (
+            <div className="neu-lower-sm p-4 sm:p-5 rounded-2xl shadow-md space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between border-b border-slate-300/60 pb-2">
+                <h3 className="text-sm font-black text-slate-950 flex items-center gap-2">
+                  <Edit className="w-4 h-4 text-slate-900" />
+                  <span>Rename Group: {group.name}</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingGroupName(false)}
+                  className="text-slate-700 hover:text-black text-xs font-bold px-2.5 py-1 rounded-xl neu-upper-btn transition-all cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (onUpdateGroupName && editGroupNameInput.trim()) {
+                    onUpdateGroupName(group.id, editGroupNameInput.trim());
+                    setIsEditingGroupName(false);
+                  }
+                }}
+                className="flex items-center gap-2"
+              >
+                <input
+                  type="text"
+                  value={editGroupNameInput}
+                  onChange={(e) => setEditGroupNameInput(e.target.value)}
+                  placeholder="Enter new group name..."
+                  className="flex-1 px-3.5 py-2.5 neu-upper-sm rounded-xl font-bold text-xs text-slate-900 focus:outline-none"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2.5 bg-black hover:bg-slate-800 text-white rounded-xl text-xs font-black transition-all cursor-pointer shadow-md"
+                >
+                  Save Name
+                </button>
+              </form>
+            </div>
+          )}
 
           {/* CREATE NEW GROUP INLINE FORM PANEL */}
           {showCreateGroup && (
@@ -1192,70 +1300,58 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
         )}
         <div className="space-y-2.5">
           {group.members.map((member) => {
-            const activeCount = (member.includedCategories || ALL_EXPENSE_OPTIONS.map((o) => o.id)).length;
             return (
               <div
                 key={member.id}
-                className="neu-lower-sm rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-slate-900 transition-all"
+                className="neu-lower-sm rounded-2xl p-3 flex items-center justify-between gap-3 text-slate-900 transition-all"
               >
-                {/* Left Side: Member Name & Avatar */}
-                <div className="flex items-center gap-2.5 shrink-0">
+                {/* Left: User Profile Picture (10mm) & User Name (12pt) */}
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   <MemberAvatar
                     name={member.name}
                     avatar={member.avatar}
-                    size="sm"
-                    className="shadow-xs shrink-0 ring-1 ring-slate-300"
+                    size="custom"
+                    className="w-[10mm] h-[10mm] min-w-[10mm] min-h-[10mm] shadow-xs shrink-0 ring-1 ring-slate-300"
                   />
-                  <h4 className="text-xs sm:text-sm font-black text-slate-950">{member.name}</h4>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-[12pt] font-black text-slate-950 leading-tight truncate">
+                      {member.name}
+                    </h4>
+                    {member.phone && (
+                      <span className="text-[10px] text-slate-500 font-bold block truncate">
+                        {member.phone}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                {/* Right Side: Badges & Controls (Aligned consistently to the right) */}
-                <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end shrink-0">
-                  {/* Mobile Number Badge */}
-                  <span className="text-[11px] text-slate-700 font-bold neu-upper-sm px-2.5 py-1 rounded-lg font-mono flex items-center gap-1.5">
-                    <Phone className="w-3 h-3 text-slate-500" />
-                    <span>{member.phone || member.mobileNumber || member.email || 'No Mobile'}</span>
-                  </span>
-
-                  {/* Password Badge (Admin Only) */}
-                  {isAdmin && (
-                    <span className="text-[11px] text-amber-900 font-bold bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-300/80 font-mono flex items-center gap-1.5 shadow-2xs">
-                      <KeyRound className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Pass: {member.password || '123456'}</span>
-                    </span>
-                  )}
-
-                  {/* Expense Scope Badge */}
-                  <span className="text-[11px] text-blue-900 font-bold bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-200/80 flex items-center gap-1 shadow-2xs">
-                    <span>Scope:</span>
-                    <strong className="font-black text-blue-950">{activeCount}/{ALL_EXPENSE_OPTIONS.length}</strong>
-                  </span>
-
-                  {/* Edit Scope Button */}
-                  {isAdmin && (
+                {/* Right: Admin Action Buttons (Edit & Hard Delete) */}
+                {isAdmin && (
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       type="button"
-                      onClick={() => openEditMemberModal(member)}
-                      className="text-[11px] text-slate-900 neu-upper-btn px-2.5 py-1 rounded-lg font-bold cursor-pointer transition-all flex items-center gap-1"
+                      onClick={() => {
+                        triggerHaptic(hapticPatterns.click);
+                        openEditMemberModal(member);
+                      }}
+                      className="p-2 rounded-xl neu-upper-btn text-slate-800 hover:text-black transition-all cursor-pointer shadow-xs"
+                      title={`Edit ${member.name}'s info & scope`}
                     >
-                      <Edit className="w-3 h-3 text-slate-900" />
-                      <span>Edit Scope</span>
+                      <Edit className="w-4 h-4 text-slate-800" />
                     </button>
-                  )}
-
-                  {/* Delete Button */}
-                  {isAdmin && (
                     <button
                       type="button"
-                      onClick={() => setDeleteConfirmMember(member)}
-                      className="p-1 px-2.5 text-rose-600 neu-upper-btn rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold"
-                      title="Delete member"
+                      onClick={() => {
+                        triggerHaptic(hapticPatterns.error);
+                        setDeleteConfirmMember(member);
+                      }}
+                      className="p-2 rounded-xl neu-upper-btn text-rose-600 hover:text-rose-700 transition-all cursor-pointer shadow-xs"
+                      title={`Hard delete ${member.name}`}
                     >
-                      <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                      <span className="hidden sm:inline">Delete</span>
+                      <Trash2 className="w-4 h-4 text-rose-600" />
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             );
           })}

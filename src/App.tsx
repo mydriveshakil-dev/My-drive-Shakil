@@ -65,6 +65,11 @@ import { GlassContainer } from './components/GlassContainer';
 import { BottomNavBar, AppTabType } from './components/BottomNavBar';
 import { CheckCircle2, MessageCircle, Plus, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import {
+  registerPushNotifications,
+  sendGroupPushNotification,
+  showLocalChatMessageNotification,
+} from './utils/pushNotifications';
 
 export default function App() {
   const [allGroups, setAllGroups] = useState<Group[]>(() => {
@@ -567,6 +572,14 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // Auto-register device for push notifications when user is logged in
+  useEffect(() => {
+    if (userAuth.isLoggedIn && group?.id) {
+      const activeUid = userAuth.id || userAuth.mobileNumber || userAuth.email || 'user';
+      registerPushNotifications(group.id, activeUid, userAuth.name).catch(() => {});
+    }
+  }, [userAuth.isLoggedIn, userAuth.id, userAuth.mobileNumber, userAuth.email, userAuth.name, group?.id]);
 
   // Function to record member notice views and increment view count
   const recordNoticeView = async (targetGroup: Group, noticeId: string, user: UserAuthProfile) => {
@@ -1300,6 +1313,18 @@ export default function App() {
     setChatMessages((prev) => [...prev, newMsg]);
     saveChatMessageToFirestore(group.id, newMsg);
     triggerHaptic(hapticPatterns.click);
+
+    // Send Web Push Notification to all group members on mobile/web!
+    sendGroupPushNotification({
+      groupId: group.id,
+      groupName: group.name,
+      senderId: newMsg.senderId,
+      senderName: newMsg.senderName,
+      text: newMsg.text,
+      messageType: newMsg.type,
+      fileName: newMsg.fileName,
+      audioDuration: newMsg.audioDuration,
+    }).catch(() => {});
   };
 
   const handleToggleMessageReaction = (messageId: string, emoji: string) => {

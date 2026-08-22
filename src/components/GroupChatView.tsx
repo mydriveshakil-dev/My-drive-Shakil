@@ -19,6 +19,11 @@ import {
   Download,
   ExternalLink,
   Loader2,
+  Bell,
+  BellRing,
+  BellOff,
+  Check,
+  Smartphone,
 } from 'lucide-react';
 import { MemberAvatar } from './MemberAvatar';
 import { VoiceMessagePlayer } from './VoiceMessagePlayer';
@@ -32,6 +37,12 @@ import {
 } from '../lib/firebase';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 import { compressChatImage } from '../utils/imageCompressor';
+import {
+  registerPushNotifications,
+  getNotificationPermissionStatus,
+  sendTestPushNotification,
+  isPushNotificationSupported,
+} from '../utils/pushNotifications';
 
 interface GroupChatViewProps {
   group: Group;
@@ -155,6 +166,58 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
       }
     };
   }, []);
+
+  // Web Push Notifications state & handlers
+  const [pushStatus, setPushStatus] = useState<NotificationPermission | 'unsupported'>(() => getNotificationPermissionStatus());
+  const [isEnablingPush, setIsEnablingPush] = useState(false);
+  const [pushToast, setPushToast] = useState<string | null>(null);
+  const [showPushInfoModal, setShowPushInfoModal] = useState(false);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
+
+  useEffect(() => {
+    setPushStatus(getNotificationPermissionStatus());
+  }, []);
+
+  const handleTogglePushNotifications = async () => {
+    triggerHaptic(hapticPatterns.click);
+    if (!isPushNotificationSupported()) {
+      setPushToast('Push notifications are not supported on this browser.');
+      setTimeout(() => setPushToast(null), 3500);
+      return;
+    }
+
+    if (pushStatus === 'granted') {
+      setShowPushInfoModal(true);
+      return;
+    }
+
+    setIsEnablingPush(true);
+    const res = await registerPushNotifications(group.id, activeSenderId, activeSenderName);
+    setIsEnablingPush(false);
+
+    if (res.success) {
+      setPushStatus('granted');
+      triggerHaptic(hapticPatterns.success);
+      setPushToast('🔔 Push notifications active! You will receive alerts when messages arrive.');
+      setTimeout(() => setPushToast(null), 4000);
+    } else {
+      triggerHaptic(hapticPatterns.error);
+      setPushToast(res.error || 'Failed to enable notifications. Please check browser settings.');
+      setTimeout(() => setPushToast(null), 4000);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    triggerHaptic(hapticPatterns.click);
+    const res = await sendTestPushNotification(activeSenderName);
+    if (res.success) {
+      triggerHaptic(hapticPatterns.success);
+      setPushToast('✅ Test notification sent! Check your device notification bar.');
+    } else {
+      setPushToast(res.message);
+    }
+    setTimeout(() => setPushToast(null), 3500);
+  };
 
   // Lock body scrolling while full-screen group chat is active
   useEffect(() => {
@@ -627,8 +690,39 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
           </div>
         </div>
 
-        {/* Right Header: Circular Close / Exit Button */}
-        <div className="flex items-center shrink-0">
+        {/* Right Header: Notification Toggle & Circular Close / Exit Button */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Push Notifications Toggle Button */}
+          <button
+            type="button"
+            onClick={handleTogglePushNotifications}
+            disabled={isEnablingPush}
+            title={
+              pushStatus === 'granted'
+                ? 'Mobile push notifications active (Tap to test)'
+                : 'Turn on push notifications'
+            }
+            className={`h-9 px-2.5 rounded-full flex items-center gap-1.5 text-xs font-bold transition-all border cursor-pointer active:scale-95 ${
+              pushStatus === 'granted'
+                ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/30'
+                : 'bg-amber-500/20 border-amber-400/40 text-amber-200 hover:bg-amber-500/30 animate-pulse'
+            }`}
+          >
+            {isEnablingPush ? (
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
+            ) : pushStatus === 'granted' ? (
+              <>
+                <BellRing className="w-4 h-4 text-emerald-400" />
+                <span className="hidden sm:inline text-[11px] font-semibold text-emerald-200">Active</span>
+              </>
+            ) : (
+              <>
+                <BellOff className="w-4 h-4 text-amber-300" />
+                <span className="hidden sm:inline text-[11px] font-semibold text-amber-100">Enable Alert</span>
+              </>
+            )}
+          </button>
+
           {onBack && (
             <button
               type="button"
@@ -644,6 +738,43 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* Push Notification Banner (Visible if permissions not yet granted and not dismissed) */}
+      {pushStatus !== 'granted' && !isBannerDismissed && (
+        <div className="shrink-0 bg-gradient-to-r from-[#07193F] to-[#0A2E6E] text-white px-3.5 py-2 flex items-center justify-between border-b border-blue-400/20 text-xs shadow-inner">
+          <div className="flex items-center gap-2 min-w-0 pr-2">
+            <Smartphone className="w-4 h-4 text-blue-300 shrink-0" />
+            <span className="truncate text-blue-100 text-[11px] sm:text-xs">
+              Receive mobile notifications even when the app is closed.
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleTogglePushNotifications}
+              disabled={isEnablingPush}
+              className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-[11px] font-bold rounded-lg shadow-xs transition-all cursor-pointer flex items-center gap-1"
+            >
+              {isEnablingPush ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bell className="w-3 h-3" />}
+              <span>Enable</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsBannerDismissed(true)}
+              className="p-1 hover:bg-white/10 text-white/70 rounded-md transition-colors cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Push Notification Toast Notification */}
+      {pushToast && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-slate-900/95 backdrop-blur-md text-white rounded-full text-xs font-semibold shadow-2xl border border-white/20 flex items-center gap-2 max-w-[92vw] text-center animate-in fade-in slide-in-from-top-2 duration-200">
+          <span>{pushToast}</span>
+        </div>
+      )}
 
       {/* WhatsApp Messages Canvas (Scrollable messages area) */}
       <div
@@ -1199,6 +1330,64 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
               alt="Full view"
               className="max-h-[78vh] w-auto object-contain"
             />
+          </div>
+        </div>
+      )}
+      {/* Push Notification Diagnostics & Testing Modal */}
+      {showPushInfoModal && (
+        <div
+          onClick={() => setShowPushInfoModal(false)}
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-5 text-slate-900 border border-slate-200 animate-in zoom-in-95 duration-200"
+          >
+            <div className="flex items-center justify-between mb-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <BellRing className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Push Notifications</h3>
+                  <p className="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                    Active on this device
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPushInfoModal(false)}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 space-y-1.5 border border-slate-200/80 mb-4">
+              <p className="font-semibold text-slate-800">
+                ✅ When other members post messages, photos, or files in <span className="font-bold text-blue-900">{group.name}</span>, your phone will receive a push notification even if this app or browser is closed.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleSendTestPush}
+                className="w-full py-2.5 px-4 bg-[#07193F] hover:bg-[#0A2E6E] active:scale-98 text-white rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Bell className="w-4 h-4 text-emerald-400" />
+                <span>Send Test Notification to this Phone</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPushInfoModal(false)}
+                className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

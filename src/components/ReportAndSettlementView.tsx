@@ -344,27 +344,56 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
       </div>
 
       {/* Date Picker & Compact Include Categories in 1 Line */}
-      <div className="p-4 neu-upper text-slate-900 space-y-3 rounded-2xl text-center">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 border-b border-slate-300/60 pb-2.5 text-center">
-          <div className="flex items-center justify-center gap-1.5 text-[12pt] font-bold text-slate-900 text-center">
-            <Calendar className="w-4 h-4 text-black" />
-            <span>Settlement Period Range:</span>
-          </div>
+      <div className="p-4 neu-upper text-slate-900 space-y-3.5 rounded-2xl text-center">
+        {/* Navy Blue Header Bar for Report Range (15pt, white text) */}
+        <div className="bg-[#07193F] text-white py-2 px-4 rounded-xl shadow-md flex items-center justify-center gap-2">
+          <Calendar className="w-5 h-5 text-white" />
+          <span className="text-[15pt] font-bold text-white tracking-wide">Report Range</span>
+        </div>
 
-          <div className="flex items-center justify-center gap-1.5 text-xs text-center">
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="px-2.5 py-1 neu-lower-sm rounded-lg font-semibold text-slate-900 focus:outline-none text-center"
-            />
-            <span className="text-slate-500 font-bold">to</span>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="px-2.5 py-1 neu-lower-sm rounded-lg font-semibold text-slate-900 focus:outline-none text-center"
-            />
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 border-b border-slate-300/60 pb-3 text-center">
+          <div className="flex items-center justify-center gap-3 text-xs text-center flex-wrap">
+            {/* From Date Debossed Neumorphic Box */}
+            <div
+              className="relative px-3.5 py-2 rounded-2xl transition-all"
+              style={{
+                backgroundColor: '#E7E7E7',
+                boxShadow:
+                  'inset -6px -6px 16px 0px rgba(255, 255, 255, 0.95), inset 6px 6px 16px 0px rgba(174, 174, 192, 0.85)',
+              }}
+            >
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="bg-transparent font-bold text-slate-900 focus:outline-none text-center border-none cursor-pointer"
+                style={{
+                  backgroundColor: 'transparent',
+                }}
+              />
+            </div>
+
+            <span className="text-slate-600 font-black text-xs uppercase px-1">to</span>
+
+            {/* To Date Debossed Neumorphic Box */}
+            <div
+              className="relative px-3.5 py-2 rounded-2xl transition-all"
+              style={{
+                backgroundColor: '#E7E7E7',
+                boxShadow:
+                  'inset -6px -6px 16px 0px rgba(255, 255, 255, 0.95), inset 6px 6px 16px 0px rgba(174, 174, 192, 0.85)',
+              }}
+            >
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="bg-transparent font-bold text-slate-900 focus:outline-none text-center border-none cursor-pointer"
+                style={{
+                  backgroundColor: 'transparent',
+                }}
+              />
+            </div>
           </div>
         </div>
 

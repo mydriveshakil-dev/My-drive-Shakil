@@ -38,21 +38,21 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
       {/* Ambient soft blue glow behind the nav bar */}
       <div className="absolute inset-x-0 bottom-0 h-24 bg-[#1D60FF]/20 blur-3xl pointer-events-none -z-10" />
 
-      {/* Main Bar Container */}
-      <div className={`relative w-full max-w-lg h-[72px] sm:h-[76px] ${isHidden ? 'pointer-events-none' : 'pointer-events-auto'}`}>
+      {/* Main Bar Container (Height increased 5mm upwards, fixed at bottom) */}
+      <div className={`relative w-full max-w-lg h-[calc(72px+5mm)] sm:h-[calc(76px+5mm)] ${isHidden ? 'pointer-events-none' : 'pointer-events-auto'}`}>
         
         {/* SVG Curved Bar Frame Background */}
         <svg
           className="absolute inset-0 w-full h-full filter drop-shadow-[0_-4px_20px_rgba(0,0,0,0.5)]"
-          viewBox="0 0 400 72"
+          viewBox="0 0 400 92"
           preserveAspectRatio="none"
           fill="none"
         >
           <path
             d={
               isAddExpenseOpen
-                ? "M 0 72 L 0 20 C 0 8, 8 0, 22 0 L 378 0 C 392 0, 400 8, 400 20 L 400 72 Z"
-                : "M 0 72 L 0 20 C 0 8, 8 0, 22 0 L 142 0 C 160 0, 166 32, 200 32 C 234 32, 240 0, 258 0 L 378 0 C 392 0, 400 8, 400 20 L 400 72 Z"
+                ? "M 0 92 L 0 20 C 0 8, 8 0, 22 0 L 378 0 C 392 0, 400 8, 400 20 L 400 92 Z"
+                : "M 0 92 L 0 20 C 0 8, 8 0, 22 0 L 142 0 C 160 0, 166 32, 200 32 C 234 32, 240 0, 258 0 L 378 0 C 392 0, 400 8, 400 20 L 400 92 Z"
             }
             fill="#07152D"
             stroke="#132B5E"
@@ -60,7 +60,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
           />
         </svg>
 
-        {/* Central Circular Add Expense Button & Label */}
+        {/* Central Circular Add Expense Button & Label (Elevated with 5mm top offset) */}
         {!isAddExpenseOpen && (
           <div className="absolute left-1/2 top-0 -translate-x-1/2 z-20 flex flex-col items-center">
             {/* Elevated Circular Plus Button */}
@@ -91,8 +91,8 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
           </div>
         )}
 
-        {/* Navigation Tabs Bar */}
-        <div className="relative z-10 w-full h-full flex items-center justify-between px-3 sm:px-5">
+        {/* Navigation Tabs Bar - shifted 5mm upwards from bottom */}
+        <div className="relative z-10 w-full h-[72px] sm:h-[76px] flex items-center justify-between px-3 sm:px-5">
           
           {/* Left Side: Dashboard & Bills/Rent */}
           <div className={`flex-1 flex justify-around items-center h-full pt-1.5 ${isAddExpenseOpen ? 'px-2' : 'pr-5 sm:pr-8'}`}>

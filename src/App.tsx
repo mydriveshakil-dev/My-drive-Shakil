@@ -555,10 +555,11 @@ export default function App() {
 
   const [isManualProfileModalOpen, setIsManualProfileModalOpen] = useState<boolean>(false);
 
-  // Mandatory profile picture modal: active for new or existing users without an uploaded profile picture once splash is finished
+  // Mandatory profile picture modal: active for regular room members without an uploaded profile picture once splash is finished (exempt for Admin)
   const isMandatoryProfileModalOpen = useMemo(() => {
+    if (userAuth.role === 'admin') return false;
     return Boolean(userAuth.isLoggedIn && !isLoginModalOpen && !isLoginSuccessAnimActive && !hasProfilePic);
-  }, [userAuth.isLoggedIn, isLoginModalOpen, isLoginSuccessAnimActive, hasProfilePic]);
+  }, [userAuth.isLoggedIn, userAuth.role, isLoginModalOpen, isLoginSuccessAnimActive, hasProfilePic]);
 
   const isProfileModalOpen = isMandatoryProfileModalOpen || isManualProfileModalOpen;
 

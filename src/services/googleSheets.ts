@@ -131,14 +131,16 @@ export class GoogleSheetsService {
       }
     }
 
-    localStorage.setItem(
-      this.STORAGE_KEY,
-      JSON.stringify({
-        spreadsheetId,
-        lastSyncedAt: syncedAt,
-        status: 'connected',
-      })
-    );
+    try {
+      localStorage.setItem(
+        this.STORAGE_KEY,
+        JSON.stringify({
+          spreadsheetId,
+          lastSyncedAt: syncedAt,
+          status: 'connected',
+        })
+      );
+    } catch {}
 
     let message = `Successfully synchronized ${payload.expenses.length} expenses and ${payload.utilities.length} utilities to Google Sheet!`;
     if (!webAppSynced && !apiSynced && !scriptUrl) {

@@ -101,13 +101,13 @@ self.addEventListener('push', (event) => {
     icon: notificationData.icon || '/icon-192.png',
     badge: notificationData.badge || '/icon-192.png',
     image: notificationData.image || undefined,
-    vibrate: [200, 100, 200, 100, 200],
+    vibrate: [250, 100, 250, 100, 250],
     tag: notificationData.tag || 'group-chat-msg',
     renotify: true,
     requireInteraction: true,
     data: notificationData.data || { url: '/?tab=chat' },
     actions: [
-      { action: 'open_chat', title: 'Open Chat' }
+      { action: 'open_chat', title: '💬 Open Group Chat' }
     ]
   };
 

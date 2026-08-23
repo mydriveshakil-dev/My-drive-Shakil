@@ -1,24 +1,43 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import webpush from 'web-push';
 
 // Configuration for Web Push Notifications
-// Generate or use persistent VAPID keys
-let vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
-let vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+// Stable, persistent VAPID Keys
+const STABLE_VAPID_PUBLIC_KEY =
+  'BI2wJb8kiVH4mG-5Na_JYxiyBYEGTFPY6VgTmJZ3ZHS3YUB2C_lYra9pDTlioDznIqIrj7T6mkQwcRKX7blV6CQ';
+const STABLE_VAPID_PRIVATE_KEY =
+  '57Drr642VgEJe3Sce_5_CQAHALCrmAkFKZBJaM_ZPvk';
+
+let vapidPublicKey = process.env.VAPID_PUBLIC_KEY || STABLE_VAPID_PUBLIC_KEY;
+let vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || STABLE_VAPID_PRIVATE_KEY;
 const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:support@uaemess.com';
 
-if (!vapidPublicKey || !vapidPrivateKey) {
-  // Use stable default VAPID keys if not set in environment
-  const generatedKeys = webpush.generateVAPIDKeys();
-  vapidPublicKey = generatedKeys.publicKey;
-  vapidPrivateKey = generatedKeys.privateKey;
+// Try loading from vapid-keys.json if available
+try {
+  const vapidFilePath = path.join(process.cwd(), 'vapid-keys.json');
+  if (fs.existsSync(vapidFilePath)) {
+    const raw = fs.readFileSync(vapidFilePath, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (parsed.publicKey && parsed.privateKey) {
+      vapidPublicKey = parsed.publicKey;
+      vapidPrivateKey = parsed.privateKey;
+    }
+  } else {
+    fs.writeFileSync(
+      vapidFilePath,
+      JSON.stringify({ publicKey: vapidPublicKey, privateKey: vapidPrivateKey }, null, 2)
+    );
+  }
+} catch (e) {
+  console.warn('[Web Push] VAPID keys load note:', e);
 }
 
 try {
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
-  console.log('[Web Push] VAPID details configured successfully.');
+  console.log('[Web Push] VAPID details configured successfully with permanent keys.');
 } catch (err) {
   console.error('[Web Push] Failed to set VAPID details:', err);
 }
@@ -34,6 +53,44 @@ interface StoredPushSubscription {
 
 // In-memory subscription store indexed by subscription endpoint
 const pushSubscriptionsMap = new Map<string, StoredPushSubscription>();
+
+// Persistent storage file path
+const DATA_DIR = path.join(process.cwd(), 'data');
+const SUBSCRIPTIONS_FILE = path.join(DATA_DIR, 'push-subscriptions.json');
+
+// Load stored subscriptions from disk on server boot
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (fs.existsSync(SUBSCRIPTIONS_FILE)) {
+    const data = fs.readFileSync(SUBSCRIPTIONS_FILE, 'utf8');
+    const list: StoredPushSubscription[] = JSON.parse(data);
+    if (Array.isArray(list)) {
+      list.forEach((sub) => {
+        if (sub?.subscription?.endpoint) {
+          pushSubscriptionsMap.set(sub.subscription.endpoint, sub);
+        }
+      });
+      console.log(`[Web Push] Loaded ${pushSubscriptionsMap.size} persisted push subscriptions from disk.`);
+    }
+  }
+} catch (e) {
+  console.warn('[Web Push] Could not load persisted subscriptions:', e);
+}
+
+// Helper to save subscriptions to disk
+function saveSubscriptionsToDisk() {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    const list = Array.from(pushSubscriptionsMap.values());
+    fs.writeFileSync(SUBSCRIPTIONS_FILE, JSON.stringify(list, null, 2), 'utf8');
+  } catch (e) {
+    console.warn('[Web Push] Could not save subscriptions to disk:', e);
+  }
+}
 
 async function startServer() {
   const app = express();
@@ -77,6 +134,8 @@ async function startServer() {
         updatedAt: Date.now(),
       });
 
+      saveSubscriptionsToDisk();
+
       console.log(`[Web Push] Device subscribed for user: ${userName || targetUserId} in group: ${targetGroupId}. Total active subscriptions: ${pushSubscriptionsMap.size}`);
 
       return res.json({
@@ -96,6 +155,7 @@ async function startServer() {
       const { endpoint } = req.body;
       if (endpoint && pushSubscriptionsMap.has(endpoint)) {
         pushSubscriptionsMap.delete(endpoint);
+        saveSubscriptionsToDisk();
       }
       return res.json({ success: true, message: 'Unsubscribed successfully.' });
     } catch (err: any) {

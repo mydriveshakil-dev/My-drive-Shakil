@@ -63,13 +63,14 @@ import { UserProfileModal } from './components/UserProfileModal';
 import { getLoggedInMember, hasUserSetProfilePicture } from './utils/permissionUtils';
 import { GlassContainer } from './components/GlassContainer';
 import { BottomNavBar, AppTabType } from './components/BottomNavBar';
-import { CheckCircle2, MessageCircle, Plus, AlertCircle } from 'lucide-react';
+import { CheckCircle2, MessageCircle, Plus, AlertCircle, Bell, BellRing, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   registerPushNotifications,
   sendGroupPushNotification,
   showLocalChatMessageNotification,
 } from './utils/pushNotifications';
+import { playNotificationSound, triggerNotificationVibration } from './utils/notificationSound';
 
 export default function App() {
   const [allGroups, setAllGroups] = useState<Group[]>(() => {
@@ -286,6 +287,9 @@ export default function App() {
   const utilitiesRef = useRef(utilities);
   const rentRef = useRef(rent);
   const groupRef = useRef(group);
+  const activeTabRef = useRef<AppTabType>('home');
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
+  const isInitialChatSyncRef = useRef<boolean>(true);
 
   useEffect(() => {
     expensesRef.current = expenses;
@@ -450,6 +454,55 @@ export default function App() {
       if (remoteMsgs && remoteMsgs.length > 0) {
         setChatMessages(remoteMsgs);
         localStorage.setItem(`room_chat_messages_${group.id}`, JSON.stringify(remoteMsgs));
+
+        const currentUser = userAuthRef.current;
+        const currentUserId = currentUser.id || currentUser.mobileNumber || currentUser.email || 'user';
+
+        if (isInitialChatSyncRef.current) {
+          remoteMsgs.forEach((m) => seenMessageIdsRef.current.add(m.id));
+          isInitialChatSyncRef.current = false;
+        } else {
+          // Detect incoming messages that were not in our seen list
+          const brandNewMsgs = remoteMsgs.filter((m) => !seenMessageIdsRef.current.has(m.id));
+          brandNewMsgs.forEach((m) => seenMessageIdsRef.current.add(m.id));
+
+          const incomingFromOthers = brandNewMsgs.filter(
+            (m) => m.senderId !== currentUserId && m.senderName !== currentUser.name
+          );
+
+          if (incomingFromOthers.length > 0) {
+            const latest = incomingFromOthers[incomingFromOthers.length - 1];
+            // Play notification chime & mobile vibration
+            playNotificationSound();
+            triggerNotificationVibration();
+
+            const previewText =
+              latest.type === 'voice'
+                ? '🎤 Voice Message'
+                : latest.type === 'image'
+                ? '📷 Photo'
+                : latest.type === 'file'
+                ? `📎 ${latest.fileName || 'Document'}`
+                : latest.text || 'New message';
+
+            showLocalChatMessageNotification(
+              `${latest.senderName} (${groupRef.current?.name || 'Mess Group'})`,
+              previewText
+            );
+
+            if (activeTabRef.current !== 'chat') {
+              setIncomingChatBanner({
+                senderName: latest.senderName,
+                text: previewText,
+                avatar: latest.senderAvatar,
+                type: latest.type,
+              });
+              setTimeout(() => {
+                setIncomingChatBanner(null);
+              }, 6000);
+            }
+          }
+        }
       } else if (remoteMsgs && remoteMsgs.length === 0) {
         const saved = localStorage.getItem(`room_chat_messages_${group.id}`);
         const startOfMonthMs = getStartOfCurrentMonthMs();
@@ -532,6 +585,11 @@ export default function App() {
       role: 'user',
     };
   });
+
+  const userAuthRef = useRef(userAuth);
+  useEffect(() => {
+    userAuthRef.current = userAuth;
+  }, [userAuth]);
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(() => {
     return !userAuth.isLoggedIn;
@@ -706,6 +764,46 @@ export default function App() {
     }
     return 'home';
   });
+
+  const [incomingChatBanner, setIncomingChatBanner] = useState<{
+    senderName: string;
+    text: string;
+    avatar?: string;
+    type?: string;
+  } | null>(null);
+
+  const [notificationPermissionPrompt, setNotificationPermissionPrompt] = useState<boolean>(false);
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (
+        Notification.permission === 'default' &&
+        userAuth.isLoggedIn &&
+        !isLoginModalOpen &&
+        !isLoginSuccessAnimActive
+      ) {
+        const timer = setTimeout(() => {
+          setNotificationPermissionPrompt(true);
+        }, 2500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [userAuth.isLoggedIn, isLoginModalOpen, isLoginSuccessAnimActive]);
+
+  const handleEnablePushAlerts = async () => {
+    triggerHaptic(hapticPatterns.click);
+    setNotificationPermissionPrompt(false);
+    const activeUid = userAuth.id || userAuth.mobileNumber || userAuth.email || 'user';
+    const res = await registerPushNotifications(group.id, activeUid, userAuth.name);
+    if (res.success) {
+      triggerHaptic(hapticPatterns.success);
+      playNotificationSound();
+    }
+  };
   const [billingCycleType, setBillingCycleType] = useState<BillingCycleType>('current');
   const [selectedPreviousCycle, setSelectedPreviousCycle] = useState<string>(() => {
     const prevs = getPreviousCycleOptions(1);
@@ -2395,6 +2493,97 @@ export default function App() {
         groupName={group?.name}
         onClose={handleCloseNoticePopup}
       />
+
+      {/* Floating Incoming Group Chat Message Alert Banner */}
+      <AnimatePresence>
+        {incomingChatBanner && activeTab !== 'chat' && (
+          <motion.div
+            initial={{ opacity: 0, y: -60, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -40, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            onClick={() => {
+              triggerHaptic(hapticPatterns.click);
+              setActiveTab('chat');
+              setIncomingChatBanner(null);
+            }}
+            className="fixed top-4 left-4 right-4 max-w-md mx-auto z-[99] bg-[#07193F]/98 backdrop-blur-xl text-white p-3.5 rounded-2xl shadow-2xl border border-blue-400/40 flex items-center justify-between gap-3 cursor-pointer ring-2 ring-blue-500/20 active:scale-98 transition-transform"
+          >
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center font-black text-sm shrink-0 border border-white/30 text-white shadow-md overflow-hidden">
+                {incomingChatBanner.avatar ? (
+                  <img src={incomingChatBanner.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  incomingChatBanner.senderName.slice(0, 2).toUpperCase()
+                )}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black text-emerald-400 truncate">
+                    {incomingChatBanner.senderName}
+                  </span>
+                  <span className="text-[10px] text-slate-300 font-medium">• just now</span>
+                </div>
+                <p className="text-xs text-slate-100 font-semibold truncate max-w-[240px]">
+                  {incomingChatBanner.text}
+                </p>
+              </div>
+            </div>
+            <div className="shrink-0 flex items-center gap-2">
+              <span className="text-[11px] font-bold bg-blue-600 text-white px-2.5 py-1 rounded-full border border-blue-400/40 flex items-center gap-1 shadow-sm">
+                <MessageCircle className="w-3 h-3" />
+                Reply
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Push Notification Permission Prompt */}
+      <AnimatePresence>
+        {notificationPermissionPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+            className="fixed bottom-24 sm:bottom-28 left-4 right-4 max-w-md mx-auto z-[80] bg-[#07193F]/98 backdrop-blur-xl text-white p-4 rounded-3xl shadow-2xl border border-blue-400/50 flex flex-col gap-3 ring-2 ring-blue-500/20"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-blue-600/30 border border-blue-400/40 flex items-center justify-center shrink-0 text-blue-300">
+                <BellRing className="w-5 h-5 animate-bounce" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-black text-white flex items-center gap-1.5">
+                  Enable Group Chat Alerts
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                </h4>
+                <p className="text-xs text-slate-300 font-medium mt-0.5 leading-snug">
+                  Get instant mobile notifications whenever roommates send messages, receipts, or share bills.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <button
+                onClick={handleEnablePushAlerts}
+                className="flex-1 py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs rounded-xl shadow-lg border border-blue-400/40 flex items-center justify-center gap-1.5 active:scale-95 transition-transform cursor-pointer"
+              >
+                <Bell className="w-3.5 h-3.5" />
+                Allow Notifications
+              </button>
+              <button
+                onClick={() => {
+                  triggerHaptic(hapticPatterns.click);
+                  setNotificationPermissionPrompt(false);
+                }}
+                className="py-2.5 px-3 bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-600/50 active:scale-95 transition-transform cursor-pointer"
+              >
+                Later
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Floating Action Button (FAB) for Room Group Chat - Shown across all main tabs (Bill/rent, report, group, dashboard) and opens Chat directly on the main page */}
       {activeTab !== 'chat' && !isLoginModalOpen && !isMandatoryProfileModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && (

@@ -2,9 +2,9 @@
 import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db, getIsQuotaExceeded } from '../lib/firebase';
 
-// Fallback VAPID Public Key (standard base64url encoded P-256 public key)
+// Fallback VAPID Public Key (standard base64url encoded P-256 public key matching server)
 export const FALLBACK_VAPID_PUBLIC_KEY =
-  'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+  'BI2wJb8kiVH4mG-5Na_JYxiyBYEGTFPY6VgTmJZ3ZHS3YUB2C_lYra9pDTlioDznIqIrj7T6mkQwcRKX7blV6CQ';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -241,10 +241,35 @@ export async function sendTestPushNotification(userName?: string): Promise<{ suc
 /**
  * Show local foreground/background notification if app is open
  */
-export function showLocalChatMessageNotification(title: string, body: string, icon = '/icon-192.png') {
+export async function showLocalChatMessageNotification(
+  title: string,
+  body: string,
+  icon = '/icon-192.png'
+) {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
   if (Notification.permission === 'granted') {
     try {
+      if ('serviceWorker' in navigator) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          if (reg && reg.showNotification) {
+            await reg.showNotification(title, {
+              body,
+              icon,
+              badge: icon,
+              vibrate: [250, 100, 250, 100, 250],
+              tag: 'group-chat-local',
+              renotify: true,
+              requireInteraction: true,
+              data: { url: '/?tab=chat' },
+            } as any);
+            return;
+          }
+        } catch (swErr) {
+          console.warn('[Push] ServiceWorker notification note:', swErr);
+        }
+      }
+
       if (navigator.serviceWorker && navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
           type: 'SHOW_NOTIFICATION',
@@ -253,9 +278,10 @@ export function showLocalChatMessageNotification(title: string, body: string, ic
             body,
             icon,
             badge: icon,
-            vibrate: [200, 100, 200],
+            vibrate: [250, 100, 250, 100, 250],
             tag: 'group-chat-local',
             renotify: true,
+            data: { url: '/?tab=chat' },
           },
         });
       } else {

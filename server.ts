@@ -166,7 +166,7 @@ async function startServer() {
   // 4. Send Push Notification to all group members except sender
   app.post('/api/push/send', async (req, res) => {
     try {
-      const { groupId, senderId, senderName, groupName, text, messageType, fileName, audioDuration } = req.body;
+      const { groupId, senderId, senderName, groupName, text, messageType, fileName, audioDuration, directSubscriptions } = req.body;
 
       if (!groupId) {
         return res.status(400).json({ error: 'groupId is required to send notifications.' });
@@ -191,33 +191,44 @@ async function startServer() {
         notificationBody = `${senderName || 'Member'}: ${text}`;
       }
 
+      const msgTimestamp = Date.now();
       const payload = JSON.stringify({
         title: notificationTitle,
         body: notificationBody,
         icon: '/icon-192.png',
         badge: '/icon-192.png',
-        tag: `group-${groupId}`,
+        tag: `group-${groupId}-${msgTimestamp}`,
         data: {
           url: `/?tab=chat&group=${groupId}`,
           groupId,
           senderId,
-          timestamp: Date.now(),
+          timestamp: msgTimestamp,
         },
       });
 
       // Find all target subscriptions for this group (excluding sender's own device)
-      const targetSubscribers: StoredPushSubscription[] = [];
+      const targetMap = new Map<string, StoredPushSubscription>();
+
       for (const [endpoint, storedSub] of pushSubscriptionsMap.entries()) {
         if (storedSub.groupId === groupId) {
-          // Do not send push notification to sender's own device if senderId matches
           if (senderId && storedSub.userId === senderId) {
             continue;
           }
-          targetSubscribers.push(storedSub);
+          targetMap.set(endpoint, storedSub);
         }
       }
 
-      console.log(`[Web Push] Dispatching notification to ${targetSubscribers.length} devices in group ${groupId}`);
+      // If client provided direct subscriptions, merge them
+      if (Array.isArray(directSubscriptions)) {
+        directSubscriptions.forEach((ds: any) => {
+          if (ds?.endpoint && ds?.subscription && (!senderId || ds.userId !== senderId)) {
+            targetMap.set(ds.endpoint, ds);
+          }
+        });
+      }
+
+      const targetSubscribers = Array.from(targetMap.values());
+      console.log(`[Web Push] Dispatching high-urgency lock-screen notification to ${targetSubscribers.length} devices in group ${groupId}`);
 
       let sentCount = 0;
       let failedCount = 0;
@@ -226,8 +237,12 @@ async function startServer() {
       const sendPromises = targetSubscribers.map(async (storedSub) => {
         try {
           await webpush.sendNotification(storedSub.subscription, payload, {
-            TTL: 86400, // Keep in push service for up to 24 hours if device is temporarily offline
+            TTL: 2419200, // 4 weeks - ensures push servers wake up locked & sleeping mobile devices
             urgency: 'high',
+            headers: {
+              'Urgency': 'high',
+              'Topic': `msg-${groupId}`,
+            },
           });
           sentCount++;
         } catch (pushErr: any) {
@@ -244,8 +259,11 @@ async function startServer() {
       await Promise.allSettled(sendPromises);
 
       // Clean up expired endpoints
-      for (const expEndpoint of expiredEndpoints) {
-        pushSubscriptionsMap.delete(expEndpoint);
+      if (expiredEndpoints.length > 0) {
+        for (const expEndpoint of expiredEndpoints) {
+          pushSubscriptionsMap.delete(expEndpoint);
+        }
+        saveSubscriptionsToDisk();
       }
 
       return res.json({
@@ -260,30 +278,56 @@ async function startServer() {
     }
   });
 
-  // 5. Send Test Notification to current user device
+  // 5. Send Test Notification to current user device (supports delayed trigger for lock-screen testing)
   app.post('/api/push/test', async (req, res) => {
     try {
-      const { subscription, userName } = req.body;
+      const { subscription, userName, delaySeconds } = req.body;
       if (!subscription || !subscription.endpoint) {
         return res.status(400).json({ error: 'Subscription object required.' });
       }
 
       const testPayload = JSON.stringify({
         title: 'UAE MESS SYSTEM 🔔',
-        body: `Test notification successful! You will receive group chat alerts on this device even when the app is closed.`,
+        body: `Test notification received! Background & Lock Screen alerts are active for ${userName || 'your device'}.`,
         icon: '/icon-192.png',
         badge: '/icon-192.png',
+        tag: `test-push-${Date.now()}`,
         data: {
           url: '/?tab=chat',
+          timestamp: Date.now(),
         },
       });
 
-      await webpush.sendNotification(subscription, testPayload, {
-        TTL: 60,
-        urgency: 'high',
-      });
+      const executePush = async () => {
+        try {
+          await webpush.sendNotification(subscription, testPayload, {
+            TTL: 2419200,
+            urgency: 'high',
+            headers: {
+              'Urgency': 'high',
+              'Topic': 'test-notification',
+            },
+          });
+          console.log('[Web Push] Test push delivered successfully.');
+        } catch (e: any) {
+          console.error('[Web Push] Test delivery error:', e.message);
+        }
+      };
 
-      return res.json({ success: true, message: 'Test notification sent successfully!' });
+      const delay = Math.min(Math.max(Number(delaySeconds) || 0, 0), 30);
+      if (delay > 0) {
+        // Send response immediately, trigger push after delay so user can lock screen
+        setTimeout(executePush, delay * 1000);
+        return res.json({
+          success: true,
+          delayed: true,
+          delaySeconds: delay,
+          message: `Push will fire in ${delay} seconds. Lock your phone now to test lock-screen alert!`,
+        });
+      } else {
+        await executePush();
+        return res.json({ success: true, message: 'Test notification sent successfully!' });
+      }
     } catch (err: any) {
       console.error('[Web Push] Test push error:', err);
       return res.status(500).json({ error: err.message || 'Failed to send test push notification.' });

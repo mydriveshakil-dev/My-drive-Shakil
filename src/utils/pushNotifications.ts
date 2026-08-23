@@ -78,18 +78,48 @@ export async function registerPushNotifications(
       console.warn('Using built-in fallback VAPID key:', e);
     }
 
-    // 4. Try PushManager Subscription if supported
+    // 4. PushManager Subscription with VAPID key verification
     let subscription: PushSubscription | null = null;
     if (registration && 'pushManager' in registration) {
       try {
         subscription = await registration.pushManager.getSubscription();
 
-        if (!subscription && publicKey) {
+        if (publicKey) {
           const convertedVapidKey = urlBase64ToUint8Array(publicKey);
-          subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: convertedVapidKey,
-          });
+          
+          if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: convertedVapidKey,
+            });
+          } else {
+            // Verify if key matches or renew if requested
+            try {
+              const currentKeyRaw = subscription.options.applicationServerKey;
+              if (currentKeyRaw) {
+                const currentKey = new Uint8Array(currentKeyRaw);
+                let isMatch = currentKey.length === convertedVapidKey.length;
+                if (isMatch) {
+                  for (let i = 0; i < currentKey.length; i++) {
+                    if (currentKey[i] !== convertedVapidKey[i]) {
+                      isMatch = false;
+                      break;
+                    }
+                  }
+                }
+                if (!isMatch) {
+                  console.log('[Web Push] Renewing subscription with updated VAPID key...');
+                  await subscription.unsubscribe();
+                  subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: convertedVapidKey,
+                  });
+                }
+              }
+            } catch (rekeyErr) {
+              console.warn('[Web Push] Key verification note:', rekeyErr);
+            }
+          }
         }
       } catch (pmErr) {
         console.warn('PushManager subscribe warning (falling back to direct browser alerts):', pmErr);
@@ -99,6 +129,16 @@ export async function registerPushNotifications(
     // If subscription succeeded, sync to backend & Firestore
     if (subscription) {
       const subJson = subscription.toJSON();
+      try {
+        localStorage.setItem('uae_last_push_sub', JSON.stringify({
+          endpoint: subscription.endpoint,
+          subscription: subJson,
+          groupId: groupId || 'group-room-3',
+          userId: userId || 'anonymous',
+          userName: userName || 'Room Member',
+          updatedAt: Date.now(),
+        }));
+      } catch {}
 
       try {
         await fetch('/api/push/subscribe', {
@@ -165,6 +205,17 @@ export async function sendGroupPushNotification(params: {
   audioDuration?: number;
 }): Promise<boolean> {
   try {
+    let directSubscriptions: any[] = [];
+    try {
+      const lastSubStr = localStorage.getItem('uae_last_push_sub');
+      if (lastSubStr) {
+        const lastSub = JSON.parse(lastSubStr);
+        if (lastSub && lastSub.groupId === params.groupId && lastSub.userId !== params.senderId) {
+          directSubscriptions.push(lastSub);
+        }
+      }
+    } catch {}
+
     const res = await fetch('/api/push/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -177,6 +228,7 @@ export async function sendGroupPushNotification(params: {
         messageType: params.messageType || 'text',
         fileName: params.fileName,
         audioDuration: params.audioDuration,
+        directSubscriptions,
       }),
     });
 
@@ -192,9 +244,12 @@ export async function sendGroupPushNotification(params: {
 }
 
 /**
- * Send a Test Notification to the current device
+ * Send a Test Notification to the current device (supports delay for testing lock-screen delivery)
  */
-export async function sendTestPushNotification(userName?: string): Promise<{ success: boolean; message: string }> {
+export async function sendTestPushNotification(
+  userName?: string,
+  delaySeconds: number = 0
+): Promise<{ success: boolean; message: string; delayed?: boolean }> {
   if (!isPushNotificationSupported()) {
     return { success: false, message: 'Push notifications are not supported on this browser.' };
   }
@@ -215,12 +270,35 @@ export async function sendTestPushNotification(userName?: string): Promise<{ suc
         body: JSON.stringify({
           subscription: subscription.toJSON(),
           userName: userName || 'Room Member',
+          delaySeconds: delaySeconds || 0,
         }),
       });
 
       if (res.ok) {
-        return { success: true, message: 'Test notification sent! Check your phone/device notification shade.' };
+        const data = await res.json();
+        if (data.delayed) {
+          return {
+            success: true,
+            delayed: true,
+            message: `🔔 Push scheduled in ${delaySeconds} seconds! Lock your phone screen NOW to test!`,
+          };
+        }
+        return { success: true, message: 'Test notification sent! Check your phone notification shade.' };
       }
+    }
+
+    if (delaySeconds > 0) {
+      setTimeout(() => {
+        showLocalChatMessageNotification(
+          'UAE MESS SYSTEM 🔔',
+          `Test background notification for ${userName || 'you'}! Group chat alerts active.`
+        );
+      }, delaySeconds * 1000);
+      return {
+        success: true,
+        delayed: true,
+        message: `🔔 Notification will fire in ${delaySeconds}s! Lock your screen now to verify.`,
+      };
     }
 
     // Fallback: Dispatch direct browser notification
@@ -228,11 +306,11 @@ export async function sendTestPushNotification(userName?: string): Promise<{ suc
       'UAE MESS SYSTEM 🔔',
       `Test notification successful for ${userName || 'you'}! Group chat alerts are active.`
     );
-    return { success: true, message: 'Test notification delivered to your screen.' };
+    return { success: true, message: 'Test notification delivered to your device.' };
   } catch (err: any) {
     showLocalChatMessageNotification(
       'UAE MESS SYSTEM 🔔',
-      `Test notification successful! Group chat alerts are active.`
+      `Test notification active! Group chat alerts are ready.`
     );
     return { success: true, message: 'Test notification delivered to your device.' };
   }

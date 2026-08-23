@@ -62,29 +62,25 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Push notification event listener (fires when app is in background or closed!)
+// Push notification event listener (fires when app is in background, closed, or screen locked!)
 self.addEventListener('push', (event) => {
   let notificationData = {
-    title: 'UAE MESS SYSTEM - New Message',
+    title: 'UAE MESS SYSTEM - Group Alert',
     body: 'You have a new message in your room group.',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     data: {
-      url: '/?tab=chat'
+      url: '/?tab=chat',
+      timestamp: Date.now()
     }
   };
 
   if (event.data) {
     try {
       const parsed = event.data.json();
-      notificationData = {
-        ...notificationData,
-        ...parsed,
-        data: {
-          ...notificationData.data,
-          ...(parsed.data || {})
-        }
-      };
+      notificationData = Object.assign({}, notificationData, parsed, {
+        data: Object.assign({}, notificationData.data, parsed.data || {})
+      });
     } catch (e) {
       try {
         const text = event.data.text();
@@ -95,16 +91,20 @@ self.addEventListener('push', (event) => {
     }
   }
 
-  const title = notificationData.title || 'New Group Message';
+  const title = notificationData.title || 'UAE MESS SYSTEM';
+  const tagId = notificationData.tag || ('group-msg-' + (notificationData.data?.timestamp || Date.now()));
+  
   const options = {
     body: notificationData.body,
     icon: notificationData.icon || '/icon-192.png',
     badge: notificationData.badge || '/icon-192.png',
     image: notificationData.image || undefined,
-    vibrate: [250, 100, 250, 100, 250],
-    tag: notificationData.tag || 'group-chat-msg',
+    vibrate: [300, 100, 300, 100, 300],
+    tag: tagId,
     renotify: true,
     requireInteraction: true,
+    silent: false,
+    timestamp: notificationData.data?.timestamp || Date.now(),
     data: notificationData.data || { url: '/?tab=chat' },
     actions: [
       { action: 'open_chat', title: '💬 Open Group Chat' }
@@ -112,7 +112,9 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    self.registration.showNotification(title, options).catch((err) => {
+      console.error('[Service Worker] showNotification error:', err);
+    })
   );
 });
 

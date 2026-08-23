@@ -207,16 +207,39 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
     }
   };
 
-  const handleSendTestPush = async () => {
+  const handleSendTestPush = async (delaySeconds = 0) => {
     triggerHaptic(hapticPatterns.click);
-    const res = await sendTestPushNotification(activeSenderName);
+    const res = await sendTestPushNotification(activeSenderName, delaySeconds);
     if (res.success) {
       triggerHaptic(hapticPatterns.success);
-      setPushToast('✅ Test notification sent! Check your device notification bar.');
+      setPushToast(res.message);
     } else {
       setPushToast(res.message);
     }
-    setTimeout(() => setPushToast(null), 3500);
+    setTimeout(() => setPushToast(null), 5000);
+  };
+
+  const handleReSyncDeviceToken = async () => {
+    triggerHaptic(hapticPatterns.click);
+    setIsEnablingPush(true);
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await sub.unsubscribe();
+        }
+      }
+    } catch {}
+    const res = await registerPushNotifications(group.id, activeSenderId, activeSenderName);
+    setIsEnablingPush(false);
+    if (res.success) {
+      triggerHaptic(hapticPatterns.success);
+      setPushToast('✅ Device push token refreshed & connected to lock screen delivery!');
+    } else {
+      setPushToast(res.error || 'Failed to refresh token.');
+    }
+    setTimeout(() => setPushToast(null), 4000);
   };
 
   // Lock body scrolling while full-screen group chat is active
@@ -1365,25 +1388,55 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
               </button>
             </div>
 
-            <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 space-y-1.5 border border-slate-200/80 mb-4">
+            <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 space-y-2 border border-slate-200/80 mb-3.5 max-h-[42vh] overflow-y-auto">
               <p className="font-semibold text-slate-800">
-                ✅ When other members post messages, photos, or files in <span className="font-bold text-blue-900">{group.name}</span>, your phone will receive a push notification even if this app or browser is closed.
+                ✅ When other members post in <span className="font-bold text-blue-900">{group.name}</span>, your device receives background push alerts with sound and vibration even if the screen is locked or the browser is closed.
               </p>
+              
+              <div className="p-2.5 bg-amber-50/80 border border-amber-200/70 rounded-lg text-[11px] text-amber-900 space-y-1">
+                <p className="font-bold flex items-center gap-1 text-amber-800">
+                  📱 Mobile Lock-Screen Delivery Tips:
+                </p>
+                <ul className="list-disc list-inside space-y-0.5 text-amber-950/90 text-[10.5px]">
+                  <li><strong>Android:</strong> In Chrome App Info → Battery, set to <em>"Unrestricted"</em> so Android doesn't sleep background push. Ensure Lock Screen notifications are set to <em>"Show all content"</em>.</li>
+                  <li><strong>iPhone (iOS):</strong> Tap Safari Share → <em>"Add to Home Screen"</em> (PWA) to receive background lock-screen pushes.</li>
+                </ul>
+              </div>
             </div>
 
             <div className="flex flex-col gap-2">
               <button
                 type="button"
-                onClick={handleSendTestPush}
-                className="w-full py-2.5 px-4 bg-[#07193F] hover:bg-[#0A2E6E] active:scale-98 text-white rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                onClick={() => handleSendTestPush(5)}
+                className="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 active:scale-98 text-white rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                <Bell className="w-4 h-4 text-emerald-400" />
-                <span>Send Test Notification to this Phone</span>
+                <BellRing className="w-4 h-4 text-emerald-200 animate-pulse" />
+                <span>Test Lock-Screen Alert (5s Delay)</span>
               </button>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSendTestPush(0)}
+                  className="flex-1 py-2 px-3 bg-[#07193F] hover:bg-[#0A2E6E] active:scale-98 text-white rounded-xl font-bold text-[11px] shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Bell className="w-3.5 h-3.5 text-blue-300" />
+                  <span>Instant Test</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReSyncDeviceToken}
+                  disabled={isEnablingPush}
+                  className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-xl border border-slate-200 active:scale-98 transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                >
+                  {isEnablingPush ? 'Refreshing...' : '🔄 Re-Sync'}
+                </button>
+              </div>
+
               <button
                 type="button"
                 onClick={() => setShowPushInfoModal(false)}
-                className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer"
+                className="w-full py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer"
               >
                 Close
               </button>

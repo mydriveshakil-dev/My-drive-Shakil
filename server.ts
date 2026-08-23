@@ -98,6 +98,21 @@ async function startServer() {
 
   app.use(express.json({ limit: '10mb' }));
 
+  // Serve Service Worker files with optimal headers for PWA & background push
+  app.get(['/sw.js', '/firebase-messaging-sw.js'], (req, res, next) => {
+    res.setHeader('Service-Worker-Allowed', '/');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    const targetFileName = req.path === '/firebase-messaging-sw.js' ? 'firebase-messaging-sw.js' : 'sw.js';
+    const filePath = path.join(process.cwd(), 'public', targetFileName);
+    if (fs.existsSync(filePath)) {
+      res.setHeader('Content-Type', 'application/javascript');
+      return res.sendFile(filePath);
+    }
+    next();
+  });
+
   // API endpoints
   app.get('/api/health', (req, res) => {
     res.json({

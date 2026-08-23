@@ -1057,4 +1057,70 @@ export function subscribeToLaundryBills(userId: string, onUpdate: (bills: Laundr
   }
 }
 
+// 9. Multi-Device Push Notification Token & Subscription Cloud Sync
+export async function savePushSubscriptionToFirestore(
+  groupId: string,
+  userId: string,
+  userName: string,
+  subscription: any
+) {
+  if (isQuotaExceeded || !groupId || !subscription || !subscription.endpoint) return;
+  try {
+    const endpointHash = btoa(subscription.endpoint).replace(/[^a-zA-Z0-9]/g, '_').slice(-80);
+    const docRef = doc(db, 'push_subscriptions', `sub_${endpointHash}`);
+    await setDoc(
+      docRef,
+      {
+        endpoint: subscription.endpoint,
+        subscription,
+        groupId,
+        userId,
+        userName,
+        updatedAt: Date.now(),
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    if (!isQuotaError(err)) {
+      console.warn('Warning saving push subscription to Firestore:', err);
+    }
+  }
+}
+
+export async function fetchGroupPushSubscriptionsFromFirestore(groupId: string): Promise<any[]> {
+  if (isQuotaExceeded || !groupId) return [];
+  try {
+    const colRef = collection(db, 'push_subscriptions');
+    const q = query(colRef, where('groupId', '==', groupId));
+    const snapshot = await getDocs(q);
+    const results: any[] = [];
+    snapshot.forEach((d) => {
+      const data = d.data();
+      if (data && data.endpoint && data.subscription) {
+        results.push(data);
+      }
+    });
+    return results;
+  } catch (err) {
+    if (!isQuotaError(err)) {
+      console.warn('Warning fetching push subscriptions from Firestore:', err);
+    }
+    return [];
+  }
+}
+
+export async function deletePushSubscriptionFromFirestore(endpoint: string) {
+  if (isQuotaExceeded || !endpoint) return;
+  try {
+    const endpointHash = btoa(endpoint).replace(/[^a-zA-Z0-9]/g, '_').slice(-80);
+    const docRef = doc(db, 'push_subscriptions', `sub_${endpointHash}`);
+    await deleteDoc(docRef);
+  } catch (err) {
+    if (!isQuotaError(err)) {
+      console.warn('Warning deleting push subscription from Firestore:', err);
+    }
+  }
+}
+
+
 

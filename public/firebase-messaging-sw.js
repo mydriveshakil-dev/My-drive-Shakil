@@ -1,16 +1,7 @@
-// Service Worker for UAE MESS SYSTEM PWA & Web Push Notifications
-const CACHE_NAME = 'uae-mess-v3';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/apple-touch-icon.png',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/uae_mess_logo.jpg'
-];
+// Firebase Messaging Service Worker for UAE MESS SYSTEM
+// Handles background push notifications when app is closed or screen is locked
 
-// Optional Firebase compat loading for FCM background message support
+// 1. Load Firebase Compat SDKs
 try {
   importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
   importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
@@ -23,8 +14,9 @@ try {
   });
 
   const messaging = firebase.messaging();
+
   messaging.onBackgroundMessage((payload) => {
-    console.log('[SW] FCM Background Message:', payload);
+    console.log('[FCM-SW] Received background message:', payload);
     const title = payload.notification?.title || payload.data?.title || 'UAE MESS SYSTEM';
     const body = payload.notification?.body || payload.data?.body || 'You have a new message in your room group.';
     const icon = payload.notification?.icon || payload.data?.icon || '/icon-192.png';
@@ -52,68 +44,13 @@ try {
     return self.registration.showNotification(title, options);
   });
 } catch (e) {
-  // Offline or blocked CDN - native push event handler below handles everything safely
+  console.warn('[FCM-SW] Firebase compat script load error, falling back to native push handler:', e);
 }
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE).catch(() => {
-        // Ignore individual asset fetch failures during install
-      });
-    })
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
-  );
-});
-
-// Network-first cache fallback strategy
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  const url = new URL(event.request.url);
-  if (
-    url.pathname.startsWith('/api') ||
-    url.hostname.includes('firestore') ||
-    url.hostname.includes('googleapis') ||
-    url.hostname.includes('firebase')
-  ) {
-    return;
-  }
-
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response && response.status === 200 && response.type === 'basic') {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
-  );
-});
-
-// Push notification event listener (fires when app is in background, closed, or screen locked!)
+// 2. Native Web Push Event Handler (Direct VAPID WebPush Support)
 self.addEventListener('push', (event) => {
   let notificationData = {
-    title: 'UAE MESS SYSTEM - Group Alert',
+    title: 'UAE MESS SYSTEM',
     body: 'You have a new message in your room group.',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
@@ -141,7 +78,7 @@ self.addEventListener('push', (event) => {
 
   const title = notificationData.title || 'UAE MESS SYSTEM';
   const tagId = notificationData.tag || ('group-msg-' + (notificationData.data?.timestamp || Date.now()));
-  
+
   const options = {
     body: notificationData.body,
     icon: notificationData.icon || '/icon-192.png',
@@ -166,7 +103,7 @@ self.addEventListener('push', (event) => {
   );
 });
 
-// Notification click event handler (opens or focuses app when user taps notification)
+// 3. Notification Click Action Handler
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
@@ -174,7 +111,6 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // If a window is already open, focus it and navigate to chat
       for (const client of windowClients) {
         if ('focus' in client) {
           client.focus();
@@ -184,7 +120,6 @@ self.addEventListener('notificationclick', (event) => {
           return;
         }
       }
-      // If no window is open, open a new window
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }
@@ -192,13 +127,10 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// Handle custom messages from app
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
-    const { title, options } = event.data;
-    self.registration.showNotification(title || 'UAE MESS SYSTEM', options || {});
-  }
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
 });

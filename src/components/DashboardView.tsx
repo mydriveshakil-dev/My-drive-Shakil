@@ -6,6 +6,8 @@ import { cleanExpenseTitle } from '../utils/textCleaner';
 import { getPreviousCycleOptions } from '../utils/cycleUtils';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 import { isPhoneMatch } from '../lib/firebase';
+import { formatAmountNumber } from '../utils/currency';
+import { formatDateDisplay } from '../utils/dateUtils';
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { AdminQuickControlsCard } from './AdminQuickControlsCard';
 import {
@@ -78,7 +80,7 @@ const renderCustomizedPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, 
         filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.6))',
       }}
     >
-      {typeof value === 'number' ? value.toFixed(2) : value}
+      {typeof value === 'number' ? formatAmountNumber(value) : value}
     </text>
   );
 };
@@ -307,7 +309,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   const cycleTotal = getCycleTotalExpenses(opt.cycleId);
                   return (
                     <option key={opt.cycleId} value={opt.cycleId} className="bg-[#07193F] text-white">
-                      {opt.label} • ({cycleTotal.toFixed(2)} {currencyDisplay})
+                      {opt.label} • ({formatAmountNumber(cycleTotal)} {currencyDisplay})
                     </option>
                   );
                 })}
@@ -339,7 +341,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       From: <strong className="underline font-black">{tx.payByName}</strong>
                     </span>
                     <div className="text-[20px] font-black text-slate-950 font-sans">
-                      <span>Amount: {tx.amount.toFixed(2)} {group.currency || 'AED'}</span>
+                      <span>Amount: {formatAmountNumber(tx.amount)} {group.currency || 'AED'}</span>
                     </div>
                   </div>
 
@@ -350,10 +352,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <strong>Purpose:</strong> {tx.purpose}
                       </p>
                       <div className="flex items-center gap-3 text-[11px] font-medium text-slate-800 flex-wrap">
-                        <span><strong>Date:</strong> {tx.date}</span>
+                        <span><strong>Date:</strong> {formatDateDisplay(tx.date)}</span>
                         {tx.returnDate && (
                           <span className="bg-white/80 px-2 py-0.5 rounded-md font-bold text-slate-900">
-                            <strong>Promised Return:</strong> {tx.returnDate}
+                            <strong>Promised Return:</strong> {formatDateDisplay(tx.returnDate)}
                           </span>
                         )}
                       </div>
@@ -426,7 +428,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5">
-                            <span>Loan: {tx.amount.toFixed(2)} {group.currency || 'AED'}</span>
+                            <span>Loan: {formatAmountNumber(tx.amount)} {group.currency || 'AED'}</span>
                             <button
                               type="button"
                               onClick={() => handleStartEditAmount(tx)}
@@ -447,10 +449,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           <strong>Purpose:</strong> {tx.purpose}
                         </p>
                         <div className="flex items-center gap-3 text-[11px] font-medium text-slate-800 flex-wrap">
-                          <span><strong>Date:</strong> {tx.date}</span>
+                          <span><strong>Date:</strong> {formatDateDisplay(tx.date)}</span>
                           {tx.returnDate && (
                             <span className="bg-white/80 px-2 py-0.5 rounded-md font-bold text-slate-900">
-                              <strong>Return Date:</strong> {tx.returnDate}
+                              <strong>Return Date:</strong> {formatDateDisplay(tx.returnDate)}
                             </span>
                           )}
                         </div>
@@ -543,7 +545,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </span>
                   </div>
                   <span className="font-extrabold text-slate-900 text-xs sm:text-sm shrink-0">
-                    {item.value.toFixed(2)} {currencyDisplay}
+                    {formatAmountNumber(item.value)} {currencyDisplay}
                   </span>
                 </div>
               ))}
@@ -589,7 +591,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
               <div className="space-y-0.5">
                 <span className="text-base sm:text-xl font-black text-[#071E55] block">
-                  {mySpent.toFixed(2)} AED
+                  {formatAmountNumber(mySpent)} AED
                 </span>
                 <span className="text-xs font-bold text-slate-500 tracking-tight block">
                   My Contribution
@@ -606,7 +608,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
               <div className="space-y-0.5">
                 <span className="text-base sm:text-xl font-black text-[#071E55] block">
-                  {avgPerPerson.toFixed(2)} AED
+                  {formatAmountNumber(avgPerPerson)} AED
                 </span>
                 <span className="text-xs font-bold text-slate-500 tracking-tight block">
                   Avg. per Person
@@ -686,7 +688,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         />
                         <span className="truncate">{selectedMember?.name || 'Selected User'}</span>
                         <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full shrink-0">
-                          {selectedUserCount} • {selectedUserTotal.toFixed(0)} {currencyDisplay}
+                          {selectedUserCount} • {formatAmountNumber(selectedUserTotal)} {currencyDisplay}
                         </span>
                       </div>
                     )}
@@ -766,7 +768,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           <span className={`text-[10px] font-bold ${
                             isSelected ? 'text-blue-100' : 'text-slate-500'
                           }`}>
-                            {userCount} exp • {userTotal.toFixed(0)} {currencyDisplay}
+                            {userCount} exp • {formatAmountNumber(userTotal)} {currencyDisplay}
                           </span>
                           {isSelected && <Check className="w-4 h-4 text-white shrink-0" />}
                         </div>
@@ -840,7 +842,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           )}
                         </div>
                         <span className="text-[10px] text-slate-500 font-medium block truncate">
-                          {exp.date}
+                          {formatDateDisplay(exp.date)}
                         </span>
                       </div>
                     </div>

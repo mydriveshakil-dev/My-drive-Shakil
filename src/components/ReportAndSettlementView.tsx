@@ -22,6 +22,8 @@ import {
 import { isPhoneMatch } from '../lib/firebase';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 import { MemberAvatar } from './MemberAvatar';
+import { formatAmountNumber } from '../utils/currency';
+import { formatDateDisplay } from '../utils/dateUtils';
 
 interface ReportAndSettlementViewProps {
   group: Group;
@@ -226,10 +228,10 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
   };
 
   const handleShareWhatsApp = () => {
-    const summaryText = `📋 *${group.name} - Settlement Report*\n📅 Period: ${fromDate} to ${toDate}\n\n💰 Grand Total: ${settlementResult.grandTotalExpenses.toFixed(2)} ${group.currency}\n\n*Settlement Transactions:*\n${
+    const summaryText = `📋 *${group.name} - Settlement Report*\n📅 Period: ${formatDateDisplay(fromDate)} to ${formatDateDisplay(toDate)}\n\n💰 Grand Total: ${formatAmountNumber(settlementResult.grandTotalExpenses)} ${group.currency}\n\n*Settlement Transactions:*\n${
       settlementResult.settlementFlows.length > 0
         ? settlementResult.settlementFlows
-            .map((f) => `• ${f.fromMemberName} pays ${f.toMemberName}: ${f.amount.toFixed(2)} ${group.currency}`)
+            .map((f) => `• ${f.fromMemberName} pays ${f.toMemberName}: ${formatAmountNumber(f.amount)} ${group.currency}`)
             .join('\n')
         : 'All balances cleared!'
     }`;
@@ -240,10 +242,10 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
   const handleShareReport = async () => {
     const fileName = `${group.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Settlement_Report_${fromDate}_to_${toDate}.pdf`;
-    const summaryText = `📋 *${group.name} - Settlement Report*\n📅 Period: ${fromDate} to ${toDate}\n\n💰 Grand Total: ${settlementResult.grandTotalExpenses.toFixed(2)} ${group.currency}\n\n*Settlement Transactions:*\n${
+    const summaryText = `📋 *${group.name} - Settlement Report*\n📅 Period: ${formatDateDisplay(fromDate)} to ${formatDateDisplay(toDate)}\n\n💰 Grand Total: ${formatAmountNumber(settlementResult.grandTotalExpenses)} ${group.currency}\n\n*Settlement Transactions:*\n${
       settlementResult.settlementFlows.length > 0
         ? settlementResult.settlementFlows
-            .map((f) => `• ${f.fromMemberName} pays ${f.toMemberName}: ${f.amount.toFixed(2)} ${group.currency}`)
+            .map((f) => `• ${f.fromMemberName} pays ${f.toMemberName}: ${formatAmountNumber(f.amount)} ${group.currency}`)
             .join('\n')
         : 'All balances cleared!'
     }`;
@@ -273,7 +275,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
         try {
           await navigator.share({
             title: `${group.name} Settlement Report`,
-            text: `Here is the settlement report for ${group.name} (${fromDate} to ${toDate}).`,
+            text: `Here is the settlement report for ${group.name} (${formatDateDisplay(fromDate)} to ${formatDateDisplay(toDate)}).`,
             files: [targetFile],
           });
           return;
@@ -318,10 +320,8 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
 
   return (
     <div className="space-y-6 pb-28">
-      {/* Top Banner - Dark Navy Luxury Theme */}
-      <div
-        className="rounded-3xl neu-upper text-slate-900 overflow-hidden"
-      >
+      {/* Top Banner & Control Container */}
+      <div className="rounded-3xl neu-upper text-slate-900 overflow-hidden">
         {/* Top Dark Navy Header Band with centered Title & Description */}
         <div className="bg-[#07193F] text-white px-5 py-5 sm:py-6 text-center space-y-1">
           <h2 className="text-xl sm:text-2xl font-black text-white">Report & Member Settlement</h2>
@@ -330,101 +330,96 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
           </p>
         </div>
 
-        {/* Center-aligned Export PDF Button */}
-        <div className="p-5 sm:p-6 flex justify-center items-center">
-          <button
-            type="button"
-            onClick={() => setIsPdfPreviewOpen(true)}
-            className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-6 py-2.5 rounded-2xl text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer uppercase tracking-wider shadow-md active:scale-95"
-          >
-            <FileText className="w-4 h-4 text-white" />
-            <span>Export PDF</span>
-          </button>
-        </div>
-      </div>
+        {/* Report Range & Include Categories moved up to present position of Export PDF button */}
+        <div className="p-4 sm:p-5 space-y-3.5 text-center">
+          {/* Navy Blue Header Bar for Report Range (15pt, white text) */}
+          <div className="bg-[#07193F] text-white py-2 px-4 rounded-xl shadow-md flex items-center justify-center gap-2">
+            <Calendar className="w-5 h-5 text-white" />
+            <span className="text-[15pt] font-bold text-white tracking-wide">Report Range</span>
+          </div>
 
-      {/* Date Picker & Compact Include Categories in 1 Line */}
-      <div className="p-4 neu-upper text-slate-900 space-y-3.5 rounded-2xl text-center">
-        {/* Navy Blue Header Bar for Report Range (15pt, white text) */}
-        <div className="bg-[#07193F] text-white py-2 px-4 rounded-xl shadow-md flex items-center justify-center gap-2">
-          <Calendar className="w-5 h-5 text-white" />
-          <span className="text-[15pt] font-bold text-white tracking-wide">Report Range</span>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 border-b border-slate-300/60 pb-3 text-center">
-          <div className="flex items-center justify-center gap-3 text-xs text-center flex-wrap">
-            {/* From Date Debossed Neumorphic Box */}
-            <div
-              className="relative px-3.5 py-2 rounded-2xl transition-all"
-              style={{
-                backgroundColor: '#E7E7E7',
-                boxShadow:
-                  'inset -6px -6px 16px 0px rgba(255, 255, 255, 0.95), inset 6px 6px 16px 0px rgba(174, 174, 192, 0.85)',
-              }}
-            >
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                className="bg-transparent font-bold text-slate-900 focus:outline-none text-center border-none cursor-pointer"
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 border-b border-slate-300/60 pb-3 text-center">
+            <div className="flex items-center justify-center gap-3 text-xs text-center flex-wrap">
+              {/* From Date Debossed Neumorphic Box */}
+              <div
+                className="relative px-3.5 py-2 rounded-2xl transition-all"
                 style={{
-                  backgroundColor: 'transparent',
+                  backgroundColor: '#E7E7E7',
+                  boxShadow:
+                    'inset -6px -6px 16px 0px rgba(255, 255, 255, 0.95), inset 6px 6px 16px 0px rgba(174, 174, 192, 0.85)',
                 }}
-              />
-            </div>
+              >
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="bg-transparent font-bold text-slate-900 focus:outline-none text-center border-none cursor-pointer"
+                />
+              </div>
 
-            <span className="text-slate-600 font-black text-xs uppercase px-1">to</span>
+              <span className="text-slate-600 font-black text-xs uppercase px-1">to</span>
 
-            {/* To Date Debossed Neumorphic Box */}
-            <div
-              className="relative px-3.5 py-2 rounded-2xl transition-all"
-              style={{
-                backgroundColor: '#E7E7E7',
-                boxShadow:
-                  'inset -6px -6px 16px 0px rgba(255, 255, 255, 0.95), inset 6px 6px 16px 0px rgba(174, 174, 192, 0.85)',
-              }}
-            >
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                className="bg-transparent font-bold text-slate-900 focus:outline-none text-center border-none cursor-pointer"
+              {/* To Date Debossed Neumorphic Box */}
+              <div
+                className="relative px-3.5 py-2 rounded-2xl transition-all"
                 style={{
-                  backgroundColor: 'transparent',
+                  backgroundColor: '#E7E7E7',
+                  boxShadow:
+                    'inset -6px -6px 16px 0px rgba(255, 255, 255, 0.95), inset 6px 6px 16px 0px rgba(174, 174, 192, 0.85)',
                 }}
-              />
+              >
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="bg-transparent font-bold text-slate-900 focus:outline-none text-center border-none cursor-pointer"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Category Checkboxes in 1 compact center-aligned line */}
-        <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-center">
-          <span className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider shrink-0 text-center">
-            Include Categories:
-          </span>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 text-center">
-            {[
-              { key: 'mess', label: 'Mess' },
-              { key: 'general', label: 'General' },
-              { key: 'utilities', label: 'Utilities' },
-              { key: 'expensesSummary', label: 'Expenses Summary' },
-            ].map(({ key, label }) => {
-              const isChecked = includeCategories[key as keyof typeof includeCategories];
-              return (
-                <button
-                  key={key}
-                  onClick={() => toggleCategory(key as keyof typeof includeCategories)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                    isChecked
-                      ? 'bg-black text-white shadow-xs'
-                      : 'neu-upper-btn text-slate-700'
-                  }`}
-                >
-                  {isChecked ? <CheckSquare className="w-3.5 h-3.5 text-white" /> : <Square className="w-3.5 h-3.5 text-slate-400" />}
-                  <span>{label}</span>
-                </button>
-              );
-            })}
+          {/* Category Checkboxes in 1 compact center-aligned line */}
+          <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-center">
+            <span className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider shrink-0 text-center">
+              Include Categories:
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-1.5 text-center">
+              {[
+                { key: 'mess', label: 'Mess' },
+                { key: 'general', label: 'General' },
+                { key: 'utilities', label: 'Utilities' },
+                { key: 'expensesSummary', label: 'Expenses Summary' },
+              ].map(({ key, label }) => {
+                const isChecked = includeCategories[key as keyof typeof includeCategories];
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => toggleCategory(key as keyof typeof includeCategories)}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      isChecked
+                        ? 'bg-black text-white shadow-xs'
+                        : 'neu-upper-btn text-slate-700'
+                    }`}
+                  >
+                    {isChecked ? <CheckSquare className="w-3.5 h-3.5 text-white" /> : <Square className="w-3.5 h-3.5 text-slate-400" />}
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Export PDF Button placed below Include Categories */}
+          <div className="pt-2 flex justify-center items-center">
+            <button
+              type="button"
+              onClick={() => setIsPdfPreviewOpen(true)}
+              className="bg-[#0052FF] hover:bg-[#0047E0] text-white font-black px-6 py-2.5 rounded-2xl text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer uppercase tracking-wider shadow-md active:scale-95"
+            >
+              <FileText className="w-4 h-4 text-white" />
+              <span>Export PDF</span>
+            </button>
           </div>
         </div>
       </div>
@@ -467,12 +462,12 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                 <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
                   <div className="neu-upper-sm p-2 rounded-xl text-center">
                     <span className="text-slate-500 block text-[9px] sm:text-[10px] font-extrabold uppercase">Per Person Cost</span>
-                    <span className="font-black text-slate-900 block mt-0.5">{ms.totalActualExpense.toFixed(2)} {group.currency}</span>
+                    <span className="font-black text-slate-900 block mt-0.5">{formatAmountNumber(ms.totalActualExpense)} {group.currency}</span>
                   </div>
 
                   <div className="neu-upper-sm p-2 rounded-xl text-center">
                     <span className="text-slate-500 block text-[9px] sm:text-[10px] font-extrabold uppercase">Amount Paid</span>
-                    <span className="font-black text-slate-900 block mt-0.5">{ms.totalAmountSpent.toFixed(2)} {group.currency}</span>
+                    <span className="font-black text-slate-900 block mt-0.5">{formatAmountNumber(ms.totalAmountSpent)} {group.currency}</span>
                   </div>
 
                   <div
@@ -484,7 +479,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                   >
                     <span className="block text-[9px] sm:text-[10px] font-extrabold uppercase opacity-80">Final Status</span>
                     <span className="font-black block mt-0.5 truncate">
-                      {isOverpaid ? `+${ms.balance.toFixed(2)} (Gets)` : `${ms.balance.toFixed(2)} (Due)`}
+                      {isOverpaid ? `+${formatAmountNumber(ms.balance)} (Gets)` : `${formatAmountNumber(ms.balance)} (Due)`}
                     </span>
                   </div>
                 </div>
@@ -512,7 +507,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                     </span>
                   </h3>
                   <p className="text-[10px] sm:text-[11px] text-emerald-200/80 truncate max-w-[150px] sm:max-w-md">
-                    {group.name} • Period: {fromDate} to {toDate}
+                    {group.name} • Period: {formatDateDisplay(fromDate)} to {formatDateDisplay(toDate)}
                   </p>
                 </div>
               </div>
@@ -591,12 +586,12 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                       <p className="font-bold text-xs" style={{ color: '#0f172a' }}>Group: {group.name}</p>
                       <p className="leading-normal">
                         Settlement Period:{' '}
-                        <strong style={{ color: '#047857' }}>{fromDate}</strong> to{' '}
-                        <strong style={{ color: '#047857' }}>{toDate}</strong>
+                        <strong style={{ color: '#047857' }}>{formatDateDisplay(fromDate)}</strong> to{' '}
+                        <strong style={{ color: '#047857' }}>{formatDateDisplay(toDate)}</strong>
                       </p>
                       <p className="leading-normal">
                         Generated:{' '}
-                        {new Date().toLocaleDateString('en-US', {
+                        {new Date().toLocaleDateString('en-GB', {
                           year: 'numeric',
                           month: 'short',
                           day: 'numeric',
@@ -612,7 +607,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                         Total Mess Expense
                       </span>
                       <div className="text-base font-black my-1 leading-snug" style={{ color: '#0f172a' }}>
-                        {settlementResult.totalMessExpenses.toFixed(2)} {group.currency}
+                        {formatAmountNumber(settlementResult.totalMessExpenses)} {group.currency}
                       </div>
                       <span className="text-[10px] font-medium leading-normal" style={{ color: '#64748b' }}>
                         Shared equally
@@ -624,7 +619,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                         General Expense
                       </span>
                       <div className="text-base font-black my-1 leading-snug" style={{ color: '#0f172a' }}>
-                        {settlementResult.totalGeneralExpenses.toFixed(2)} {group.currency}
+                        {formatAmountNumber(settlementResult.totalGeneralExpenses)} {group.currency}
                       </div>
                       <span className="text-[10px] font-medium leading-normal" style={{ color: '#64748b' }}>
                         Shared equally
@@ -636,7 +631,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                         Utilities (DEWA & WiFi)
                       </span>
                       <div className="text-base font-black my-1 leading-snug" style={{ color: '#0f172a' }}>
-                        {settlementResult.totalUtilities.toFixed(2)} {group.currency}
+                        {formatAmountNumber(settlementResult.totalUtilities)} {group.currency}
                       </div>
                       <span className="text-[10px] font-medium leading-normal" style={{ color: '#64748b' }}>
                         DEWA, WiFi Bills
@@ -648,7 +643,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                         Grand Total
                       </span>
                       <div className="text-base font-black my-1 leading-snug" style={{ color: '#022c22' }}>
-                        {settlementResult.grandTotalExpenses.toFixed(2)} {group.currency}
+                        {formatAmountNumber(settlementResult.grandTotalExpenses)} {group.currency}
                       </div>
                       <span className="text-[10px] font-semibold leading-normal" style={{ color: '#047857' }}>
                         {group.members.length} Members
@@ -695,16 +690,16 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                                   </div>
                                 </td>
                                 <td className="p-2.5 border-r text-right leading-normal" style={{ borderColor: '#e2e8f0', color: '#334155' }}>
-                                  {ms.totalActualExpense.toFixed(2)} {group.currency}
+                                  {formatAmountNumber(ms.totalActualExpense)} {group.currency}
                                 </td>
                                 <td className="p-2.5 border-r text-right font-bold leading-normal" style={{ borderColor: '#e2e8f0', color: '#b45309' }}>
-                                  {ms.totalAmountSpent.toFixed(2)} {group.currency}
+                                  {formatAmountNumber(ms.totalAmountSpent)} {group.currency}
                                 </td>
                                 <td className="p-2.5 text-right font-black leading-normal">
                                   <span style={{ color: isOverpaid ? '#047857' : '#be123c' }}>
                                     {isOverpaid
-                                      ? `+${ms.balance.toFixed(2)} ${group.currency} (Gets Back)`
-                                      : `${ms.balance.toFixed(2)} ${group.currency} (DUE)`}
+                                      ? `+${formatAmountNumber(ms.balance)} ${group.currency} (Gets Back)`
+                                      : `${formatAmountNumber(ms.balance)} ${group.currency} (DUE)`}
                                   </span>
                                 </td>
                               </tr>
@@ -740,7 +735,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                               <span className="text-xs font-semibold" style={{ color: '#64748b' }}>pays</span>
                               <ArrowRight className="w-4 h-4 shrink-0" style={{ color: '#059669' }} />
                               <span className="font-black px-3 py-1 rounded-lg border text-xs shadow-2xs leading-normal inline-block" style={{ backgroundColor: '#fef3c7', borderColor: '#fde68a', color: '#020617' }}>
-                                {flow.amount.toFixed(2)} {group.currency}
+                                {formatAmountNumber(flow.amount)} {group.currency}
                               </span>
                             </div>
 
@@ -766,7 +761,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                       <h3 className="text-xs font-black uppercase tracking-wider pb-1.5 border-b flex items-center justify-between" style={{ color: '#1e293b', borderColor: '#e2e8f0' }}>
                         <span>3. Utility Bills Breakdown (DEWA & WiFi)</span>
                         <span className="font-normal text-[11px]" style={{ color: '#64748b' }}>
-                          Total: {settlementResult.totalUtilities.toFixed(2)} {group.currency}
+                          Total: {formatAmountNumber(settlementResult.totalUtilities)} {group.currency}
                         </span>
                       </h3>
                       {filteredUtilitiesByDate && filteredUtilitiesByDate.length > 0 ? (
@@ -786,8 +781,8 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                                 return (
                                   <tr key={u.id} style={{ backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}>
                                     <td className="p-2 border-r font-bold" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>{u.name || u.category || 'Utility'}</td>
-                                    <td className="p-2 border-r" style={{ borderColor: '#e2e8f0', color: '#475569' }}>{u.dueDate || u.cycle || 'Current'}</td>
-                                    <td className="p-2 border-r text-right font-black" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>{u.amount.toFixed(2)} {group.currency}</td>
+                                    <td className="p-2 border-r" style={{ borderColor: '#e2e8f0', color: '#475569' }}>{formatDateDisplay(u.dueDate || u.cycle || 'Current')}</td>
+                                    <td className="p-2 border-r text-right font-black" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>{formatAmountNumber(u.amount)} {group.currency}</td>
                                     <td className="p-2 text-center font-bold">
                                       <span className="px-1.5 py-0.5 rounded text-[10px]" style={isPaid ? { backgroundColor: '#d1fae5', color: '#065f46' } : { backgroundColor: '#fef3c7', color: '#92400e' }}>
                                         {isPaid ? 'PAID' : 'PENDING'}
@@ -813,7 +808,7 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                       <h3 className="text-xs font-black uppercase tracking-wider pb-1.5 border-b flex items-center justify-between" style={{ color: '#1e293b', borderColor: '#e2e8f0' }}>
                         <span>4. Current Cycle Expenses Summary</span>
                         <span className="font-normal text-[11px]" style={{ color: '#64748b' }}>
-                          Total: {settlementResult.totalMessExpenses.toFixed(2)} {group.currency}
+                          Total: {formatAmountNumber(settlementResult.totalMessExpenses)} {group.currency}
                         </span>
                       </h3>
                       {filteredExpensesByDate && filteredExpensesByDate.length > 0 ? (
@@ -831,11 +826,11 @@ export const ReportAndSettlementView: React.FC<ReportAndSettlementViewProps> = (
                             <tbody className="divide-y font-medium text-[11px]" style={{ borderColor: '#e2e8f0' }}>
                               {filteredExpensesByDate.slice(0, 20).map((e, idx) => (
                                 <tr key={e.id} style={{ backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}>
-                                  <td className="p-2 border-r" style={{ borderColor: '#e2e8f0', color: '#475569' }}>{e.date}</td>
+                                  <td className="p-2 border-r" style={{ borderColor: '#e2e8f0', color: '#475569' }}>{formatDateDisplay(e.date)}</td>
                                   <td className="p-2 border-r font-bold" style={{ borderColor: '#e2e8f0', color: '#0f172a' }}>{e.title}</td>
                                   <td className="p-2 border-r uppercase text-[10px]" style={{ borderColor: '#e2e8f0', color: '#475569' }}>{e.category || 'Mess'}</td>
                                   <td className="p-2 border-r font-semibold" style={{ borderColor: '#e2e8f0', color: '#1e293b' }}>{e.paidByName || 'Member'}</td>
-                                  <td className="p-2 text-right font-black" style={{ color: '#0f172a' }}>{e.amount.toFixed(2)} {group.currency}</td>
+                                  <td className="p-2 text-right font-black" style={{ color: '#0f172a' }}>{formatAmountNumber(e.amount)} {group.currency}</td>
                                 </tr>
                               ))}
                             </tbody>

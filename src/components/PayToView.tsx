@@ -14,6 +14,8 @@ import {
 import { GlassContainer } from './GlassContainer';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 import { isPhoneMatch } from '../lib/firebase';
+import { formatAmountNumber } from '../utils/currency';
+import { formatDateDisplay } from '../utils/dateUtils';
 
 interface PayToViewProps {
   group: Group;
@@ -359,7 +361,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                 className="neu-upper-sm rounded-2xl p-3.5 space-y-2"
               >
                 <div className="flex items-center justify-between border-b border-slate-300/60 pb-2">
-                  <span className="text-[11px] font-bold text-slate-600">{tx.date}</span>
+                  <span className="text-[11px] font-bold text-slate-600">{formatDateDisplay(tx.date)}</span>
                   {tx.status === 'pending' ? (
                     <span className="inline-flex items-center gap-1.5 text-rose-600 font-black bg-rose-50 px-2 py-0.5 rounded-full border border-rose-300 text-[10px]">
                       <span className="relative flex h-2 w-2 shrink-0">
@@ -398,7 +400,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                   <div className="text-right shrink-0">
                     <span className="text-[10px] font-extrabold text-slate-500 uppercase block">Amount</span>
                     <span className="text-sm font-black text-slate-950 underline decoration-1">
-                      {tx.amount.toFixed(2)} {group.currency || preferredCurrency}
+                      {formatAmountNumber(tx.amount)} {group.currency || preferredCurrency}
                     </span>
                   </div>
                 </div>
@@ -429,7 +431,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
           {/* Mobile Grand Total Card */}
           <div className="neu-lower-sm rounded-2xl p-3.5 flex items-center justify-between font-black text-xs text-slate-950">
             <span className="uppercase tracking-wider">Grand Total (All):</span>
-            <span className="text-sm underline decoration-2">{previousGrandTotal.toFixed(2)} {group.currency || preferredCurrency}</span>
+            <span className="text-sm underline decoration-2">{formatAmountNumber(previousGrandTotal)} {group.currency || preferredCurrency}</span>
           </div>
         </div>
 
@@ -461,7 +463,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                 previousRecords.map((tx) => (
                   <tr key={tx.id} className="hover:bg-slate-200/50 transition-colors">
                     <td className="p-3 whitespace-nowrap text-slate-700 font-medium">
-                      {tx.date}
+                      {formatDateDisplay(tx.date)}
                     </td>
                     <td className="p-3 whitespace-nowrap font-black text-slate-900">
                       {tx.payByName}
@@ -473,7 +475,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                       {tx.purpose}
                     </td>
                     <td className="p-3 text-right font-black text-slate-950 whitespace-nowrap">
-                      {tx.amount.toFixed(2)}
+                      {formatAmountNumber(tx.amount)}
                     </td>
                     <td className="p-3 text-center whitespace-nowrap">
                       {tx.status === 'pending' ? (
@@ -525,7 +527,7 @@ export const PayToView: React.FC<PayToViewProps> = ({
                   Grand Total (All):
                 </td>
                 <td className="p-3 text-right text-sm underline decoration-2 underline-offset-2">
-                  {previousGrandTotal.toFixed(2)} {group.currency || preferredCurrency}
+                  {formatAmountNumber(previousGrandTotal)} {group.currency || preferredCurrency}
                 </td>
                 <td colSpan={isAdmin ? 2 : 1}></td>
               </tr>

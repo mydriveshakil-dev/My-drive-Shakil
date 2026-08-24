@@ -1,6 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Group, UtilityBill, RentContribution, UserAuthProfile, LaundryBill } from '../types';
-import { Zap, Home as HomeIcon, Plus, CheckCircle2, Clock, Edit2, AlertCircle, DollarSign, Calculator, Trash2, Lock, Unlock, X, Users, CheckSquare, Square, Shirt, Sparkles, Filter, Calendar } from 'lucide-react';
+import {
+  Zap,
+  Home as HomeIcon,
+  Plus,
+  CheckCircle2,
+  Clock,
+  Edit2,
+  AlertCircle,
+  DollarSign,
+  Calculator,
+  Trash2,
+  Lock,
+  Unlock,
+  X,
+  Users,
+  CheckSquare,
+  Square,
+  Shirt,
+  Sparkles,
+  Filter,
+  Calendar,
+  Check,
+} from 'lucide-react';
 import { DualCurrencyDisplay } from './DualCurrencyDisplay';
 import { GlassContainer } from './GlassContainer';
 import { MemberAvatar } from './MemberAvatar';
@@ -8,6 +30,8 @@ import { evaluateMathExpression } from '../utils/mathEvaluator';
 import { isCategoryPermittedForUser } from '../utils/permissionUtils';
 import { isPhoneMatch, saveLaundryBillToFirestore, deleteLaundryBillFromFirestore, subscribeToLaundryBills, subscribeToGroupLaundryBills } from '../lib/firebase';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
+import { formatDateDisplay } from '../utils/dateUtils';
+import { formatAmountNumber } from '../utils/currency';
 
 interface UtilitiesAndRentViewProps {
   group: Group;
@@ -640,21 +664,37 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
     }
   };
 
-  // Filtered laundry bills for display:
-  const filteredLaundryBills =
-    isAdmin && laundryMemberFilter !== 'all'
-      ? laundryBills.filter(
-          (b) =>
-            b.memberId === laundryMemberFilter ||
-            b.userId === laundryMemberFilter ||
-            (b.memberName &&
-              b.memberName.toLowerCase() ===
-                group.members.find((m) => m.id === laundryMemberFilter)?.name.toLowerCase())
-        )
-      : laundryBills;
+  // Filtered Laundry Bills
+  const filteredLaundryBills = laundryBills.filter((b) => {
+    if (!isAdmin || laundryMemberFilter === 'all') return true;
+    return (
+      b.memberId === laundryMemberFilter ||
+      b.userId === laundryMemberFilter ||
+      b.memberName?.toLowerCase() ===
+        group.members.find((m) => m.id === laundryMemberFilter)?.name.toLowerCase()
+    );
+  });
 
   const pendingLaundryBills = filteredLaundryBills.filter((b) => b.status === 'pending');
   const receivedLaundryBills = filteredLaundryBills.filter((b) => b.status === 'received');
+
+  const handleToggleLaundryPayment = (bill: LaundryBill) => {
+    if (bill.paymentStatus === 'paid' && !isAdmin) {
+      triggerHaptic(hapticPatterns.error);
+      alert('This laundry bill is marked as PAID and locked. Only an Admin user can change it back to Due.');
+      return;
+    }
+    triggerHaptic(hapticPatterns.success);
+    const nextPaymentStatus: 'due' | 'paid' = bill.paymentStatus === 'paid' ? 'due' : 'paid';
+    const updatedBill: LaundryBill = {
+      ...bill,
+      paymentStatus: nextPaymentStatus,
+      updatedAtMs: Date.now(),
+    };
+    const updated = laundryBills.map((b) => (b.id === bill.id ? updatedBill : b));
+    persistLaundryBills(updated);
+    saveLaundryBillToFirestore(bill.userId || sanitizedUserKey, updatedBill, group.id);
+  };
 
   return (
     <div className="space-y-6 pb-28">
@@ -670,8 +710,8 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
           </p>
         </div>
 
-        {/* 4 Clean Action Buttons with exact short names and NO icons */}
-        <div className="p-4 sm:p-5">
+        {/* 4 Clean Action Buttons, Summary Stat Cards & Export PDF */}
+        <div className="p-4 sm:p-5 space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 w-full max-w-2xl mx-auto">
             {/* 1. Add Utility */}
             <button
@@ -739,71 +779,71 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               <span>Room Rent</span>
             </button>
           </div>
-        </div>
-      </div>
 
-      {/* Summary Stat Cards - Compact Side-by-Side Boxes */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="p-4 neu-upper text-slate-900 rounded-2xl">
-          <div className="flex items-center justify-between text-slate-800 mb-1">
-            <Zap className="w-4 h-4 text-amber-500" />
-            <span className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full">
-              Utilities
-            </span>
-          </div>
-          <span className="text-[11px] text-slate-600 font-semibold block truncate">Total Utility Bills</span>
-          <div className="mt-1">
-            <DualCurrencyDisplay
-              amount={totalUtilities}
-              baseCurrency={group.currency}
-              preferredCurrency={preferredCurrency}
-              customRates={customRates}
-              layout="pill"
-              baseClassName="text-lg sm:text-xl font-black text-slate-950"
-            />
-          </div>
-          <p className="text-[10px] text-slate-600 font-bold mt-1 flex items-baseline gap-1 truncate">
-            <span>Per member:</span>
-            <DualCurrencyDisplay
-              amount={perMemberUtil}
-              baseCurrency={group.currency}
-              preferredCurrency={preferredCurrency}
-              customRates={customRates}
-              layout="inline"
-              baseClassName="font-black text-slate-950"
-            />
-          </p>
-        </div>
+          {/* Summary Stat Cards - Total Utility Bills & Total Room Rent (Nested inside header card) */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="p-3.5 sm:p-4 neu-lower-sm text-slate-900 rounded-2xl bg-white/70">
+              <div className="flex items-center justify-between text-slate-800 mb-1">
+                <Zap className="w-4 h-4 text-amber-500" />
+                <span className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full">
+                  Utilities
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-600 font-semibold block truncate">Total Utility Bills</span>
+              <div className="mt-1">
+                <DualCurrencyDisplay
+                  amount={totalUtilities}
+                  baseCurrency={group.currency}
+                  preferredCurrency={preferredCurrency}
+                  customRates={customRates}
+                  layout="pill"
+                  baseClassName="text-lg sm:text-xl font-black text-slate-950"
+                />
+              </div>
+              <p className="text-[10px] text-slate-600 font-bold mt-1 flex items-baseline gap-1 truncate">
+                <span>Per member:</span>
+                <DualCurrencyDisplay
+                  amount={perMemberUtil}
+                  baseCurrency={group.currency}
+                  preferredCurrency={preferredCurrency}
+                  customRates={customRates}
+                  layout="inline"
+                  baseClassName="font-black text-slate-950"
+                />
+              </p>
+            </div>
 
-        <div className="p-4 neu-upper text-slate-900 rounded-2xl">
-          <div className="flex items-center justify-between text-slate-800 mb-1">
-            <HomeIcon className="w-4 h-4 text-blue-600" />
-            <span className="text-[10px] font-extrabold uppercase bg-blue-100 text-blue-900 px-2 py-0.5 rounded-full">
-              Rent
-            </span>
+            <div className="p-3.5 sm:p-4 neu-lower-sm text-slate-900 rounded-2xl bg-white/70">
+              <div className="flex items-center justify-between text-slate-800 mb-1">
+                <HomeIcon className="w-4 h-4 text-blue-600" />
+                <span className="text-[10px] font-extrabold uppercase bg-blue-100 text-blue-900 px-2 py-0.5 rounded-full">
+                  Rent
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-600 font-semibold block truncate">Total Room Rent</span>
+              <div className="mt-1">
+                <DualCurrencyDisplay
+                  amount={rent.totalRent}
+                  baseCurrency={group.currency}
+                  preferredCurrency={preferredCurrency}
+                  customRates={customRates}
+                  layout="pill"
+                  baseClassName="text-lg sm:text-xl font-black text-slate-950"
+                />
+              </div>
+              <p className="text-[10px] text-slate-600 font-bold mt-1 flex items-baseline gap-1 truncate">
+                <span>Per member:</span>
+                <DualCurrencyDisplay
+                  amount={perMemberRent}
+                  baseCurrency={group.currency}
+                  preferredCurrency={preferredCurrency}
+                  customRates={customRates}
+                  layout="inline"
+                  baseClassName="font-black text-slate-950"
+                />
+              </p>
+            </div>
           </div>
-          <span className="text-[11px] text-slate-600 font-semibold block truncate">Total Room Rent</span>
-          <div className="mt-1">
-            <DualCurrencyDisplay
-              amount={rent.totalRent}
-              baseCurrency={group.currency}
-              preferredCurrency={preferredCurrency}
-              customRates={customRates}
-              layout="pill"
-              baseClassName="text-lg sm:text-xl font-black text-slate-950"
-            />
-          </div>
-          <p className="text-[10px] text-slate-600 font-bold mt-1 flex items-baseline gap-1 truncate">
-            <span>Per member:</span>
-            <DualCurrencyDisplay
-              amount={perMemberRent}
-              baseCurrency={group.currency}
-              preferredCurrency={preferredCurrency}
-              customRates={customRates}
-              layout="inline"
-              baseClassName="font-black text-slate-950"
-            />
-          </p>
         </div>
       </div>
 
@@ -1201,7 +1241,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   Total Amount
                 </label>
                 <div className="w-full px-3.5 py-2.5 rounded-2xl neu-lower-sm bg-white/70 text-slate-950 text-xs sm:text-sm font-black flex items-center justify-between h-[38px] border border-slate-200">
-                  <span className="font-mono">{calculatedLaundryTotal.toFixed(2)}</span>
+                  <span className="font-mono">{formatAmountNumber(calculatedLaundryTotal)}</span>
                   <span className="text-[10px] text-slate-500 font-bold ml-1">{group.currency || 'AED'}</span>
                 </div>
               </div>
@@ -1281,18 +1321,18 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                         Total Cost
                       </span>
                       <span className="text-2xl sm:text-3xl font-black text-slate-950 underline decoration-2">
-                        {bill.totalAmount.toFixed(2)} {group.currency || 'AED'}
+                        {formatAmountNumber(bill.totalAmount)} {group.currency || 'AED'}
                       </span>
                     </div>
                     <div className="text-right space-y-0.5 text-xs font-bold text-slate-700">
                       <div>
                         <span className="text-slate-500 text-[11px]">Items: </span>
                         <span className="font-black text-slate-900">{bill.totalItems} pcs</span>
-                        <span className="text-slate-500 text-[10px]"> (@ {bill.pricePerItem.toFixed(2)} {group.currency || 'AED'})</span>
+                        <span className="text-slate-500 text-[10px]"> (@ {formatAmountNumber(bill.pricePerItem)} {group.currency || 'AED'})</span>
                       </div>
                       <div className="text-[11px] text-slate-500">
                         <span>Date: </span>
-                        <span className="font-semibold text-slate-800">{bill.date}</span>
+                        <span className="font-semibold text-slate-800">{formatDateDisplay(bill.date)}</span>
                       </div>
                     </div>
                   </div>
@@ -1422,7 +1462,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 Total Spent
               </span>
               <span className="text-sm sm:text-xl font-black text-slate-950">
-                {receivedLaundryBills.reduce((sum, b) => sum + b.totalAmount, 0).toFixed(2)} <span className="text-[10px] font-bold">{group.currency || 'AED'}</span>
+                {formatAmountNumber(receivedLaundryBills.reduce((sum, b) => sum + b.totalAmount, 0))} <span className="text-[10px] font-bold">{group.currency || 'AED'}</span>
               </span>
             </div>
           </div>
@@ -1438,6 +1478,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                     <th className="py-2.5 px-1 sm:px-2 text-center">Items</th>
                     <th className="py-2.5 px-1 sm:px-2 text-center">Price</th>
                     <th className="py-2.5 px-1.5 sm:px-3 text-center sm:text-right">Total</th>
+                    <th className="py-2.5 px-1 sm:px-2 text-center">Status</th>
                     {isAdmin && <th className="py-2.5 px-1 sm:px-2 text-center">Act</th>}
                   </tr>
                 </thead>
@@ -1454,16 +1495,18 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                         m.name.toLowerCase() === memberName.toLowerCase()
                     );
 
+                    const isPaid = bill.paymentStatus === 'paid';
+
                     return (
                       <tr key={bill.id} className="hover:bg-slate-50/60 transition-colors">
                         {/* Date column with compact Recv subtext */}
                         <td className="py-2 sm:py-3 px-1.5 sm:px-3 align-middle">
                           <div className="font-black text-slate-950 text-[10px] sm:text-xs leading-tight">
-                            {bill.date.split(' ')[0]}
+                            {formatDateDisplay(bill.date.split(' ')[0])}
                           </div>
                           {bill.receivedAt ? (
                             <div className="text-[8px] sm:text-[10px] text-emerald-700 font-bold leading-tight mt-0.5">
-                              Recv: {new Date(bill.receivedAt).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })}
+                              Recv: {formatDateDisplay(new Date(bill.receivedAt).toISOString().split('T')[0])}
                             </div>
                           ) : (
                             <div className="text-[8px] sm:text-[10px] text-slate-500 font-medium leading-tight mt-0.5">
@@ -1493,14 +1536,53 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
                         {/* Price */}
                         <td className="py-2 sm:py-3 px-1 sm:px-2 text-center align-middle font-mono">
-                          <div className="font-black text-slate-950 text-[10px] sm:text-xs">{bill.pricePerItem.toFixed(2)}</div>
+                          <div className="font-black text-slate-950 text-[10px] sm:text-xs">{formatAmountNumber(bill.pricePerItem)}</div>
                           <div className="text-[8px] sm:text-[10px] font-bold text-slate-500">{group.currency || 'AED'}</div>
                         </td>
 
                         {/* Total */}
                         <td className="py-2 sm:py-3 px-1.5 sm:px-3 text-center sm:text-right align-middle font-mono">
-                          <div className="font-black text-slate-950 text-[10px] sm:text-xs">{bill.totalAmount.toFixed(2)}</div>
+                          <div className="font-black text-slate-950 text-[10px] sm:text-xs">{formatAmountNumber(bill.totalAmount)}</div>
                           <div className="text-[8px] sm:text-[10px] font-bold text-slate-500">{group.currency || 'AED'}</div>
+                        </td>
+
+                        {/* Due/Paid Interactive Toggle Button (Red for Due, Green for Paid - Locked for members when Paid) */}
+                        <td className="py-2 sm:py-3 px-1 sm:px-2 text-center align-middle">
+                          <button
+                            type="button"
+                            disabled={isPaid && !isAdmin}
+                            onClick={() => handleToggleLaundryPayment(bill)}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-xs transition-all inline-flex items-center justify-center gap-1 ${
+                              isPaid
+                                ? isAdmin
+                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer active:scale-95'
+                                  : 'bg-emerald-700/90 text-white cursor-not-allowed opacity-90'
+                                : 'bg-rose-500 hover:bg-rose-600 text-white cursor-pointer active:scale-95'
+                            }`}
+                            title={
+                              isPaid
+                                ? isAdmin
+                                  ? 'Paid (Admin: Click to unlock & change to Due)'
+                                  : 'Paid (Locked - Only Admin can change back to Due)'
+                                : 'Due (Click to mark as Paid)'
+                            }
+                          >
+                            {isPaid ? (
+                              <>
+                                {isAdmin ? (
+                                  <Check className="w-3 h-3 stroke-[3]" />
+                                ) : (
+                                  <Lock className="w-3 h-3 stroke-[2.5]" />
+                                )}
+                                <span>Paid</span>
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="w-3 h-3 stroke-[3]" />
+                                <span>Due</span>
+                              </>
+                            )}
+                          </button>
                         </td>
 
                         {/* Action column (Admin Only: Edit & Delete) */}
@@ -1576,7 +1658,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                       <div>
                         <h4 className="text-sm font-bold text-slate-900">{util.name}</h4>
                         <p className="text-xs text-slate-600 mt-0.5">
-                          Due: {util.dueDate} • Paid by{' '}
+                          Due: {formatDateDisplay(util.dueDate)} • Paid by{' '}
                           <strong className="text-slate-950">{payer?.name || util.paidById}</strong>
                         </p>
                       </div>
@@ -1602,7 +1684,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
                     <div className="neu-lower-sm rounded-2xl p-3 flex items-center justify-between mt-3">
                       <span className="text-xs font-semibold text-slate-700">Total Bill Amount</span>
-                      <span className="text-lg font-black text-slate-950">{util.amount.toFixed(2)} AED</span>
+                      <span className="text-lg font-black text-slate-950">{formatAmountNumber(util.amount)} AED</span>
                     </div>
                   </div>
 
@@ -1611,7 +1693,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                       <span>Shared cost per member ({sharedWithIds.length}):</span>
                       <div className="flex items-center gap-3">
                         <span className="font-bold text-slate-950">
-                          {perMemberUtilCost.toFixed(2)} AED
+                          {formatAmountNumber(perMemberUtilCost)} AED
                         </span>
                         {onDeleteUtility && canDelete && (
                           <div>
@@ -1892,7 +1974,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   >
                     <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
                     <span>{name} (Temp)</span>
-                    <span className="text-[10px] text-slate-500 font-normal">({currentMemberRentShare.toFixed(0)} AED)</span>
+                    <span className="text-[10px] text-slate-500 font-normal">({formatAmountNumber(currentMemberRentShare)} AED)</span>
                     {isAdmin && (
                       <button
                         type="button"
@@ -1915,7 +1997,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
           <div>
             <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
               <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Member Rent Payment Status ({currentMemberRentShare.toFixed(2)} AED / person)
+                Member Rent Payment Status ({formatAmountNumber(currentMemberRentShare)} AED / person)
               </h4>
               <span className="text-[10px] text-slate-600 font-bold neu-upper-sm px-2.5 py-0.5 rounded-full">
                 1-Time Lock per month • Auto-resets on 1st of next month
@@ -1962,7 +2044,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       <span className="text-[11px] font-mono">
-                        {currentMemberRentShare.toFixed(0)} AED
+                        {formatAmountNumber(currentMemberRentShare)} AED
                       </span>
                       <span className="text-xs font-extrabold flex items-center gap-1">
                         {isPaid ? (

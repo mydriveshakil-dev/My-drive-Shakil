@@ -209,6 +209,7 @@ export interface LaundryBill {
   pricePerItem: number;  // Manual price per item (e.g. 2.00)
   totalAmount: number;   // Auto-calculated: (totalItems * pricePerItem)
   status: 'pending' | 'received'; // 'pending' (shows Notice card) vs 'received'
+  paymentStatus?: 'due' | 'paid'; // 'due' (Red button) vs 'paid' (Green button)
   createdAtMs: number;
   monthCycle: string;    // e.g. "2026-08" for monthly grouping and Pre.Due calculation
   receivedAt?: string;

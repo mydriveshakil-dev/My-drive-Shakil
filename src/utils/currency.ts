@@ -46,15 +46,27 @@ export function convertAmount(
   return amountInAED * toRate;
 }
 
+export function formatAmountNumber(amount: number): string {
+  if (isNaN(amount) || amount === null || amount === undefined) return '0';
+  const roundedCents = Math.round(Math.abs(amount) * 100) % 100;
+  const isWhole = roundedCents === 0;
+
+  return Math.abs(amount).toLocaleString('en-US', {
+    minimumFractionDigits: isWhole ? 0 : 2,
+    maximumFractionDigits: isWhole ? 0 : 2,
+  });
+}
+
+export function formatAmount(amount: number): string {
+  return formatAmountNumber(amount);
+}
+
 export function formatCurrencyAmount(
   amount: number,
-  currencyCode: string
+  currencyCode: string = 'AED'
 ): string {
   const symbol = getCurrencySymbol(currencyCode);
-  const formattedNumber = Math.abs(amount).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  const formattedNumber = formatAmountNumber(amount);
 
   const sign = amount < 0 ? '-' : '';
 

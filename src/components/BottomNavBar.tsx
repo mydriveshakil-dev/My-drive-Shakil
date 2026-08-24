@@ -219,16 +219,14 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
               isExpanded ? 'top-0 -translate-y-5' : 'bottom-3 sm:bottom-4'
             }`}
           >
-            {/* Circular Plus Button (Smooth slide up transition on expand) */}
+            {/* Circular Plus Button (Smooth border outline transition between application blue and navy blue) */}
             <button
               type="button"
               onClick={handleMainButtonClick}
-              className={`w-[52px] h-[52px] sm:w-[56px] sm:h-[56px] rounded-full bg-[#07152D] hover:bg-[#0B1E3D] active:scale-90 border-[2.5px] border-[#1D60FF] shadow-[0_0_25px_rgba(29,96,255,0.8)] flex items-center justify-center transition-all duration-300 cursor-pointer ring-4 ring-[#07152D] ${
-                !isExpanded ? 'animate-pulse hover:animate-none' : ''
-              }`}
+              className="relative w-[52px] h-[52px] sm:w-[56px] sm:h-[56px] rounded-full bg-[#07152D] hover:bg-[#0B1E3D] active:scale-90 border-[2.5px] border-[#0052FF] animate-border-blue-navy flex items-center justify-center transition-all duration-300 cursor-pointer ring-4 ring-[#07152D]"
               title={isExpanded ? 'Add New Expense' : 'Open Navigation Menu'}
             >
-              <div className="relative flex items-center justify-center text-white filter drop-shadow-[0_0_6px_rgba(255,255,255,0.9)]">
+              <div className="relative flex items-center justify-center text-white">
                 <Plus
                   className={`w-6 h-6 sm:w-7 sm:h-7 stroke-[3] text-white transition-transform duration-500 ${
                     isExpanded ? 'rotate-0' : 'rotate-0 scale-110'
@@ -240,7 +238,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
             {/* Label: Add Expense (shown when expanded) */}
             <span
               onClick={handleMainButtonClick}
-              className={`text-[11px] sm:text-xs font-bold tracking-tight text-white mt-1 whitespace-nowrap cursor-pointer filter drop-shadow-[0_0_4px_rgba(255,255,255,0.6)] transition-all duration-500 ${
+              className={`text-[11px] sm:text-xs font-bold tracking-tight text-white mt-1 whitespace-nowrap cursor-pointer transition-all duration-500 ${
                 isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none h-0'
               }`}
             >

@@ -21,7 +21,6 @@ import {
   Loader2,
   Bell,
   BellRing,
-  BellOff,
   Check,
   Smartphone,
 } from 'lucide-react';
@@ -713,39 +712,8 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
           </div>
         </div>
 
-        {/* Right Header: Notification Toggle & Circular Close / Exit Button */}
+        {/* Right Header: Circular Close / Exit Button */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Push Notifications Toggle Button */}
-          <button
-            type="button"
-            onClick={handleTogglePushNotifications}
-            disabled={isEnablingPush}
-            title={
-              pushStatus === 'granted'
-                ? 'Mobile push notifications active (Tap to test)'
-                : 'Turn on push notifications'
-            }
-            className={`h-9 px-2.5 rounded-full flex items-center gap-1.5 text-xs font-bold transition-all border cursor-pointer active:scale-95 ${
-              pushStatus === 'granted'
-                ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/30'
-                : 'bg-amber-500/20 border-amber-400/40 text-amber-200 hover:bg-amber-500/30 animate-pulse'
-            }`}
-          >
-            {isEnablingPush ? (
-              <Loader2 className="w-4 h-4 animate-spin text-white" />
-            ) : pushStatus === 'granted' ? (
-              <>
-                <BellRing className="w-4 h-4 text-emerald-400" />
-                <span className="hidden sm:inline text-[11px] font-semibold text-emerald-200">Active</span>
-              </>
-            ) : (
-              <>
-                <BellOff className="w-4 h-4 text-amber-300" />
-                <span className="hidden sm:inline text-[11px] font-semibold text-amber-100">Enable Alert</span>
-              </>
-            )}
-          </button>
-
           {onBack && (
             <button
               type="button"

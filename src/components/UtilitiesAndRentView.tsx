@@ -354,46 +354,105 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
   const groupLaundryStorageKey = `group_laundry_${group.id}`;
 
   const [laundryBills, setLaundryBills] = useState<LaundryBill[]>(() => {
+    const billsMap = new Map<string, LaundryBill>();
+
+    // 1. Group saved in localStorage
     const groupSaved = localStorage.getItem(groupLaundryStorageKey);
     if (groupSaved) {
       try {
         const parsed = JSON.parse(groupSaved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          parsed.forEach((b: LaundryBill) => {
+            if (b && b.id) billsMap.set(b.id, b);
+          });
+        }
       } catch (e) {}
     }
+
+    // 2. Personal saved in localStorage
     const personalSaved = localStorage.getItem(personalLaundryStorageKey);
     if (personalSaved) {
       try {
         const parsed = JSON.parse(personalSaved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          parsed.forEach((b: LaundryBill) => {
+            if (b && b.id) billsMap.set(b.id, b);
+          });
+        }
       } catch (e) {}
     }
-    return [];
+
+    // 3. Scan all localStorage keys for any personal_laundry_* or group_laundry_* to retrieve all members' records
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('personal_laundry_') || key.startsWith('group_laundry_') || key.startsWith('laundry_'))) {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) {
+                parsed.forEach((b: LaundryBill) => {
+                  if (b && b.id) {
+                    const matchesGroup = !b.groupId || b.groupId === group.id;
+                    const matchesMember = group.members.some(
+                      (m) =>
+                        m.id === b.memberId ||
+                        m.id === b.userId ||
+                        (b.memberName && m.name.toLowerCase() === b.memberName.toLowerCase())
+                    );
+                    if (matchesGroup || matchesMember) {
+                      billsMap.set(b.id, {
+                        ...b,
+                        groupId: b.groupId || group.id,
+                      });
+                    }
+                  }
+                });
+              }
+            } catch (e) {}
+          }
+        }
+      }
+    } catch (e) {}
+
+    const items = Array.from(billsMap.values());
+    items.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+    return items;
   });
 
   // Sync with Firestore
   useEffect(() => {
-    // 1. Group-wide laundry bills listener (so Admin & members see all notices for current room)
-    const unsubGroup = subscribeToGroupLaundryBills(group.id, (bills) => {
-      if (bills && Array.isArray(bills)) {
-        setLaundryBills(bills);
-        localStorage.setItem(groupLaundryStorageKey, JSON.stringify(bills));
-      }
-    });
+    // 1. Group-wide laundry bills listener with all members (so Admin & members see all notices for current room)
+    const unsubGroup = subscribeToGroupLaundryBills(
+      group.id,
+      (bills) => {
+        if (bills && Array.isArray(bills)) {
+          setLaundryBills((prev) => {
+            const map = new Map<string, LaundryBill>();
+            prev.forEach((b) => map.set(b.id, b));
+            bills.forEach((b) => map.set(b.id, b));
+            const list = Array.from(map.values());
+            list.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+            return list;
+          });
+          localStorage.setItem(groupLaundryStorageKey, JSON.stringify(bills));
+        }
+      },
+      group.members
+    );
 
     // 2. Personal laundry bills listener as backup/individual sync
     const unsubPersonal = subscribeToLaundryBills(sanitizedUserKey, (personalBills) => {
       if (personalBills && Array.isArray(personalBills)) {
         localStorage.setItem(personalLaundryStorageKey, JSON.stringify(personalBills));
         setLaundryBills((prev) => {
-          const existingIds = new Set(prev.map((b) => b.id));
-          const toAdd = personalBills.filter((b) => !existingIds.has(b.id));
-          if (toAdd.length > 0) {
-            const merged = [...prev, ...toAdd];
-            merged.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
-            return merged;
-          }
-          return prev;
+          const map = new Map<string, LaundryBill>();
+          prev.forEach((b) => map.set(b.id, b));
+          personalBills.forEach((b) => map.set(b.id, b));
+          const merged = Array.from(map.values());
+          merged.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+          return merged;
         });
       }
     });
@@ -402,7 +461,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
       if (unsubGroup) unsubGroup();
       if (unsubPersonal) unsubPersonal();
     };
-  }, [group.id, sanitizedUserKey, groupLaundryStorageKey, personalLaundryStorageKey]);
+  }, [group.id, group.members, sanitizedUserKey, groupLaundryStorageKey, personalLaundryStorageKey]);
 
   const persistLaundryBills = (updated: LaundryBill[]) => {
     setLaundryBills(updated);
@@ -1168,57 +1227,6 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         </div>
       )}
 
-      {/* ADMIN LAUNDRY MEMBER FILTER (Visible when admin is viewing room with members) */}
-      {isAdmin && group.members.length > 0 && (
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-[11px] font-black uppercase text-slate-600 tracking-wider flex items-center gap-1">
-              <Filter className="w-3.5 h-3.5 text-blue-600" /> Filter by Member
-            </span>
-            <span className="text-[11px] text-slate-500 font-bold">
-              {laundryBills.length} total records in room
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 px-1 no-scrollbar">
-            <button
-              type="button"
-              onClick={() => setLaundryMemberFilter('all')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shrink-0 transition-all cursor-pointer ${
-                laundryMemberFilter === 'all'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'bg-white/80 hover:bg-white text-slate-700 border border-slate-200'
-              }`}
-            >
-              All Members ({laundryBills.length})
-            </button>
-            {group.members.map((m) => {
-              const memberCount = laundryBills.filter(
-                (b) =>
-                  b.memberId === m.id ||
-                  b.userId === m.id ||
-                  (b.memberName && b.memberName.toLowerCase() === m.name.toLowerCase())
-              ).length;
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setLaundryMemberFilter(m.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 border ${
-                    laundryMemberFilter === m.id
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                      : 'bg-white/80 hover:bg-white text-slate-700 border-slate-200'
-                  }`}
-                >
-                  <MemberAvatar name={m.name} avatar={m.avatar} size="xs" className="w-4 h-4 text-[8px]" />
-                  <span>{m.name}</span>
-                  <span className="text-[10px] opacity-80 font-mono">({memberCount})</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* PENDING LAUNDRY NOTICE CARDS (Based on attached IMG_8304.jpeg) */}
       {pendingLaundryBills.length > 0 && (
         <div className="space-y-3">
@@ -1333,35 +1341,35 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
       {/* LAUNDRY PREVIOUS RECORDS SECTION (Shows all received laundry history & summary table) */}
       {(receivedLaundryBills.length > 0 || isAdmin) && (
-        <div className="p-5 sm:p-6 neu-upper rounded-3xl text-slate-900 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-300/60 pb-3 gap-2">
+        <div className="p-3.5 sm:p-6 neu-upper rounded-3xl text-slate-900 space-y-3.5 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-300/60 pb-3 gap-1.5">
             <div className="flex items-center gap-2">
               <Shirt className="w-5 h-5 text-slate-900" />
-              <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase tracking-wide">
+              <h3 className="text-xs sm:text-base font-black text-slate-900 uppercase tracking-wide">
                 Laundry Previous Records ({receivedLaundryBills.length})
               </h3>
             </div>
-            <span className="text-xs text-slate-500 font-medium">
+            <span className="text-[11px] sm:text-xs text-slate-500 font-medium">
               Completed & received laundry delivery logs
             </span>
           </div>
 
-          {/* Admin Member Filter Pills */}
+          {/* Admin Member Filter Pills (flex-wrap so no swiping needed) */}
           {isAdmin && group.members.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              <span className="text-[11px] font-black uppercase text-slate-500 mr-1 shrink-0">
-                Filter Member:
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <span className="text-[10px] sm:text-[11px] font-black uppercase text-slate-500 mr-0.5 shrink-0">
+                Filter:
               </span>
               <button
                 type="button"
                 onClick={() => setLaundryMemberFilter('all')}
-                className={`px-3 py-1 rounded-xl text-xs font-black transition-all cursor-pointer shrink-0 ${
+                className={`px-2.5 py-1 rounded-xl text-[11px] sm:text-xs font-black transition-all cursor-pointer ${
                   laundryMemberFilter === 'all'
                     ? 'bg-slate-900 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
-                All Members ({laundryBills.filter((b) => b.status === 'received').length})
+                All ({laundryBills.filter((b) => b.status === 'received').length})
               </button>
               {group.members.map((m) => {
                 const count = laundryBills.filter(
@@ -1376,7 +1384,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                     key={m.id}
                     type="button"
                     onClick={() => setLaundryMemberFilter(m.id)}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                    className={`px-2 py-1 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
                       laundryMemberFilter === m.id
                         ? 'bg-slate-900 text-white shadow-xs'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -1384,7 +1392,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                   >
                     <MemberAvatar name={m.name} avatar={m.avatar} size="xs" className="w-3.5 h-3.5 text-[8px]" />
                     <span>{m.name}</span>
-                    <span className="text-[10px] opacity-80">({count})</span>
+                    <span className="text-[9px] opacity-80">({count})</span>
                   </button>
                 );
               })}
@@ -1392,45 +1400,45 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
           )}
 
           {/* Summary Stat Strip */}
-          <div className="grid grid-cols-3 gap-2.5 neu-lower-sm p-4 rounded-2xl text-center">
-            <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5 neu-lower-sm p-2.5 sm:p-4 rounded-2xl text-center">
+            <div className="p-1">
+              <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-0.5 sm:mb-1">
                 Deliveries
               </span>
-              <span className="text-base sm:text-xl font-black text-slate-950">
+              <span className="text-sm sm:text-xl font-black text-slate-950">
                 {receivedLaundryBills.length}
               </span>
             </div>
-            <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+            <div className="p-1">
+              <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-0.5 sm:mb-1">
                 Items Washed
               </span>
-              <span className="text-base sm:text-xl font-black text-slate-950">
-                {receivedLaundryBills.reduce((sum, b) => sum + b.totalItems, 0)} pcs
+              <span className="text-sm sm:text-xl font-black text-slate-950">
+                {receivedLaundryBills.reduce((sum, b) => sum + b.totalItems, 0)} <span className="text-[10px] font-bold">pcs</span>
               </span>
             </div>
-            <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+            <div className="p-1">
+              <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-0.5 sm:mb-1">
                 Total Spent
               </span>
-              <span className="text-base sm:text-xl font-black text-slate-950">
-                {receivedLaundryBills.reduce((sum, b) => sum + b.totalAmount, 0).toFixed(2)} {group.currency || 'AED'}
+              <span className="text-sm sm:text-xl font-black text-slate-950">
+                {receivedLaundryBills.reduce((sum, b) => sum + b.totalAmount, 0).toFixed(2)} <span className="text-[10px] font-bold">{group.currency || 'AED'}</span>
               </span>
             </div>
           </div>
 
-          {/* Laundry Records Table */}
+          {/* Laundry Records Table - 100% Screen Fitted, No Horizontal Swiping */}
           {receivedLaundryBills.length > 0 ? (
-            <div className="overflow-x-auto neu-lower-sm rounded-2xl">
+            <div className="w-full neu-lower-sm rounded-2xl overflow-hidden">
               <table className="w-full text-left text-xs text-slate-900 border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-300 text-[11px] font-black uppercase text-slate-700 bg-slate-100/60">
-                    <th className="p-3 sm:p-3.5">Date</th>
-                    <th className="p-3 sm:p-3.5">Given To</th>
-                    <th className="p-3 sm:p-3.5 text-center">Items</th>
-                    <th className="p-3 sm:p-3.5 text-center">Price</th>
-                    <th className="p-3 sm:p-3.5 text-center">Total</th>
-                    {isAdmin && <th className="p-3 sm:p-3.5 text-center">Action</th>}
+                  <tr className="border-b border-slate-300 text-[9px] sm:text-[11px] font-black uppercase text-slate-700 bg-slate-100/70">
+                    <th className="py-2.5 px-1.5 sm:px-3 text-left">Date</th>
+                    <th className="py-2.5 px-1.5 sm:px-3 text-left">Given To</th>
+                    <th className="py-2.5 px-1 sm:px-2 text-center">Items</th>
+                    <th className="py-2.5 px-1 sm:px-2 text-center">Price</th>
+                    <th className="py-2.5 px-1.5 sm:px-3 text-center sm:text-right">Total</th>
+                    {isAdmin && <th className="py-2.5 px-1 sm:px-2 text-center">Act</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200/80">
@@ -1448,66 +1456,72 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
                     return (
                       <tr key={bill.id} className="hover:bg-slate-50/60 transition-colors">
-                        {/* Date column with Recv subtext */}
-                        <td className="p-3 sm:p-3.5 whitespace-nowrap">
-                          <div className="font-black text-slate-950 text-xs sm:text-sm">{bill.date.split(' ')[0]}</div>
+                        {/* Date column with compact Recv subtext */}
+                        <td className="py-2 sm:py-3 px-1.5 sm:px-3 align-middle">
+                          <div className="font-black text-slate-950 text-[10px] sm:text-xs leading-tight">
+                            {bill.date.split(' ')[0]}
+                          </div>
                           {bill.receivedAt ? (
-                            <div className="text-[10px] text-emerald-700 font-bold">
-                              Recv: {new Date(bill.receivedAt).toLocaleDateString()}
+                            <div className="text-[8px] sm:text-[10px] text-emerald-700 font-bold leading-tight mt-0.5">
+                              Recv: {new Date(bill.receivedAt).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })}
                             </div>
                           ) : (
-                            <div className="text-[10px] text-slate-500 font-medium">Recv: Yes</div>
+                            <div className="text-[8px] sm:text-[10px] text-slate-500 font-medium leading-tight mt-0.5">
+                              Recv: Yes
+                            </div>
                           )}
                         </td>
 
                         {/* Given To with Member tag for Admin */}
-                        <td className="p-3 sm:p-3.5">
-                          <div className="font-black text-slate-950 text-xs sm:text-sm">{bill.giveTo}</div>
+                        <td className="py-2 sm:py-3 px-1.5 sm:px-3 align-middle">
+                          <div className="font-black text-slate-950 text-[10px] sm:text-xs leading-tight break-words max-w-[85px] sm:max-w-none">
+                            {bill.giveTo}
+                          </div>
                           {isAdmin && (
-                            <div className="mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-[10px] text-slate-700 font-bold">
-                              <MemberAvatar name={memberName} avatar={memberObj?.avatar} size="xs" className="w-3 h-3 text-[7px]" />
-                              <span>{memberName}</span>
+                            <div className="mt-0.5 inline-flex items-center gap-1 px-1 py-0.5 rounded bg-slate-100 border border-slate-200 text-[8px] sm:text-[10px] text-slate-700 font-bold max-w-full">
+                              <MemberAvatar name={memberName} avatar={memberObj?.avatar} size="xs" className="w-3 h-3 text-[7px] shrink-0" />
+                              <span className="truncate max-w-[55px] sm:max-w-none">{memberName}</span>
                             </div>
                           )}
                         </td>
 
                         {/* Items */}
-                        <td className="p-3 sm:p-3.5 text-center whitespace-nowrap">
-                          <div className="font-black text-slate-950 text-xs sm:text-sm">{bill.totalItems}</div>
-                          <div className="text-[10px] font-bold text-slate-500">pcs</div>
+                        <td className="py-2 sm:py-3 px-1 sm:px-2 text-center align-middle">
+                          <div className="font-black text-slate-950 text-[10px] sm:text-xs">{bill.totalItems}</div>
+                          <div className="text-[8px] sm:text-[10px] font-bold text-slate-500">pcs</div>
                         </td>
 
                         {/* Price */}
-                        <td className="p-3 sm:p-3.5 text-center whitespace-nowrap font-mono">
-                          <div className="font-black text-slate-950 text-xs sm:text-sm">{bill.pricePerItem.toFixed(2)}</div>
-                          <div className="text-[10px] font-bold text-slate-500">{group.currency || 'AED'}</div>
+                        <td className="py-2 sm:py-3 px-1 sm:px-2 text-center align-middle font-mono">
+                          <div className="font-black text-slate-950 text-[10px] sm:text-xs">{bill.pricePerItem.toFixed(2)}</div>
+                          <div className="text-[8px] sm:text-[10px] font-bold text-slate-500">{group.currency || 'AED'}</div>
                         </td>
 
                         {/* Total */}
-                        <td className="p-3 sm:p-3.5 text-center whitespace-nowrap font-mono">
-                          <div className="font-black text-slate-950 text-xs sm:text-sm">{bill.totalAmount.toFixed(2)}</div>
-                          <div className="text-[10px] font-bold text-slate-500">{group.currency || 'AED'}</div>
+                        <td className="py-2 sm:py-3 px-1.5 sm:px-3 text-center sm:text-right align-middle font-mono">
+                          <div className="font-black text-slate-950 text-[10px] sm:text-xs">{bill.totalAmount.toFixed(2)}</div>
+                          <div className="text-[8px] sm:text-[10px] font-bold text-slate-500">{group.currency || 'AED'}</div>
                         </td>
 
                         {/* Action column (Admin Only: Edit & Delete) */}
                         {isAdmin && (
-                          <td className="p-3 sm:p-3.5 text-center whitespace-nowrap">
-                            <div className="flex items-center justify-center gap-1">
+                          <td className="py-2 sm:py-3 px-0.5 sm:px-1.5 text-center align-middle">
+                            <div className="flex items-center justify-center gap-0.5 sm:gap-1">
                               <button
                                 type="button"
                                 onClick={() => handleStartEditLaundry(bill)}
-                                className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"
+                                className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md cursor-pointer transition-colors"
                                 title="Edit laundry record"
                               >
-                                <Edit2 className="w-4 h-4" />
+                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteLaundry(bill.id)}
-                                className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md cursor-pointer transition-colors"
                                 title="Delete laundry record"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </td>

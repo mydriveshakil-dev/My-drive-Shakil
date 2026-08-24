@@ -1001,14 +1001,30 @@ export function subscribeToUserPresences(groupId: string, onUpdate: (activeMembe
   }
 }
 
-// 8. Personal Laundry Ledger Firestore Cloud Sync (Strictly private per user)
-export async function saveLaundryBillToFirestore(userId: string, bill: LaundryBill) {
-  if (isQuotaExceeded || !userId) return;
+// 8. Personal & Group Laundry Ledger Firestore Cloud Sync
+export async function saveLaundryBillToFirestore(userId: string, bill: LaundryBill, groupId?: string) {
+  if (isQuotaExceeded) return;
+  const gId = groupId || bill.groupId;
   try {
-    const sanitizedUser = userId.replace(/[^a-zA-Z0-9_\-]/g, '_');
-    const docRef = doc(db, `laundry_${sanitizedUser}`, bill.id);
-    const payload = removeUndefinedFields({ ...bill, updatedAtMs: Date.now() });
-    await setDoc(docRef, payload, { merge: true });
+    const payload = removeUndefinedFields({
+      ...bill,
+      groupId: gId || bill.groupId,
+      updatedAtMs: Date.now(),
+    });
+
+    // Save to user's personal laundry collection
+    if (userId || bill.userId) {
+      const uId = (userId || bill.userId).replace(/[^a-zA-Z0-9_\-]/g, '_');
+      const userDocRef = doc(db, `laundry_${uId}`, bill.id);
+      await setDoc(userDocRef, payload, { merge: true });
+    }
+
+    // Also save to group-wide laundry collection if group context exists
+    if (gId) {
+      const sanitizedGId = gId.replace(/[^a-zA-Z0-9_\-]/g, '_');
+      const groupDocRef = doc(db, `group_laundry_${sanitizedGId}`, bill.id);
+      await setDoc(groupDocRef, payload, { merge: true });
+    }
   } catch (err) {
     if (!isQuotaError(err)) {
       console.warn('Warning saving laundry bill to Firestore:', err);
@@ -1016,12 +1032,23 @@ export async function saveLaundryBillToFirestore(userId: string, bill: LaundryBi
   }
 }
 
-export async function deleteLaundryBillFromFirestore(userId: string, billId: string) {
-  if (isQuotaExceeded || !userId || !billId) return;
+export async function deleteLaundryBillFromFirestore(
+  userId: string,
+  billId: string,
+  groupId?: string
+) {
+  if (isQuotaExceeded || !billId) return;
   try {
-    const sanitizedUser = userId.replace(/[^a-zA-Z0-9_\-]/g, '_');
-    const docRef = doc(db, `laundry_${sanitizedUser}`, billId);
-    await deleteDoc(docRef);
+    if (userId) {
+      const sanitizedUser = userId.replace(/[^a-zA-Z0-9_\-]/g, '_');
+      const docRef = doc(db, `laundry_${sanitizedUser}`, billId);
+      await deleteDoc(docRef);
+    }
+    if (groupId) {
+      const sanitizedGId = groupId.replace(/[^a-zA-Z0-9_\-]/g, '_');
+      const groupDocRef = doc(db, `group_laundry_${sanitizedGId}`, billId);
+      await deleteDoc(groupDocRef);
+    }
   } catch (err) {
     if (!isQuotaError(err)) {
       console.warn('Warning deleting laundry bill from Firestore:', err);
@@ -1051,6 +1078,113 @@ export function subscribeToLaundryBills(userId: string, onUpdate: (bills: Laundr
         }
       }
     );
+  } catch (e) {
+    isQuotaError(e);
+    return () => {};
+  }
+}
+
+export function subscribeToGroupLaundryBills(
+  groupId: string,
+  onUpdate: (bills: LaundryBill[]) => void,
+  members?: { id: string; name?: string; phone?: string; mobileNumber?: string; email?: string }[]
+) {
+  if (!groupId || isQuotaExceeded) return () => {};
+  const unsubs: (() => void)[] = [];
+  const billsMap = new Map<string, LaundryBill>();
+
+  const emitMergedBills = () => {
+    const items = Array.from(billsMap.values());
+    items.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+    onUpdate(items);
+  };
+
+  try {
+    const sanitizedGId = groupId.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    const groupColRef = collection(db, `group_laundry_${sanitizedGId}`);
+
+    // 1. Group-level collection listener
+    const unsubGroup = onSnapshot(
+      groupColRef,
+      (snapshot) => {
+        snapshot.forEach((docSnap) => {
+          billsMap.set(docSnap.id, { ...docSnap.data(), id: docSnap.id } as LaundryBill);
+        });
+        emitMergedBills();
+      },
+      (err) => {
+        if (!isQuotaError(err)) {
+          console.warn('Firestore group laundry listener warning:', err);
+        }
+      }
+    );
+    unsubs.push(unsubGroup);
+
+    // 2. Also listen to / sync from all member personal laundry collections
+    if (members && Array.isArray(members)) {
+      const checkedKeys = new Set<string>();
+      members.forEach((m) => {
+        const potentialKeys = [
+          m.id,
+          m.phone,
+          m.mobileNumber,
+          m.email,
+          m.name,
+          cleanPhoneDigits(m.phone || m.mobileNumber || ''),
+        ].filter(Boolean) as string[];
+
+        potentialKeys.forEach((key) => {
+          const sanitized = key.replace(/[^a-zA-Z0-9_\-]/g, '_');
+          if (sanitized && !checkedKeys.has(sanitized)) {
+            checkedKeys.add(sanitized);
+            try {
+              const memberColRef = collection(db, `laundry_${sanitized}`);
+              const unsubMember = onSnapshot(
+                memberColRef,
+                (snapshot) => {
+                  let foundNew = false;
+                  snapshot.forEach((docSnap) => {
+                    const data = docSnap.data() as LaundryBill;
+                    const bId = docSnap.id;
+                    const existing = billsMap.get(bId);
+                    if (!existing || (data.updatedAtMs || 0) > (existing.updatedAtMs || 0)) {
+                      const completeBill: LaundryBill = {
+                        ...data,
+                        id: bId,
+                        groupId: data.groupId || groupId,
+                        memberId: data.memberId || m.id,
+                        memberName: data.memberName || m.name || 'Member',
+                      };
+                      billsMap.set(bId, completeBill);
+                      foundNew = true;
+                      // Backfill to group laundry collection so other admins/members see it immediately
+                      saveLaundryBillToFirestore(sanitized, completeBill, groupId);
+                    }
+                  });
+                  if (foundNew) {
+                    emitMergedBills();
+                  }
+                },
+                (err) => {
+                  if (!isQuotaError(err)) {
+                    // benign warning
+                  }
+                }
+              );
+              unsubs.push(unsubMember);
+            } catch (e) {}
+          }
+        });
+      });
+    }
+
+    return () => {
+      unsubs.forEach((unsub) => {
+        try {
+          unsub();
+        } catch (e) {}
+      });
+    };
   } catch (e) {
     isQuotaError(e);
     return () => {};

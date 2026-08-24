@@ -6,7 +6,7 @@ import { GlassContainer } from './GlassContainer';
 import { MemberAvatar } from './MemberAvatar';
 import { evaluateMathExpression } from '../utils/mathEvaluator';
 import { isCategoryPermittedForUser } from '../utils/permissionUtils';
-import { isPhoneMatch, saveLaundryBillToFirestore, deleteLaundryBillFromFirestore, subscribeToLaundryBills } from '../lib/firebase';
+import { isPhoneMatch, saveLaundryBillToFirestore, deleteLaundryBillFromFirestore, subscribeToLaundryBills, subscribeToGroupLaundryBills } from '../lib/firebase';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 
 interface UtilitiesAndRentViewProps {
@@ -341,7 +341,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
   };
 
   // ==========================================
-  // PERSONAL LAUNDRY BILL STATE & SYNC (Strictly private per user)
+  // GROUP & PERSONAL LAUNDRY BILL STATE & SYNC
   // ==========================================
   const userKey =
     currentUser?.email ||
@@ -350,39 +350,71 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
     loggedInMember?.id ||
     'default_user';
   const sanitizedUserKey = userKey.replace(/[^a-zA-Z0-9_]/g, '_');
-  const laundryStorageKey = `personal_laundry_${sanitizedUserKey}`;
+  const personalLaundryStorageKey = `personal_laundry_${sanitizedUserKey}`;
+  const groupLaundryStorageKey = `group_laundry_${group.id}`;
 
   const [laundryBills, setLaundryBills] = useState<LaundryBill[]>(() => {
-    const saved = localStorage.getItem(laundryStorageKey);
-    if (saved) {
+    const groupSaved = localStorage.getItem(groupLaundryStorageKey);
+    if (groupSaved) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = JSON.parse(groupSaved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    const personalSaved = localStorage.getItem(personalLaundryStorageKey);
+    if (personalSaved) {
+      try {
+        const parsed = JSON.parse(personalSaved);
         if (Array.isArray(parsed)) return parsed;
       } catch (e) {}
     }
     return [];
   });
 
-  // Sync with Firestore & localStorage
+  // Sync with Firestore
   useEffect(() => {
-    if (!sanitizedUserKey) return;
-    const unsub = subscribeToLaundryBills(sanitizedUserKey, (bills) => {
+    // 1. Group-wide laundry bills listener (so Admin & members see all notices for current room)
+    const unsubGroup = subscribeToGroupLaundryBills(group.id, (bills) => {
       if (bills && Array.isArray(bills)) {
         setLaundryBills(bills);
-        localStorage.setItem(laundryStorageKey, JSON.stringify(bills));
+        localStorage.setItem(groupLaundryStorageKey, JSON.stringify(bills));
       }
     });
+
+    // 2. Personal laundry bills listener as backup/individual sync
+    const unsubPersonal = subscribeToLaundryBills(sanitizedUserKey, (personalBills) => {
+      if (personalBills && Array.isArray(personalBills)) {
+        localStorage.setItem(personalLaundryStorageKey, JSON.stringify(personalBills));
+        setLaundryBills((prev) => {
+          const existingIds = new Set(prev.map((b) => b.id));
+          const toAdd = personalBills.filter((b) => !existingIds.has(b.id));
+          if (toAdd.length > 0) {
+            const merged = [...prev, ...toAdd];
+            merged.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+            return merged;
+          }
+          return prev;
+        });
+      }
+    });
+
     return () => {
-      if (unsub) unsub();
+      if (unsubGroup) unsubGroup();
+      if (unsubPersonal) unsubPersonal();
     };
-  }, [sanitizedUserKey, laundryStorageKey]);
+  }, [group.id, sanitizedUserKey, groupLaundryStorageKey, personalLaundryStorageKey]);
 
   const persistLaundryBills = (updated: LaundryBill[]) => {
     setLaundryBills(updated);
-    localStorage.setItem(laundryStorageKey, JSON.stringify(updated));
+    localStorage.setItem(groupLaundryStorageKey, JSON.stringify(updated));
+    localStorage.setItem(personalLaundryStorageKey, JSON.stringify(updated));
   };
 
-  // Laundry Form State
+  // Laundry Member Filter State (Admin Only)
+  const [laundryMemberFilter, setLaundryMemberFilter] = useState<string>('all');
+
+  // Laundry Add Form State
+  const [laundryMemberId, setLaundryMemberId] = useState<string>(loggedInMember?.id || group.members[0]?.id || '');
   const [laundryDate, setLaundryDate] = useState(() => {
     const d = new Date();
     const YYYY = d.getFullYear();
@@ -395,6 +427,69 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
   const [laundryGiveTo, setLaundryGiveTo] = useState('');
   const [laundryTotalItems, setLaundryTotalItems] = useState('');
   const [laundryPrice, setLaundryPrice] = useState('');
+
+  // Laundry Edit State (Admin Only)
+  const [editingLaundryBill, setEditingLaundryBill] = useState<LaundryBill | null>(null);
+  const [editLaundryMemberId, setEditLaundryMemberId] = useState<string>('');
+  const [editLaundryDate, setEditLaundryDate] = useState('');
+  const [editLaundryGiveTo, setEditLaundryGiveTo] = useState('');
+  const [editLaundryTotalItems, setEditLaundryTotalItems] = useState('');
+  const [editLaundryPrice, setEditLaundryPrice] = useState('');
+  const [editLaundryStatus, setEditLaundryStatus] = useState<'pending' | 'received'>('pending');
+
+  const handleStartEditLaundry = (bill: LaundryBill) => {
+    if (!isAdmin) return;
+    setEditingLaundryBill(bill);
+    const mId = bill.memberId || group.members.find((m) => m.name.toLowerCase() === bill.memberName?.toLowerCase())?.id || loggedInMember?.id || group.members[0]?.id || '';
+    setEditLaundryMemberId(mId);
+    setEditLaundryDate(bill.date);
+    setEditLaundryGiveTo(bill.giveTo);
+    setEditLaundryTotalItems(bill.totalItems.toString());
+    setEditLaundryPrice(bill.pricePerItem.toString());
+    setEditLaundryStatus(bill.status);
+    triggerHaptic(hapticPatterns.click);
+  };
+
+  const handleSaveEditLaundry = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLaundryBill || !isAdmin) return;
+    const items = parseInt(editLaundryTotalItems, 10) || 0;
+    const price = parseFloat(editLaundryPrice) || 0;
+    if (!editLaundryGiveTo.trim()) {
+      alert('Please enter who the laundry was given to.');
+      return;
+    }
+    if (items <= 0 || price <= 0) {
+      alert('Please enter valid items count and price per item.');
+      return;
+    }
+
+    const assignedMember = group.members.find((m) => m.id === editLaundryMemberId);
+
+    const updatedBill: LaundryBill = {
+      ...editingLaundryBill,
+      memberId: assignedMember?.id || editingLaundryBill.memberId,
+      memberName: assignedMember?.name || editingLaundryBill.memberName,
+      date: editLaundryDate.trim() || editingLaundryBill.date,
+      giveTo: editLaundryGiveTo.trim(),
+      totalItems: items,
+      pricePerItem: price,
+      totalAmount: items * price,
+      status: editLaundryStatus,
+      receivedAt:
+        editLaundryStatus === 'received' && !editingLaundryBill.receivedAt
+          ? new Date().toISOString()
+          : editLaundryStatus === 'pending'
+          ? undefined
+          : editingLaundryBill.receivedAt,
+    };
+
+    const updated = laundryBills.map((b) => (b.id === editingLaundryBill.id ? updatedBill : b));
+    persistLaundryBills(updated);
+    saveLaundryBillToFirestore(updatedBill.userId || sanitizedUserKey, updatedBill, group.id);
+    triggerHaptic(hapticPatterns.success);
+    setEditingLaundryBill(null);
+  };
 
   // Auto calculate: (Total Item) * (Price)
   const numItems = parseInt(laundryTotalItems, 10) || 0;
@@ -418,11 +513,20 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
     const dateVal = laundryDate.trim() || new Date().toISOString().substring(0, 16).replace('T', ' ');
     const billMonth = dateVal.substring(0, 7) || currentMonthCycle;
+    const assignedMember = group.members.find((m) => m.id === laundryMemberId) || loggedInMember;
+    const assignedUserKey =
+      assignedMember?.email ||
+      assignedMember?.mobileNumber ||
+      assignedMember?.name ||
+      assignedMember?.id ||
+      userKey;
 
     const newBill: LaundryBill = {
       id: `laundry_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-      userId: userKey,
+      userId: assignedUserKey,
       groupId: group.id,
+      memberId: assignedMember?.id,
+      memberName: assignedMember?.name,
       date: dateVal,
       giveTo: laundryGiveTo.trim(),
       totalItems: numItems,
@@ -435,7 +539,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
 
     const updated = [newBill, ...laundryBills];
     persistLaundryBills(updated);
-    saveLaundryBillToFirestore(sanitizedUserKey, newBill);
+    saveLaundryBillToFirestore(assignedUserKey, newBill, group.id);
     triggerHaptic(hapticPatterns.success);
 
     // Reset Form
@@ -443,39 +547,55 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
     setLaundryTotalItems('');
     setLaundryPrice('');
     setShowLaundryForm(false);
-    alert('Personal Laundry bill saved successfully!');
+    alert('Laundry bill notice added successfully!');
   };
 
   const handleMarkLaundryReceived = (billId: string) => {
     triggerHaptic(hapticPatterns.success);
-    const updated = laundryBills.map((b) => {
-      if (b.id === billId) {
-        const receivedBill: LaundryBill = {
-          ...b,
-          status: 'received',
-          receivedAt: new Date().toISOString(),
-        };
-        saveLaundryBillToFirestore(sanitizedUserKey, receivedBill);
-        return receivedBill;
-      }
-      return b;
-    });
+    const targetBill = laundryBills.find((b) => b.id === billId);
+    if (!targetBill) return;
+    const receivedBill: LaundryBill = {
+      ...targetBill,
+      status: 'received',
+      receivedAt: new Date().toISOString(),
+    };
+    const updated = laundryBills.map((b) => (b.id === billId ? receivedBill : b));
     persistLaundryBills(updated);
+    saveLaundryBillToFirestore(receivedBill.userId || sanitizedUserKey, receivedBill, group.id);
   };
 
   const handleDeleteLaundry = (billId: string) => {
-    if (!window.confirm('Are you sure you want to delete this personal laundry record?')) {
+    if (!isAdmin) {
+      alert('Only admin can delete laundry records.');
+      return;
+    }
+    if (!window.confirm('Are you sure you want to delete this laundry record?')) {
       return;
     }
     triggerHaptic(hapticPatterns.click);
+    const targetBill = laundryBills.find((b) => b.id === billId);
     const updated = laundryBills.filter((b) => b.id !== billId);
     persistLaundryBills(updated);
-    deleteLaundryBillFromFirestore(sanitizedUserKey, billId);
+    if (targetBill) {
+      deleteLaundryBillFromFirestore(targetBill.userId || sanitizedUserKey, billId, group.id);
+    }
   };
 
-  // Pending & Received laundry bills
-  const pendingLaundryBills = laundryBills.filter((b) => b.status === 'pending');
-  const receivedLaundryBills = laundryBills.filter((b) => b.status === 'received');
+  // Filtered laundry bills for display:
+  const filteredLaundryBills =
+    isAdmin && laundryMemberFilter !== 'all'
+      ? laundryBills.filter(
+          (b) =>
+            b.memberId === laundryMemberFilter ||
+            b.userId === laundryMemberFilter ||
+            (b.memberName &&
+              b.memberName.toLowerCase() ===
+                group.members.find((m) => m.id === laundryMemberFilter)?.name.toLowerCase())
+        )
+      : laundryBills;
+
+  const pendingLaundryBills = filteredLaundryBills.filter((b) => b.status === 'pending');
+  const receivedLaundryBills = filteredLaundryBills.filter((b) => b.status === 'received');
 
   return (
     <div className="space-y-6 pb-28">
@@ -898,7 +1018,7 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         </div>
       )}
 
-      {/* PERSONAL LAUNDRY BILL ENTRY FORM (Private to user) */}
+      {/* LAUNDRY BILL ENTRY FORM */}
       {showLaundryForm && (
         <div className="p-5 sm:p-6 neu-upper rounded-3xl text-slate-900 border-2 border-rose-200 bg-rose-50/40">
           <div className="flex items-center justify-between border-b border-rose-200 pb-3 mb-4">
@@ -908,10 +1028,12 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
               </div>
               <div>
                 <h3 className="text-base font-black text-slate-950 uppercase tracking-wide">
-                  Add Laundry Bill
+                  Add Laundry Bill Notice
                 </h3>
                 <p className="text-[11px] text-slate-600 font-medium">
-                  Private record • Only visible to you ({loggedInMember?.name || 'You'})
+                  {isAdmin
+                    ? 'Admin entry • Record laundry notice for any member'
+                    : `Personal record • Logged for ${loggedInMember?.name || 'You'}`}
                 </p>
               </div>
             </div>
@@ -924,6 +1046,27 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
           </div>
 
           <form onSubmit={handleSaveLaundry} className="space-y-4">
+            {/* If Admin, allow selecting member */}
+            {isAdmin && group.members.length > 0 && (
+              <div>
+                <label className="block text-xs font-black text-slate-800 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-rose-600" />
+                  Select Member (Room Resident)
+                </label>
+                <select
+                  value={laundryMemberId}
+                  onChange={(e) => setLaundryMemberId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-2xl neu-lower-sm text-slate-900 text-xs font-bold focus:outline-none bg-white cursor-pointer"
+                >
+                  {group.members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} {m.phone ? `(${m.phone})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {/* Date */}
               <div>
@@ -1025,6 +1168,57 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
         </div>
       )}
 
+      {/* ADMIN LAUNDRY MEMBER FILTER (Visible when admin is viewing room with members) */}
+      {isAdmin && group.members.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[11px] font-black uppercase text-slate-600 tracking-wider flex items-center gap-1">
+              <Filter className="w-3.5 h-3.5 text-blue-600" /> Filter by Member
+            </span>
+            <span className="text-[11px] text-slate-500 font-bold">
+              {laundryBills.length} total records in room
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 px-1 no-scrollbar">
+            <button
+              type="button"
+              onClick={() => setLaundryMemberFilter('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shrink-0 transition-all cursor-pointer ${
+                laundryMemberFilter === 'all'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-white/80 hover:bg-white text-slate-700 border border-slate-200'
+              }`}
+            >
+              All Members ({laundryBills.length})
+            </button>
+            {group.members.map((m) => {
+              const memberCount = laundryBills.filter(
+                (b) =>
+                  b.memberId === m.id ||
+                  b.userId === m.id ||
+                  (b.memberName && b.memberName.toLowerCase() === m.name.toLowerCase())
+              ).length;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setLaundryMemberFilter(m.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 border ${
+                    laundryMemberFilter === m.id
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                      : 'bg-white/80 hover:bg-white text-slate-700 border-slate-200'
+                  }`}
+                >
+                  <MemberAvatar name={m.name} avatar={m.avatar} size="xs" className="w-4 h-4 text-[8px]" />
+                  <span>{m.name}</span>
+                  <span className="text-[10px] opacity-80 font-mono">({memberCount})</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* PENDING LAUNDRY NOTICE CARDS (Based on attached IMG_8304.jpeg) */}
       {pendingLaundryBills.length > 0 && (
         <div className="space-y-3">
@@ -1039,67 +1233,107 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
           </div>
 
           <div className="space-y-3">
-            {pendingLaundryBills.map((bill) => (
-              <div
-                key={bill.id}
-                className="border-2 border-rose-300 rounded-3xl p-4 sm:p-5 neu-upper bg-white/70 space-y-3 text-slate-900 shadow-sm"
-              >
-                {/* Top Row: Badge + Given To */}
-                <div className="flex items-center justify-between gap-2 border-b border-rose-100 pb-2.5">
-                  <span className="bg-rose-600 text-white font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider shadow-xs">
-                    PENDING LAUNDRY NOTICE
-                  </span>
-                  <div className="text-right">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">Give To: </span>
-                    <span className="font-black text-slate-950 underline decoration-1 text-xs sm:text-sm">
-                      {bill.giveTo}
-                    </span>
-                  </div>
-                </div>
+            {pendingLaundryBills.map((bill) => {
+              const memberName =
+                bill.memberName ||
+                group.members.find((m) => m.id === bill.memberId || m.id === bill.userId)?.name ||
+                'Member';
+              const memberObj = group.members.find(
+                (m) => m.id === bill.memberId || m.id === bill.userId || m.name.toLowerCase() === memberName.toLowerCase()
+              );
 
-                {/* Middle Row: Total Cost + Items breakdown */}
-                <div className="flex items-baseline justify-between py-1">
-                  <div>
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
-                      Total Cost
-                    </span>
-                    <span className="text-2xl sm:text-3xl font-black text-slate-950 underline decoration-2">
-                      {bill.totalAmount.toFixed(2)} {group.currency || 'AED'}
-                    </span>
+              return (
+                <div
+                  key={bill.id}
+                  className="border-2 border-rose-300 rounded-3xl p-4 sm:p-5 neu-upper bg-white/70 space-y-3 text-slate-900 shadow-sm"
+                >
+                  {/* Top Row: Badge + Member + Given To */}
+                  <div className="flex items-center justify-between gap-2 border-b border-rose-100 pb-2.5 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="bg-rose-600 text-white font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider shadow-xs">
+                        PENDING LAUNDRY NOTICE
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 text-white text-[11px] font-bold shadow-xs">
+                        <MemberAvatar name={memberName} avatar={memberObj?.avatar} size="xs" className="w-3.5 h-3.5 text-[8px]" />
+                        <span>{memberName}</span>
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Give To: </span>
+                      <span className="font-black text-slate-950 underline decoration-1 text-xs sm:text-sm">
+                        {bill.giveTo}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right space-y-0.5 text-xs font-bold text-slate-700">
+
+                  {/* Middle Row: Total Cost + Items breakdown */}
+                  <div className="flex items-baseline justify-between py-1">
                     <div>
-                      <span className="text-slate-500 text-[11px]">Items: </span>
-                      <span className="font-black text-slate-900">{bill.totalItems} pcs</span>
-                      <span className="text-slate-500 text-[10px]"> (@ {bill.pricePerItem.toFixed(2)} {group.currency || 'AED'})</span>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
+                        Total Cost
+                      </span>
+                      <span className="text-2xl sm:text-3xl font-black text-slate-950 underline decoration-2">
+                        {bill.totalAmount.toFixed(2)} {group.currency || 'AED'}
+                      </span>
                     </div>
-                    <div className="text-[11px] text-slate-500">
-                      <span>Date: </span>
-                      <span className="font-semibold text-slate-800">{bill.date}</span>
+                    <div className="text-right space-y-0.5 text-xs font-bold text-slate-700">
+                      <div>
+                        <span className="text-slate-500 text-[11px]">Items: </span>
+                        <span className="font-black text-slate-900">{bill.totalItems} pcs</span>
+                        <span className="text-slate-500 text-[10px]"> (@ {bill.pricePerItem.toFixed(2)} {group.currency || 'AED'})</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        <span>Date: </span>
+                        <span className="font-semibold text-slate-800">{bill.date}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Received Item Action Button (matching IMG_8304.jpeg) */}
-                <div className="pt-2 border-t border-slate-200/80">
-                  <button
-                    type="button"
-                    onClick={() => handleMarkLaundryReceived(bill.id)}
-                    className="w-full py-2.5 rounded-2xl neu-upper-sm hover:neu-lower-sm font-black text-xs text-slate-900 flex items-center justify-center gap-2 border border-slate-300 transition-all cursor-pointer active:scale-98"
-                  >
-                    <Clock className="w-4 h-4 text-slate-800" />
-                    <span>Received Item</span>
-                  </button>
+                  {/* Action Row */}
+                  <div className="pt-2 border-t border-slate-200/80 flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => handleMarkLaundryReceived(bill.id)}
+                      className="flex-1 py-2.5 rounded-2xl neu-upper-sm hover:neu-lower-sm font-black text-xs text-slate-900 flex items-center justify-center gap-2 border border-slate-300 transition-all cursor-pointer active:scale-98"
+                    >
+                      <Clock className="w-4 h-4 text-slate-800" />
+                      <span>Received Item</span>
+                    </button>
+
+                    {/* Admin Only: Edit & Delete for Pending Laundry Notice */}
+                    {isAdmin && (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditLaundry(bill)}
+                          className="py-2.5 px-3 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 cursor-pointer transition-all active:scale-95 flex items-center gap-1 text-xs font-bold shadow-xs"
+                          title="Edit Laundry Notice (Admin Only)"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteLaundry(bill.id)}
+                          className="py-2.5 px-3 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer transition-all active:scale-95 flex items-center gap-1 text-xs font-bold shadow-xs"
+                          title="Delete Laundry Notice (Admin Only)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* LAUNDRY PREVIOUS RECORDS SECTION (Shows all received laundry history & summary table) */}
-      {receivedLaundryBills.length > 0 && (
-        <div className="p-5 neu-upper rounded-3xl text-slate-900 space-y-4">
+      {(receivedLaundryBills.length > 0 || isAdmin) && (
+        <div className="p-5 sm:p-6 neu-upper rounded-3xl text-slate-900 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-300/60 pb-3 gap-2">
             <div className="flex items-center gap-2">
               <Shirt className="w-5 h-5 text-slate-900" />
@@ -1107,85 +1341,188 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 Laundry Previous Records ({receivedLaundryBills.length})
               </h3>
             </div>
-            <span className="text-xs text-slate-600 font-medium">
+            <span className="text-xs text-slate-500 font-medium">
               Completed & received laundry delivery logs
             </span>
           </div>
 
+          {/* Admin Member Filter Pills */}
+          {isAdmin && group.members.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              <span className="text-[11px] font-black uppercase text-slate-500 mr-1 shrink-0">
+                Filter Member:
+              </span>
+              <button
+                type="button"
+                onClick={() => setLaundryMemberFilter('all')}
+                className={`px-3 py-1 rounded-xl text-xs font-black transition-all cursor-pointer shrink-0 ${
+                  laundryMemberFilter === 'all'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                All Members ({laundryBills.filter((b) => b.status === 'received').length})
+              </button>
+              {group.members.map((m) => {
+                const count = laundryBills.filter(
+                  (b) =>
+                    b.status === 'received' &&
+                    (b.memberId === m.id ||
+                      b.userId === m.id ||
+                      b.memberName?.toLowerCase() === m.name.toLowerCase())
+                ).length;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setLaundryMemberFilter(m.id)}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                      laundryMemberFilter === m.id
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    <MemberAvatar name={m.name} avatar={m.avatar} size="xs" className="w-3.5 h-3.5 text-[8px]" />
+                    <span>{m.name}</span>
+                    <span className="text-[10px] opacity-80">({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Summary Stat Strip */}
-          <div className="grid grid-cols-3 gap-2.5 neu-lower-sm p-3 rounded-2xl text-center">
+          <div className="grid grid-cols-3 gap-2.5 neu-lower-sm p-4 rounded-2xl text-center">
             <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase block">Deliveries</span>
-              <span className="text-sm sm:text-base font-black text-slate-950">{receivedLaundryBills.length}</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                Deliveries
+              </span>
+              <span className="text-base sm:text-xl font-black text-slate-950">
+                {receivedLaundryBills.length}
+              </span>
             </div>
             <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase block">Items Washed</span>
-              <span className="text-sm sm:text-base font-black text-slate-950">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                Items Washed
+              </span>
+              <span className="text-base sm:text-xl font-black text-slate-950">
                 {receivedLaundryBills.reduce((sum, b) => sum + b.totalItems, 0)} pcs
               </span>
             </div>
             <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase block">Total Spent</span>
-              <span className="text-sm sm:text-base font-black text-slate-950">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                Total Spent
+              </span>
+              <span className="text-base sm:text-xl font-black text-slate-950">
                 {receivedLaundryBills.reduce((sum, b) => sum + b.totalAmount, 0).toFixed(2)} {group.currency || 'AED'}
               </span>
             </div>
           </div>
 
           {/* Laundry Records Table */}
-          <div className="overflow-x-auto neu-lower-sm rounded-2xl">
-            <table className="w-full text-left text-xs text-slate-900 border-collapse">
-              <thead>
-                <tr className="border-b border-slate-300 text-[11px] font-black uppercase text-slate-700 bg-slate-100/60">
-                  <th className="p-3">Date</th>
-                  <th className="p-3">Given To</th>
-                  <th className="p-3 text-center">Items</th>
-                  <th className="p-3 text-right">Price</th>
-                  <th className="p-3 text-right">Total</th>
-                  <th className="p-3 text-center">Status</th>
-                  <th className="p-3 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200/80">
-                {receivedLaundryBills.map((bill) => (
-                  <tr key={bill.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="p-3 whitespace-nowrap">
-                      <div className="font-bold text-slate-950">{bill.date}</div>
-                      {bill.receivedAt && (
-                        <div className="text-[10px] text-emerald-700 font-medium">
-                          Recv: {new Date(bill.receivedAt).toLocaleDateString()}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-3 font-black text-slate-900">{bill.giveTo}</td>
-                    <td className="p-3 text-center font-bold">{bill.totalItems} pcs</td>
-                    <td className="p-3 text-right font-mono font-bold">
-                      {bill.pricePerItem.toFixed(2)} {group.currency || 'AED'}
-                    </td>
-                    <td className="p-3 text-right font-black font-mono text-slate-950">
-                      {bill.totalAmount.toFixed(2)} {group.currency || 'AED'}
-                    </td>
-                    <td className="p-3 text-center">
-                      <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-2xs">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-700" />
-                        Received
-                      </span>
-                    </td>
-                    <td className="p-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteLaundry(bill.id)}
-                        className="p-1 text-slate-500 hover:text-rose-600 cursor-pointer transition-colors"
-                        title="Delete laundry record"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
+          {receivedLaundryBills.length > 0 ? (
+            <div className="overflow-x-auto neu-lower-sm rounded-2xl">
+              <table className="w-full text-left text-xs text-slate-900 border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-300 text-[11px] font-black uppercase text-slate-700 bg-slate-100/60">
+                    <th className="p-3 sm:p-3.5">Date</th>
+                    <th className="p-3 sm:p-3.5">Given To</th>
+                    <th className="p-3 sm:p-3.5 text-center">Items</th>
+                    <th className="p-3 sm:p-3.5 text-center">Price</th>
+                    <th className="p-3 sm:p-3.5 text-center">Total</th>
+                    {isAdmin && <th className="p-3 sm:p-3.5 text-center">Action</th>}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-200/80">
+                  {receivedLaundryBills.map((bill) => {
+                    const memberName =
+                      bill.memberName ||
+                      group.members.find((m) => m.id === bill.memberId || m.id === bill.userId)?.name ||
+                      'Member';
+                    const memberObj = group.members.find(
+                      (m) =>
+                        m.id === bill.memberId ||
+                        m.id === bill.userId ||
+                        m.name.toLowerCase() === memberName.toLowerCase()
+                    );
+
+                    return (
+                      <tr key={bill.id} className="hover:bg-slate-50/60 transition-colors">
+                        {/* Date column with Recv subtext */}
+                        <td className="p-3 sm:p-3.5 whitespace-nowrap">
+                          <div className="font-black text-slate-950 text-xs sm:text-sm">{bill.date.split(' ')[0]}</div>
+                          {bill.receivedAt ? (
+                            <div className="text-[10px] text-emerald-700 font-bold">
+                              Recv: {new Date(bill.receivedAt).toLocaleDateString()}
+                            </div>
+                          ) : (
+                            <div className="text-[10px] text-slate-500 font-medium">Recv: Yes</div>
+                          )}
+                        </td>
+
+                        {/* Given To with Member tag for Admin */}
+                        <td className="p-3 sm:p-3.5">
+                          <div className="font-black text-slate-950 text-xs sm:text-sm">{bill.giveTo}</div>
+                          {isAdmin && (
+                            <div className="mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-[10px] text-slate-700 font-bold">
+                              <MemberAvatar name={memberName} avatar={memberObj?.avatar} size="xs" className="w-3 h-3 text-[7px]" />
+                              <span>{memberName}</span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Items */}
+                        <td className="p-3 sm:p-3.5 text-center whitespace-nowrap">
+                          <div className="font-black text-slate-950 text-xs sm:text-sm">{bill.totalItems}</div>
+                          <div className="text-[10px] font-bold text-slate-500">pcs</div>
+                        </td>
+
+                        {/* Price */}
+                        <td className="p-3 sm:p-3.5 text-center whitespace-nowrap font-mono">
+                          <div className="font-black text-slate-950 text-xs sm:text-sm">{bill.pricePerItem.toFixed(2)}</div>
+                          <div className="text-[10px] font-bold text-slate-500">{group.currency || 'AED'}</div>
+                        </td>
+
+                        {/* Total */}
+                        <td className="p-3 sm:p-3.5 text-center whitespace-nowrap font-mono">
+                          <div className="font-black text-slate-950 text-xs sm:text-sm">{bill.totalAmount.toFixed(2)}</div>
+                          <div className="text-[10px] font-bold text-slate-500">{group.currency || 'AED'}</div>
+                        </td>
+
+                        {/* Action column (Admin Only: Edit & Delete) */}
+                        {isAdmin && (
+                          <td className="p-3 sm:p-3.5 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditLaundry(bill)}
+                                className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"
+                                title="Edit laundry record"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteLaundry(bill.id)}
+                                className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                title="Delete laundry record"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="neu-lower-sm p-6 rounded-2xl text-center text-slate-500 text-xs font-bold">
+              No completed laundry records found for the selected view.
+            </div>
+          )}
         </div>
       )}
 
@@ -1632,6 +1969,170 @@ export const UtilitiesAndRentView: React.FC<UtilitiesAndRentViewProps> = ({
                 );
               })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADMIN LAUNDRY EDIT MODAL */}
+      {isAdmin && editingLaundryBill && (
+        <div className="fixed inset-0 z-[160] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white text-slate-900 rounded-3xl p-6 w-full max-w-md border border-slate-200 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-blue-100 text-blue-700">
+                  <Edit2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black uppercase text-slate-900">
+                    Edit Laundry Record
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Admin override for laundry notice & billing
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingLaundryBill(null)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditLaundry} className="space-y-4">
+              {/* Member Selector */}
+              {group.members.length > 0 && (
+                <div>
+                  <label className="text-xs font-black uppercase text-slate-700 block mb-1">
+                    Member (Room Resident)
+                  </label>
+                  <select
+                    value={editLaundryMemberId}
+                    onChange={(e) => setEditLaundryMemberId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 text-sm font-bold bg-white cursor-pointer"
+                  >
+                    {group.members.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} {m.phone ? `(${m.phone})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs font-black uppercase text-slate-700 block mb-1">
+                  Given To (Laundry Name / Person)
+                </label>
+                <input
+                  type="text"
+                  value={editLaundryGiveTo}
+                  onChange={(e) => setEditLaundryGiveTo(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 text-sm font-bold"
+                  placeholder="e.g. Al Madina Laundry"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-black uppercase text-slate-700 block mb-1">
+                    Total Items (pcs)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editLaundryTotalItems}
+                    onChange={(e) => setEditLaundryTotalItems(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 text-sm font-bold"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-black uppercase text-slate-700 block mb-1">
+                    Price / Item ({group.currency || 'AED'})
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.1"
+                    value={editLaundryPrice}
+                    onChange={(e) => setEditLaundryPrice(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 text-sm font-bold"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-blue-50/70 rounded-2xl border border-blue-200 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-600">Calculated Total:</span>
+                <span className="text-base font-black text-blue-900 font-mono">
+                  {((parseInt(editLaundryTotalItems, 10) || 0) * (parseFloat(editLaundryPrice) || 0)).toFixed(2)}{' '}
+                  {group.currency || 'AED'}
+                </span>
+              </div>
+
+              <div>
+                <label className="text-xs font-black uppercase text-slate-700 block mb-1">
+                  Date / Time
+                </label>
+                <input
+                  type="text"
+                  value={editLaundryDate}
+                  onChange={(e) => setEditLaundryDate(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 text-xs font-bold font-mono"
+                  placeholder="YYYY-MM-DD HH:mm"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-black uppercase text-slate-700 block mb-1">
+                  Status
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditLaundryStatus('pending')}
+                    className={`py-2 rounded-xl text-xs font-black uppercase transition-all border cursor-pointer ${
+                      editLaundryStatus === 'pending'
+                        ? 'bg-rose-100 text-rose-800 border-rose-300 shadow-xs'
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}
+                  >
+                    Pending
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditLaundryStatus('received')}
+                    className={`py-2 rounded-xl text-xs font-black uppercase transition-all border cursor-pointer ${
+                      editLaundryStatus === 'received'
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs'
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}
+                  >
+                    Received
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingLaundryBill(null)}
+                  className="flex-1 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-black text-xs cursor-pointer transition-all shadow-md"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

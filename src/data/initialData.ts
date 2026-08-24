@@ -30,10 +30,10 @@ export const INITIAL_UTILITIES: UtilityBill[] = [];
 
 export const INITIAL_RENT: RentContribution = {
   id: 'rent-1',
-  groupId: 'group-room-3',
+  groupId: 'group-room-1',
   totalRent: 0,
   cycle: '2026-07',
-  paidById: 'm1',
+  paidById: 'm3',
   dueDate: '2026-07-01',
   status: 'pending',
   perMemberAmount: 0,

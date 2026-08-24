@@ -7,6 +7,7 @@ import { getPreviousCycleOptions } from '../utils/cycleUtils';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 import { isPhoneMatch } from '../lib/firebase';
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { AdminQuickControlsCard } from './AdminQuickControlsCard';
 import {
   Calendar,
   Wallet,
@@ -27,6 +28,7 @@ import {
 
 interface DashboardViewProps {
   group: Group;
+  allGroups?: Group[];
   expenses: Expense[];
   allExpenses?: Expense[];
   utilities: UtilityBill[];
@@ -37,6 +39,9 @@ interface DashboardViewProps {
   preferredCurrency?: string;
   customRates?: Record<string, number>;
   currentUser?: UserAuthProfile | null;
+  onOpenCurrencySettings?: () => void;
+  onOpenArchGuide?: () => void;
+  onOpenLoginModal?: () => void;
   billingCycleType?: BillingCycleType;
   onToggleCycle?: (type: BillingCycleType) => void;
   selectedPreviousCycle?: string;
@@ -80,6 +85,7 @@ const renderCustomizedPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, 
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   group,
+  allGroups = [],
   expenses,
   allExpenses = [],
   utilities,
@@ -87,9 +93,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   sheetsConfig,
   onSyncNow,
   isSyncing,
-  preferredCurrency = 'USD',
+  preferredCurrency = 'AED',
   customRates,
   currentUser,
+  onOpenCurrencySettings,
+  onOpenArchGuide,
+  onOpenLoginModal,
   billingCycleType = 'current',
   onToggleCycle,
   selectedPreviousCycle,
@@ -234,6 +243,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-6 pb-28">
+      {/* Admin Quick Controls & Tools Section - ONLY for Admin User */}
+      {isAdmin && (
+        <AdminQuickControlsCard
+          group={group}
+          allGroups={allGroups}
+          sheetsConfig={sheetsConfig}
+          onSyncNow={onSyncNow}
+          isSyncing={isSyncing}
+          preferredCurrency={preferredCurrency}
+          onOpenCurrencySettings={onOpenCurrencySettings}
+          onOpenArchGuide={onOpenArchGuide}
+          onOpenLoginModal={onOpenLoginModal}
+          onNavigateTab={onNavigateTab}
+          currentUser={currentUser}
+        />
+      )}
+
       {/* 2nd Component: Billing Cycle Control & Room Info Card */}
       <div className="rounded-3xl neu-upper text-slate-900 overflow-hidden p-4 sm:p-6 space-y-4">
         {/* Billing Cycle Switcher (Full Setup moved from HeaderBar) */}

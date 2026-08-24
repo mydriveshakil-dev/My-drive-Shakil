@@ -984,6 +984,7 @@ export default function App() {
     return rent;
   }, [rent, activeCycleId]);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isNavExpanded, setIsNavExpanded] = useState(false);
   const [isArchGuideOpen, setIsArchGuideOpen] = useState(false);
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
   const [isInstallPwaOpen, setIsInstallPwaOpen] = useState(false);
@@ -2244,6 +2245,7 @@ export default function App() {
               {activeTab === 'dashboard' && (
                 <DashboardView
                   group={displayedGroup}
+                  allGroups={allGroups}
                   expenses={displayedExpenses}
                   allExpenses={expenses}
                   utilities={displayedUtilities}
@@ -2254,6 +2256,9 @@ export default function App() {
                   preferredCurrency={preferredCurrency}
                   customRates={customRates}
                   currentUser={userAuth}
+                  onOpenCurrencySettings={() => setIsCurrencyModalOpen(true)}
+                  onOpenArchGuide={() => setIsArchGuideOpen(true)}
+                  onOpenLoginModal={() => setIsLoginModalOpen(true)}
                   billingCycleType={billingCycleType}
                   onToggleCycle={setBillingCycleType}
                   selectedPreviousCycle={selectedPreviousCycle}
@@ -2585,13 +2590,17 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Floating Action Button (FAB) for Room Group Chat - Shown across all main tabs (Bill/rent, report, group, dashboard) and opens Chat directly on the main page */}
+      {/* Floating Action Button (FAB) for Room Group Chat - Shown across all main tabs and smoothly slides up when navigation bar expands */}
       {activeTab !== 'chat' && !isLoginModalOpen && !isMandatoryProfileModalOpen && userAuth.isLoggedIn && (userAuth.role === 'admin' || userAuth.linkedGroupId) && (
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.92 }}
           onClick={() => setActiveTab('chat')}
-          className={`fixed bottom-[88px] sm:bottom-[94px] right-4 sm:right-6 z-50 w-12 h-12 sm:w-13 sm:h-13 bg-[#07193F] hover:bg-[#0B2556] text-white rounded-full shadow-xl border border-slate-700/80 flex items-center justify-center cursor-pointer transition-all duration-300 ring-2 ring-white/50 ${
+          className={`fixed right-4 sm:right-6 z-50 w-12 h-12 sm:w-13 sm:h-13 bg-[#07193F] hover:bg-[#0B2556] text-white rounded-full shadow-xl border border-slate-700/80 flex items-center justify-center cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ring-2 ring-white/50 ${
+            !isNavExpanded
+              ? 'bottom-3 sm:bottom-4'
+              : 'bottom-[108px] sm:bottom-[116px]'
+          } ${
             activeTab === 'chat' || isAddExpenseOpen || isTyping
               ? 'translate-y-36 opacity-0 pointer-events-none'
               : 'translate-y-0 opacity-100'
@@ -2634,6 +2643,8 @@ export default function App() {
           }}
           isAddExpenseOpen={isAddExpenseOpen}
           isHidden={activeTab === 'chat' || isAddExpenseOpen || isTyping || isMandatoryProfileModalOpen}
+          isExpanded={isNavExpanded}
+          onToggleExpand={() => setIsNavExpanded(true)}
         />
       )}
 

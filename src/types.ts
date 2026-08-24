@@ -201,6 +201,8 @@ export interface LaundryBill {
   id: string;
   userId: string;        // Strict personal user identification (email / mobile / name)
   groupId?: string;      // Current group id context
+  memberId?: string;     // Group member id (e.g. 'm1')
+  memberName?: string;   // Display name of the member
   date: string;          // YYYY-MM-DD HH:mm or YYYY-MM-DD
   giveTo: string;        // Laundry shop / person name
   totalItems: number;    // Manual count of items (e.g. 4)
@@ -210,5 +212,6 @@ export interface LaundryBill {
   createdAtMs: number;
   monthCycle: string;    // e.g. "2026-08" for monthly grouping and Pre.Due calculation
   receivedAt?: string;
+  updatedAtMs?: number;
 }
 

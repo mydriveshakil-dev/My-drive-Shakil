@@ -302,6 +302,105 @@ export async function saveUserProfileToFirestore(profile: UserAuthProfile) {
   }
 }
 
+export async function deleteProfilePictureForUser(
+  mobileOrPhone: string,
+  nameSearch?: string
+): Promise<{ success: boolean; clearedCount: number; error?: string }> {
+  if (isQuotaExceeded) return { success: false, clearedCount: 0 };
+  let clearedCount = 0;
+  const trimmed = (mobileOrPhone || '').trim();
+  const cleanDigits = cleanPhoneDigits(trimmed);
+
+  try {
+    // 1. Scan and update all groups in Firestore
+    const groupsRef = collection(db, 'groups');
+    const groupsSnap = await getDocs(groupsRef);
+
+    if (!groupsSnap.empty) {
+      for (const gDoc of groupsSnap.docs) {
+        const gData = gDoc.data() as Group;
+        if (gData.members && Array.isArray(gData.members)) {
+          let hasChange = false;
+          const updatedMembers = gData.members.map((m) => {
+            const isMatch =
+              (trimmed && (isPhoneMatch(m.mobileNumber, trimmed) || isPhoneMatch(m.phone, trimmed) || isPhoneMatch(m.email, trimmed))) ||
+              (cleanDigits && (isPhoneMatch(m.mobileNumber, cleanDigits) || isPhoneMatch(m.phone, cleanDigits))) ||
+              (nameSearch && m.name && m.name.toLowerCase().trim().includes(nameSearch.toLowerCase().trim()));
+
+            if (isMatch) {
+              hasChange = true;
+              clearedCount++;
+              const initials =
+                m.name
+                  ?.split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .toUpperCase()
+                  .substring(0, 2) || 'MB';
+              return {
+                ...m,
+                avatar: initials, // Reset to standard text initials, removing picture
+              };
+            }
+            return m;
+          });
+
+          if (hasChange) {
+            await setDoc(doc(db, 'groups', gDoc.id), removeUndefinedFields({ ...gData, members: updatedMembers }), { merge: true });
+          }
+        }
+      }
+    }
+
+    // 2. Scan and update all users in Firestore 'users' collection
+    const usersRef = collection(db, 'users');
+    const usersSnap = await getDocs(usersRef);
+
+    if (!usersSnap.empty) {
+      for (const uDoc of usersSnap.docs) {
+        const uData = uDoc.data() as UserAuthProfile;
+        const isMatch =
+          (trimmed && (isPhoneMatch(uData.mobileNumber, trimmed) || isPhoneMatch(uData.email, trimmed) || isPhoneMatch(uData.cleanMobile, trimmed) || isPhoneMatch(uData.localMobile, trimmed))) ||
+          (cleanDigits && (isPhoneMatch(uData.mobileNumber, cleanDigits) || isPhoneMatch(uData.cleanMobile, cleanDigits) || isPhoneMatch(uData.localMobile, cleanDigits))) ||
+          (nameSearch && uData.name && uData.name.toLowerCase().trim().includes(nameSearch.toLowerCase().trim()));
+
+        if (isMatch) {
+          clearedCount++;
+          const updatedProfile: UserAuthProfile = {
+            ...uData,
+            avatar: '', // Clear profile picture
+            identity: uData.identity
+              ? {
+                  ...uData.identity,
+                  photoUrl: undefined,
+                }
+              : null,
+          };
+          await setDoc(doc(db, 'users', uDoc.id), removeUndefinedFields(updatedProfile), { merge: true });
+        }
+      }
+    }
+
+    return { success: true, clearedCount };
+  } catch (err: any) {
+    console.warn('Error deleting user profile picture from Firestore:', err);
+    return { success: false, clearedCount, error: err.message };
+  }
+}
+
+// Auto-run Wahad profile picture cleanup once on initialization
+if (typeof window !== 'undefined') {
+  const WAHAD_CLEANUP_KEY = 'wahad_pfp_cleaned_v1';
+  if (!localStorage.getItem(WAHAD_CLEANUP_KEY)) {
+    setTimeout(async () => {
+      try {
+        await deleteProfilePictureForUser('0555245482', 'Wahad');
+        localStorage.setItem(WAHAD_CLEANUP_KEY, 'true');
+      } catch (e) {}
+    }, 1500);
+  }
+}
+
 export async function deleteUserProfileFromFirestore(identifier: string) {
   if (!identifier || !identifier.trim() || isQuotaExceeded) return;
   try {

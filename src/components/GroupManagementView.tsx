@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Group, Member, GoogleSheetsConfig, UserAuthProfile } from '../types';
 import { GlassContainer } from './GlassContainer';
 import { MemberAvatar } from './MemberAvatar';
 import { UserProfileModal } from './UserProfileModal';
 import { isPhoneMatch } from '../lib/firebase';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
+import { compressProfileImage } from '../utils/imageCompressor';
+import { isProfileImageSet } from '../utils/permissionUtils';
 import {
   Users,
   Plus,
@@ -31,6 +33,9 @@ import {
   StickyNote,
   User,
   Camera,
+  ImageIcon,
+  Loader2,
+  X,
 } from 'lucide-react';
 
 interface GroupManagementViewProps {
@@ -106,7 +111,12 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberPhone, setNewMemberPhone] = useState('');
   const [newMemberPassword, setNewMemberPassword] = useState('');
+  const [newMemberAvatar, setNewMemberAvatar] = useState('');
+  const [isProcessingNewAvatar, setIsProcessingNewAvatar] = useState(false);
   const [newMemberCategories, setNewMemberCategories] = useState<string[]>(ALL_EXPENSE_OPTIONS.map((o) => o.id));
+
+  const newMemberCameraInputRef = useRef<HTMLInputElement>(null);
+  const newMemberGalleryInputRef = useRef<HTMLInputElement>(null);
 
   const [isEditingGroupName, setIsEditingGroupName] = useState(false);
   const [editGroupNameInput, setEditGroupNameInput] = useState(group.name);
@@ -129,8 +139,13 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   const [editMemberName, setEditMemberName] = useState('');
   const [editMemberPhone, setEditMemberPhone] = useState('');
   const [editMemberPassword, setEditMemberPassword] = useState('');
+  const [editMemberAvatar, setEditMemberAvatar] = useState('');
+  const [isProcessingEditAvatar, setIsProcessingEditAvatar] = useState(false);
   const [editMemberDays, setEditMemberDays] = useState(30);
   const [editMemberCategories, setEditMemberCategories] = useState<string[]>([]);
+
+  const editMemberCameraInputRef = useRef<HTMLInputElement>(null);
+  const editMemberGalleryInputRef = useRef<HTMLInputElement>(null);
 
   // Admin New Group Modal State
   const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -157,6 +172,32 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
 
   const isAdmin = currentUser?.isLoggedIn === true && currentUser?.role === 'admin';
 
+  const handleNewMemberImageFile = async (file: File) => {
+    try {
+      setIsProcessingNewAvatar(true);
+      const compressed = await compressProfileImage(file, 360, 360, 0.85);
+      setNewMemberAvatar(compressed);
+      triggerHaptic(hapticPatterns.success);
+    } catch (err) {
+      console.warn('Failed to compress avatar image:', err);
+    } finally {
+      setIsProcessingNewAvatar(false);
+    }
+  };
+
+  const handleEditMemberImageFile = async (file: File) => {
+    try {
+      setIsProcessingEditAvatar(true);
+      const compressed = await compressProfileImage(file, 360, 360, 0.85);
+      setEditMemberAvatar(compressed);
+      triggerHaptic(hapticPatterns.success);
+    } catch (err) {
+      console.warn('Failed to compress avatar image:', err);
+    } finally {
+      setIsProcessingEditAvatar(false);
+    }
+  };
+
   const toggleCategoryForNewMember = (catId: string) => {
     if (newMemberCategories.includes(catId)) {
       setNewMemberCategories(newMemberCategories.filter((c) => c !== catId));
@@ -178,6 +219,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
     setEditMemberName(member.name);
     setEditMemberPhone(member.phone || member.mobileNumber || member.email || '');
     setEditMemberPassword(member.password || '');
+    setEditMemberAvatar(member.avatar || '');
     setEditMemberDays(member.daysPresent || 30);
     setEditMemberCategories(member.includedCategories || ALL_EXPENSE_OPTIONS.map((o) => o.id));
   };
@@ -185,6 +227,21 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   const handleSaveEditMemberSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMember) return;
+
+    const initials =
+      editMemberName
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2) || 'MB';
+
+    const finalAvatar = isProfileImageSet(editMemberAvatar)
+      ? editMemberAvatar
+      : editMemberAvatar && editMemberAvatar.trim().length > 0
+      ? editMemberAvatar
+      : initials;
+
     const updated: Member = {
       ...editingMember,
       name: editMemberName.trim() || editingMember.name,
@@ -192,6 +249,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       email: editMemberPhone.trim() || editingMember.email,
       mobileNumber: editMemberPhone.trim() || editingMember.mobileNumber,
       password: editMemberPassword.trim() || editingMember.password || '',
+      avatar: finalAvatar,
       daysPresent: editMemberDays,
       includedCategories: editMemberCategories,
     };
@@ -225,13 +283,15 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
         .toUpperCase()
         .substring(0, 2) || 'MB';
 
+    const finalAvatar = isProfileImageSet(newMemberAvatar) ? newMemberAvatar : initials;
+
     onAddMember({
       name: newMemberName.trim(),
       email: newMemberPhone.trim(),
       phone: newMemberPhone.trim(),
       mobileNumber: newMemberPhone.trim(),
       password: newMemberPassword.trim(),
-      avatar: initials,
+      avatar: finalAvatar,
       daysPresent: 30,
       active: true,
       includedCategories: newMemberCategories,
@@ -240,6 +300,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
     setNewMemberName('');
     setNewMemberPhone('');
     setNewMemberPassword('');
+    setNewMemberAvatar('');
     setNewMemberCategories(ALL_EXPENSE_OPTIONS.map((o) => o.id));
     setShowAddMember(false);
   };
@@ -1087,6 +1148,91 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                 </p>
               </div>
 
+              {/* Profile Picture Option */}
+              <div className="neu-upper-sm p-3.5 rounded-2xl space-y-2.5">
+                <label className="block text-xs font-bold text-slate-900 uppercase">
+                  Member Profile Picture (Optional)
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="relative shrink-0">
+                    <MemberAvatar
+                      name={newMemberName || 'New Member'}
+                      avatar={newMemberAvatar}
+                      size="xl"
+                      className="ring-2 ring-blue-600/30"
+                    />
+                    {isProcessingNewAvatar && (
+                      <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center text-white">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="user"
+                        ref={newMemberCameraInputRef}
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleNewMemberImageFile(f);
+                        }}
+                      />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={newMemberGalleryInputRef}
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleNewMemberImageFile(f);
+                        }}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => newMemberCameraInputRef.current?.click()}
+                        disabled={isProcessingNewAvatar}
+                        className="px-3 py-1.5 rounded-xl neu-upper-btn text-xs font-bold text-slate-900 flex items-center gap-1.5 cursor-pointer hover:text-blue-600 active:scale-95 transition-all"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>Camera</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => newMemberGalleryInputRef.current?.click()}
+                        disabled={isProcessingNewAvatar}
+                        className="px-3 py-1.5 rounded-xl neu-upper-btn text-xs font-bold text-slate-900 flex items-center gap-1.5 cursor-pointer hover:text-blue-600 active:scale-95 transition-all"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        <span>Gallery / Upload</span>
+                      </button>
+
+                      {newMemberAvatar && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewMemberAvatar('');
+                            triggerHaptic(hapticPatterns.click);
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl bg-red-50 text-red-600 border border-red-200 text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-red-100 active:scale-95 transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Remove</span>
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-600">
+                      Upload photo or take picture to set this member's profile picture.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Expense Inclusions Checkboxes */}
               <div>
                 <label className="block text-xs font-bold text-slate-900 uppercase mb-1 flex items-center justify-between">
@@ -1203,6 +1349,92 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                     onChange={(e) => setEditMemberPassword(e.target.value)}
                     className="w-full px-3.5 py-2.5 neu-upper-sm rounded-xl text-xs font-bold text-slate-900 focus:outline-none"
                   />
+                </div>
+              </div>
+
+              {/* Profile Picture Option */}
+              <div className="neu-upper-sm p-3.5 rounded-2xl space-y-2.5">
+                <label className="block text-xs font-bold text-slate-900 uppercase">
+                  Member Profile Picture
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="relative shrink-0">
+                    <MemberAvatar
+                      name={editMemberName || editingMember.name}
+                      avatar={editMemberAvatar}
+                      size="xl"
+                      className="ring-2 ring-blue-600/30"
+                    />
+                    {isProcessingEditAvatar && (
+                      <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center text-white">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="user"
+                        ref={editMemberCameraInputRef}
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleEditMemberImageFile(f);
+                        }}
+                      />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={editMemberGalleryInputRef}
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleEditMemberImageFile(f);
+                        }}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => editMemberCameraInputRef.current?.click()}
+                        disabled={isProcessingEditAvatar}
+                        className="px-3 py-1.5 rounded-xl neu-upper-btn text-xs font-bold text-slate-900 flex items-center gap-1.5 cursor-pointer hover:text-blue-600 active:scale-95 transition-all"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>Camera</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => editMemberGalleryInputRef.current?.click()}
+                        disabled={isProcessingEditAvatar}
+                        className="px-3 py-1.5 rounded-xl neu-upper-btn text-xs font-bold text-slate-900 flex items-center gap-1.5 cursor-pointer hover:text-blue-600 active:scale-95 transition-all"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        <span>Gallery / Upload</span>
+                      </button>
+
+                      {editMemberAvatar && isProfileImageSet(editMemberAvatar) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditMemberAvatar('');
+                            triggerHaptic(hapticPatterns.click);
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl bg-red-50 text-red-600 border border-red-200 text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-red-100 active:scale-95 transition-all"
+                          title="Remove profile picture"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Remove Photo</span>
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-600">
+                      Update, take new photo, or remove this member's profile picture.
+                    </p>
+                  </div>
                 </div>
               </div>
 

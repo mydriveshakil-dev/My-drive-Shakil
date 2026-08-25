@@ -1913,6 +1913,7 @@ export default function App() {
         isLoggedIn: true,
         role: 'user',
         linkedGroupId: group.id,
+        avatar: memberData.avatar,
       });
     }
 

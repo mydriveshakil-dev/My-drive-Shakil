@@ -36,32 +36,79 @@ export function getMonthYearDisplay(cycleId: string): string {
   return startDate.toLocaleString('en-US', { month: 'short', year: 'numeric' });
 }
 
+export function parseYearAndMonth(dateOrCycle?: string): { year: number; monthIdx: number } | null {
+  if (!dateOrCycle || typeof dateOrCycle !== 'string') return null;
+  const trimmed = dateOrCycle.trim();
+  if (!trimmed) return null;
+
+  // Handle YYYY-MM or YYYY-MM-DD
+  const match = trimmed.match(/^(\d{4})-(\d{1,2})/);
+  if (match) {
+    const y = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10) - 1; // 0-indexed
+    if (!isNaN(y) && !isNaN(m) && m >= 0 && m <= 11) {
+      return { year: y, monthIdx: m };
+    }
+  }
+
+  // Handle ISO string / standard Date parse
+  const d = new Date(trimmed);
+  if (!isNaN(d.getTime())) {
+    return { year: d.getFullYear(), monthIdx: d.getMonth() };
+  }
+
+  return null;
+}
+
 export function getPreviousCycleOptions(
-  count: number = 24,
-  groupCreatedAt?: string
+  count?: number,
+  groupCreatedAt?: string,
+  earliestCycleId?: string
 ): { cycleId: string; label: string; fullLabel: string }[] {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonthIdx = now.getMonth(); // 0 to 11
 
-  // Parse start date from groupCreatedAt if available
+  // Determine group start year and month (when admin created group)
   let startYear = currentYear;
-  let startMonthIdx = 0; // Default to Jan of current year
+  let startMonthIdx = currentMonthIdx; // Default to current month
 
-  if (groupCreatedAt) {
-    const createdDate = new Date(groupCreatedAt);
-    if (!isNaN(createdDate.getTime())) {
-      startYear = createdDate.getFullYear();
-      startMonthIdx = createdDate.getMonth();
+  const parsedCreated = parseYearAndMonth(groupCreatedAt);
+  if (parsedCreated) {
+    startYear = parsedCreated.year;
+    startMonthIdx = parsedCreated.monthIdx;
+  }
+
+  // If earliest existing expense/bill cycle is earlier than group created date, respect it
+  if (earliestCycleId) {
+    const parsedEarliest = parseYearAndMonth(earliestCycleId);
+    if (parsedEarliest) {
+      const earliestMonths = parsedEarliest.year * 12 + parsedEarliest.monthIdx;
+      const startMonths = startYear * 12 + startMonthIdx;
+      if (earliestMonths < startMonths) {
+        startYear = parsedEarliest.year;
+        startMonthIdx = parsedEarliest.monthIdx;
+      }
     }
   }
 
-  // Calculate total months difference from start to current
+  // Calculate total months difference from creation month to current month
   const totalMonthsDiff = (currentYear - startYear) * 12 + (currentMonthIdx - startMonthIdx);
-  const maxCycles = Math.max(totalMonthsDiff > 0 ? totalMonthsDiff : 0, 1);
-  const cycleCount = Math.min(Math.max(maxCycles, count), 36);
 
-  const options = [];
+  // Exact number of previous cycles: from the creation month up to the current month
+  let cycleCount: number;
+  if (totalMonthsDiff > 0) {
+    if (count !== undefined && count > 0) {
+      cycleCount = Math.min(totalMonthsDiff, count);
+    } else {
+      cycleCount = Math.min(totalMonthsDiff, 60);
+    }
+  } else {
+    // If created in current month, provide at least 1 previous cycle so dropdown remains functional
+    cycleCount = 1;
+  }
+
+  const options: { cycleId: string; label: string; fullLabel: string }[] = [];
   for (let i = 1; i <= cycleCount; i++) {
     const d = new Date(currentYear, currentMonthIdx - i, 1);
     const year = d.getFullYear();
@@ -77,6 +124,7 @@ export function getPreviousCycleOptions(
       fullLabel,
     });
   }
+
   return options;
 }
 

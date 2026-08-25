@@ -1,5 +1,5 @@
-// Service Worker for UAE MESS SYSTEM PWA & Web Push Notifications
-const CACHE_NAME = 'uae-mess-v3';
+// Enhanced Service Worker for UAE MESS SYSTEM PWA & Background / Lock-Screen Push Notifications
+const CACHE_NAME = 'uae-mess-v4';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -10,62 +10,34 @@ const ASSETS_TO_CACHE = [
   '/uae_mess_logo.jpg'
 ];
 
-// Optional Firebase compat loading for FCM background message support
-try {
-  importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
-  importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
+// Fallback VAPID Public Key for automatic re-subscription on pushsubscriptionchange
+const VAPID_PUBLIC_KEY =
+  'BI2wJb8kiVH4mG-5Na_JYxiyBYEGTFPY6VgTmJZ3ZHS3YUB2C_lYra9pDTlioDznIqIrj7T6mkQwcRKX7blV6CQ';
 
-  firebase.initializeApp({
-    apiKey: "AIzaSyCH129y4KdjopaOK2KO4WZh7hw5nCrSGNA",
-    projectId: "gen-lang-client-0739502996",
-    messagingSenderId: "173049739239",
-    appId: "1:173049739239:web:c890ddf3bc6dfaf0b6af42"
-  });
-
-  const messaging = firebase.messaging();
-  messaging.onBackgroundMessage((payload) => {
-    console.log('[SW] FCM Background Message:', payload);
-    const title = payload.notification?.title || payload.data?.title || 'UAE MESS SYSTEM';
-    const body = payload.notification?.body || payload.data?.body || 'You have a new message in your room group.';
-    const icon = payload.notification?.icon || payload.data?.icon || '/icon-192.png';
-    const badge = payload.notification?.badge || '/icon-192.png';
-    const image = payload.notification?.image || payload.data?.image || undefined;
-    const tag = payload.data?.tag || ('group-msg-' + Date.now());
-
-    const options = {
-      body,
-      icon,
-      badge,
-      image,
-      tag,
-      renotify: true,
-      requireInteraction: true,
-      silent: false,
-      vibrate: [300, 100, 300, 100, 300],
-      timestamp: Date.now(),
-      data: payload.data || { url: '/?tab=chat' },
-      actions: [
-        { action: 'open_chat', title: '💬 Open Group Chat' }
-      ]
-    };
-
-    return self.registration.showNotification(title, options);
-  });
-} catch (e) {
-  // Offline or blocked CDN - native push event handler below handles everything safely
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
 }
 
+// 1. Service Worker Installation
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE).catch(() => {
-        // Ignore individual asset fetch failures during install
+      return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
+        console.warn('[SW] Cache addAll non-fatal warning:', err);
       });
     })
   );
   self.skipWaiting();
 });
 
+// 2. Service Worker Activation & Immediate Client Claiming
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -80,10 +52,12 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Network-first cache fallback strategy
+// 3. Network-First Cache Strategy for App Shell & Static Assets
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
+
+  // Bypass API calls, Firebase endpoints, and live real-time sync
   if (
     url.pathname.startsWith('/api') ||
     url.hostname.includes('firestore') ||
@@ -110,89 +84,218 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Push notification event listener (fires when app is in background, closed, or screen locked!)
+/**
+ * 4. High-Reliability Push Event Listener
+ * Wakes up when app is closed, in background, or screen is locked.
+ * Handles diverse payload formats (JSON, FCM notification/data payloads, plain text, and sync pings).
+ */
 self.addEventListener('push', (event) => {
-  let notificationData = {
-    title: 'UAE MESS SYSTEM - Group Alert',
-    body: 'You have a new message in your room group.',
+  const timestamp = Date.now();
+
+  let payload = {
+    title: 'UAE MESS SYSTEM 🔔',
+    body: 'You have a new group update in your mess room.',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
+    image: undefined,
+    tag: 'group-msg-' + timestamp,
     data: {
       url: '/?tab=chat',
-      timestamp: Date.now()
-    }
+      timestamp: timestamp,
+    },
   };
 
   if (event.data) {
     try {
       const parsed = event.data.json();
-      notificationData = Object.assign({}, notificationData, parsed, {
-        data: Object.assign({}, notificationData.data, parsed.data || {})
-      });
+      if (parsed && typeof parsed === 'object') {
+        // Extract title with high precedence
+        const extractedTitle =
+          parsed.title ||
+          parsed.notification?.title ||
+          parsed.data?.title ||
+          parsed.heading ||
+          payload.title;
+
+        // Extract body message
+        const extractedBody =
+          parsed.body ||
+          parsed.notification?.body ||
+          parsed.data?.body ||
+          parsed.data?.message ||
+          parsed.text ||
+          payload.body;
+
+        // Extract icons, badge, image
+        const extractedIcon =
+          parsed.icon ||
+          parsed.notification?.icon ||
+          parsed.data?.icon ||
+          '/icon-192.png';
+
+        const extractedBadge =
+          parsed.badge ||
+          parsed.notification?.badge ||
+          parsed.data?.badge ||
+          '/icon-192.png';
+
+        const extractedImage =
+          parsed.image ||
+          parsed.notification?.image ||
+          parsed.data?.image ||
+          undefined;
+
+        // Extract deep link url and metadata
+        let customData = parsed.data || {};
+        if (typeof customData === 'string') {
+          try {
+            customData = JSON.parse(customData);
+          } catch (e) {}
+        }
+
+        const targetUrl =
+          parsed.url ||
+          parsed.notification?.click_action ||
+          customData?.url ||
+          (customData?.groupId ? `/?tab=chat&group=${customData.groupId}` : '/?tab=chat');
+
+        const tagId =
+          parsed.tag ||
+          customData?.tag ||
+          (customData?.groupId ? `group-${customData.groupId}-${timestamp}` : `group-msg-${timestamp}`);
+
+        payload = {
+          title: extractedTitle,
+          body: extractedBody,
+          icon: extractedIcon,
+          badge: extractedBadge,
+          image: extractedImage,
+          tag: tagId,
+          data: Object.assign({}, customData, { url: targetUrl, timestamp }),
+        };
+      }
     } catch (e) {
+      // Fallback for plain text push
       try {
-        const text = event.data.text();
-        if (text) {
-          notificationData.body = text;
+        const textData = event.data.text();
+        if (textData) {
+          payload.body = textData;
         }
       } catch (err) {}
     }
   }
 
-  const title = notificationData.title || 'UAE MESS SYSTEM';
-  const tagId = notificationData.tag || ('group-msg-' + (notificationData.data?.timestamp || Date.now()));
-  
-  const options = {
-    body: notificationData.body,
-    icon: notificationData.icon || '/icon-192.png',
-    badge: notificationData.badge || '/icon-192.png',
-    image: notificationData.image || undefined,
-    vibrate: [300, 100, 300, 100, 300],
-    tag: tagId,
+  // Options optimized for background and lock-screen alerts
+  const notificationOptions = {
+    body: payload.body,
+    icon: payload.icon || '/icon-192.png',
+    badge: payload.badge || '/icon-192.png',
+    image: payload.image,
+    tag: payload.tag,
     renotify: true,
     requireInteraction: true,
     silent: false,
-    timestamp: notificationData.data?.timestamp || Date.now(),
-    data: notificationData.data || { url: '/?tab=chat' },
+    vibrate: [300, 100, 300, 100, 300],
+    timestamp: payload.data?.timestamp || timestamp,
+    data: payload.data || { url: '/?tab=chat' },
     actions: [
       { action: 'open_chat', title: '💬 Open Group Chat' }
     ]
   };
 
   event.waitUntil(
-    self.registration.showNotification(title, options).catch((err) => {
-      console.error('[Service Worker] showNotification error:', err);
-    })
+    self.registration
+      .showNotification(payload.title, notificationOptions)
+      .then(() => {
+        // Broadcast notification received to all open clients if any exist
+        return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsList) => {
+          clientsList.forEach((client) => {
+            client.postMessage({
+              type: 'PUSH_RECEIVED',
+              payload,
+            });
+          });
+        });
+      })
+      .catch((err) => {
+        console.error('[SW] showNotification error:', err);
+      })
   );
 });
 
-// Notification click event handler (opens or focuses app when user taps notification)
+/**
+ * 5. Notification Click Handler
+ * Accurately focuses active window or launches app directly to chat when tapped from lock screen.
+ */
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const targetUrl = (event.notification.data && event.notification.data.url) ? event.notification.data.url : '/?tab=chat';
+  const notificationData = event.notification.data || {};
+  let targetUrl = notificationData.url || '/?tab=chat';
+
+  if (event.action === 'open_chat' && !targetUrl.includes('tab=chat')) {
+    targetUrl = '/?tab=chat';
+  }
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // If a window is already open, focus it and navigate to chat
-      for (const client of windowClients) {
-        if ('focus' in client) {
-          client.focus();
-          if ('navigate' in client && targetUrl) {
-            client.navigate(targetUrl);
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((windowClients) => {
+        // Check if there is already a window open
+        for (const client of windowClients) {
+          if ('focus' in client) {
+            client.focus();
+            if ('navigate' in client && targetUrl) {
+              client.navigate(targetUrl);
+            }
+            client.postMessage({
+              type: 'NOTIFICATION_CLICKED',
+              data: notificationData,
+            });
+            return;
           }
-          return;
         }
-      }
-      // If no window is open, open a new window
-      if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
-      }
-    })
+        // If no window is open (e.g. app was closed or device was locked), open new window
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl);
+        }
+      })
   );
 });
 
-// Handle custom messages from app
+/**
+ * 6. Push Subscription Change Handler
+ * Handles background key expiration or renewal by browser push services.
+ */
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    self.registration.pushManager
+      .subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      })
+      .then((newSubscription) => {
+        return fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subscription: newSubscription.toJSON(),
+            groupId: 'group-room-3',
+            userId: 're-subscribed-device',
+            userName: 'Room Member',
+            updatedAt: Date.now(),
+          }),
+        });
+      })
+      .catch((err) => {
+        console.warn('[SW] pushsubscriptionchange renewal error:', err);
+      })
+  );
+});
+
+/**
+ * 7. Message Channel from Foreground Application
+ */
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();

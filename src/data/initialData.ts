@@ -7,7 +7,7 @@ export const INITIAL_GROUP: Group = {
   billingCycle: '01 Jul - 31 Jul 2026',
   cycleId: '2026-07',
   status: 'pending',
-  createdAt: new Date().toISOString().split('T')[0],
+  createdAt: '2026-07-01',
   members: [
     {
       id: 'm3',

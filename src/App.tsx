@@ -806,8 +806,8 @@ export default function App() {
   };
   const [billingCycleType, setBillingCycleType] = useState<BillingCycleType>('current');
   const [selectedPreviousCycle, setSelectedPreviousCycle] = useState<string>(() => {
-    const prevs = getPreviousCycleOptions(1);
-    return prevs[0]?.cycleId || '2026-06';
+    const prevs = getPreviousCycleOptions(1, group?.createdAt || group?.cycleId);
+    return prevs[0]?.cycleId || '2026-07';
   });
 
   // Ensure manual refresh or page reload defaults to Current Cycle
@@ -914,7 +914,7 @@ export default function App() {
 
   const activeCycleId = billingCycleType === 'current'
     ? currentCycleId
-    : (selectedPreviousCycle || getPreviousCycleOptions(1)[0]?.cycleId || '2026-06');
+    : (selectedPreviousCycle || getPreviousCycleOptions(1, group?.createdAt || group?.cycleId)[0]?.cycleId || '2026-07');
 
   const activeCycleLabel = billingCycleType === 'current'
     ? (group.billingCycle || currentCycleLabel)

@@ -1,131 +1,19 @@
 // Firebase Messaging Service Worker for UAE MESS SYSTEM
 // Handles background push notifications when app is closed or screen is locked
 
-// 1. Load Firebase Compat SDKs
-try {
-  importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
-  importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
+const VAPID_PUBLIC_KEY =
+  'BI2wJb8kiVH4mG-5Na_JYxiyBYEGTFPY6VgTmJZ3ZHS3YUB2C_lYra9pDTlioDznIqIrj7T6mkQwcRKX7blV6CQ';
 
-  firebase.initializeApp({
-    apiKey: "AIzaSyCH129y4KdjopaOK2KO4WZh7hw5nCrSGNA",
-    projectId: "gen-lang-client-0739502996",
-    messagingSenderId: "173049739239",
-    appId: "1:173049739239:web:c890ddf3bc6dfaf0b6af42"
-  });
-
-  const messaging = firebase.messaging();
-
-  messaging.onBackgroundMessage((payload) => {
-    console.log('[FCM-SW] Received background message:', payload);
-    const title = payload.notification?.title || payload.data?.title || 'UAE MESS SYSTEM';
-    const body = payload.notification?.body || payload.data?.body || 'You have a new message in your room group.';
-    const icon = payload.notification?.icon || payload.data?.icon || '/icon-192.png';
-    const badge = payload.notification?.badge || '/icon-192.png';
-    const image = payload.notification?.image || payload.data?.image || undefined;
-    const tag = payload.data?.tag || ('group-msg-' + Date.now());
-
-    const options = {
-      body,
-      icon,
-      badge,
-      image,
-      tag,
-      renotify: true,
-      requireInteraction: true,
-      silent: false,
-      vibrate: [300, 100, 300, 100, 300],
-      timestamp: Date.now(),
-      data: payload.data || { url: '/?tab=chat' },
-      actions: [
-        { action: 'open_chat', title: '💬 Open Group Chat' }
-      ]
-    };
-
-    return self.registration.showNotification(title, options);
-  });
-} catch (e) {
-  console.warn('[FCM-SW] Firebase compat script load error, falling back to native push handler:', e);
-}
-
-// 2. Native Web Push Event Handler (Direct VAPID WebPush Support)
-self.addEventListener('push', (event) => {
-  let notificationData = {
-    title: 'UAE MESS SYSTEM',
-    body: 'You have a new message in your room group.',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    data: {
-      url: '/?tab=chat',
-      timestamp: Date.now()
-    }
-  };
-
-  if (event.data) {
-    try {
-      const parsed = event.data.json();
-      notificationData = Object.assign({}, notificationData, parsed, {
-        data: Object.assign({}, notificationData.data, parsed.data || {})
-      });
-    } catch (e) {
-      try {
-        const text = event.data.text();
-        if (text) {
-          notificationData.body = text;
-        }
-      } catch (err) {}
-    }
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
   }
-
-  const title = notificationData.title || 'UAE MESS SYSTEM';
-  const tagId = notificationData.tag || ('group-msg-' + (notificationData.data?.timestamp || Date.now()));
-
-  const options = {
-    body: notificationData.body,
-    icon: notificationData.icon || '/icon-192.png',
-    badge: notificationData.badge || '/icon-192.png',
-    image: notificationData.image || undefined,
-    vibrate: [300, 100, 300, 100, 300],
-    tag: tagId,
-    renotify: true,
-    requireInteraction: true,
-    silent: false,
-    timestamp: notificationData.data?.timestamp || Date.now(),
-    data: notificationData.data || { url: '/?tab=chat' },
-    actions: [
-      { action: 'open_chat', title: '💬 Open Group Chat' }
-    ]
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(title, options).catch((err) => {
-      console.error('[Service Worker] showNotification error:', err);
-    })
-  );
-});
-
-// 3. Notification Click Action Handler
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  const targetUrl = (event.notification.data && event.notification.data.url) ? event.notification.data.url : '/?tab=chat';
-
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      for (const client of windowClients) {
-        if ('focus' in client) {
-          client.focus();
-          if ('navigate' in client && targetUrl) {
-            client.navigate(targetUrl);
-          }
-          return;
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
-      }
-    })
-  );
-});
+  return outputArray;
+}
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -133,4 +21,180 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
+});
+
+/**
+ * Universal Push Event Listener for both FCM & WebPush
+ */
+self.addEventListener('push', (event) => {
+  const timestamp = Date.now();
+
+  let payload = {
+    title: 'UAE MESS SYSTEM 🔔',
+    body: 'You have a new group update in your mess room.',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    image: undefined,
+    tag: 'group-msg-' + timestamp,
+    data: {
+      url: '/?tab=chat',
+      timestamp: timestamp,
+    },
+  };
+
+  if (event.data) {
+    try {
+      const parsed = event.data.json();
+      if (parsed && typeof parsed === 'object') {
+        const extractedTitle =
+          parsed.title ||
+          parsed.notification?.title ||
+          parsed.data?.title ||
+          parsed.heading ||
+          payload.title;
+
+        const extractedBody =
+          parsed.body ||
+          parsed.notification?.body ||
+          parsed.data?.body ||
+          parsed.data?.message ||
+          parsed.text ||
+          payload.body;
+
+        const extractedIcon =
+          parsed.icon ||
+          parsed.notification?.icon ||
+          parsed.data?.icon ||
+          '/icon-192.png';
+
+        const extractedBadge =
+          parsed.badge ||
+          parsed.notification?.badge ||
+          parsed.data?.badge ||
+          '/icon-192.png';
+
+        const extractedImage =
+          parsed.image ||
+          parsed.notification?.image ||
+          parsed.data?.image ||
+          undefined;
+
+        let customData = parsed.data || {};
+        if (typeof customData === 'string') {
+          try {
+            customData = JSON.parse(customData);
+          } catch (e) {}
+        }
+
+        const targetUrl =
+          parsed.url ||
+          parsed.notification?.click_action ||
+          customData?.url ||
+          (customData?.groupId ? `/?tab=chat&group=${customData.groupId}` : '/?tab=chat');
+
+        const tagId =
+          parsed.tag ||
+          customData?.tag ||
+          (customData?.groupId ? `group-${customData.groupId}-${timestamp}` : `group-msg-${timestamp}`);
+
+        payload = {
+          title: extractedTitle,
+          body: extractedBody,
+          icon: extractedIcon,
+          badge: extractedBadge,
+          image: extractedImage,
+          tag: tagId,
+          data: Object.assign({}, customData, { url: targetUrl, timestamp }),
+        };
+      }
+    } catch (e) {
+      try {
+        const textData = event.data.text();
+        if (textData) {
+          payload.body = textData;
+        }
+      } catch (err) {}
+    }
+  }
+
+  const notificationOptions = {
+    body: payload.body,
+    icon: payload.icon || '/icon-192.png',
+    badge: payload.badge || '/icon-192.png',
+    image: payload.image,
+    tag: payload.tag,
+    renotify: true,
+    requireInteraction: true,
+    silent: false,
+    vibrate: [300, 100, 300, 100, 300],
+    timestamp: payload.data?.timestamp || timestamp,
+    data: payload.data || { url: '/?tab=chat' },
+    actions: [
+      { action: 'open_chat', title: '💬 Open Group Chat' }
+    ]
+  };
+
+  event.waitUntil(
+    self.registration
+      .showNotification(payload.title, notificationOptions)
+      .catch((err) => {
+        console.error('[FCM-SW] showNotification error:', err);
+      })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const notificationData = event.notification.data || {};
+  let targetUrl = notificationData.url || '/?tab=chat';
+
+  if (event.action === 'open_chat' && !targetUrl.includes('tab=chat')) {
+    targetUrl = '/?tab=chat';
+  }
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((windowClients) => {
+        for (const client of windowClients) {
+          if ('focus' in client) {
+            client.focus();
+            if ('navigate' in client && targetUrl) {
+              client.navigate(targetUrl);
+            }
+            return;
+          }
+        }
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl);
+        }
+      })
+  );
+});
+
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    self.registration.pushManager
+      .subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      })
+      .then((newSubscription) => {
+        return fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subscription: newSubscription.toJSON(),
+            groupId: 'group-room-3',
+            userId: 're-subscribed-device',
+            userName: 'Room Member',
+            updatedAt: Date.now(),
+          }),
+        });
+      })
+      .catch((err) => {
+        console.warn('[FCM-SW] pushsubscriptionchange renewal error:', err);
+      })
+  );
 });

@@ -168,7 +168,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     setEditingAmountTxId(null);
   };
 
-  const previousCycleOptions = getPreviousCycleOptions(24, group?.createdAt);
+  const earliestExpenseCycle = useMemo(() => {
+    const all = allExpenses.length > 0 ? allExpenses : expenses;
+    if (!all || all.length === 0) return undefined;
+    const cycles = all
+      .filter((e) => {
+        const itemGroupId = e.groupId;
+        if (itemGroupId && itemGroupId !== group.id) return false;
+        if (!itemGroupId && group.id !== 'group-room-3') return false;
+        return true;
+      })
+      .map((e) => e.cycle || (e.date ? e.date.slice(0, 7) : ''))
+      .filter(Boolean)
+      .sort();
+    return cycles[0];
+  }, [allExpenses, expenses, group.id]);
+
+  const previousCycleOptions = useMemo(() => {
+    return getPreviousCycleOptions(undefined, group?.createdAt || group?.cycleId, earliestExpenseCycle);
+  }, [group?.createdAt, group?.cycleId, earliestExpenseCycle]);
+
   const activeSelectedPreviousCycleId = selectedPreviousCycle || previousCycleOptions[0]?.cycleId || '2026-07';
 
   // Helper to calculate total expenses for a specific cycleId from allExpenses

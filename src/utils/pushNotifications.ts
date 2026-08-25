@@ -4,7 +4,6 @@ import {
   savePushSubscriptionToFirestore,
   fetchGroupPushSubscriptionsFromFirestore,
 } from '../lib/firebase';
-import firebaseConfig from '../../firebase-applet-config.json';
 
 // Standard base64url encoded P-256 public key matching server
 export const FALLBACK_VAPID_PUBLIC_KEY =
@@ -31,6 +30,26 @@ export function getNotificationPermissionStatus(): NotificationPermission | 'uns
     return 'unsupported';
   }
   return Notification.permission;
+}
+
+/**
+ * Early registration of Service Worker to ensure background message listeners
+ * are immediately active for closed-app & lock-screen push events.
+ */
+export async function initEarlyServiceWorker(): Promise<ServiceWorkerRegistration | null> {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return null;
+  try {
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+      updateViaCache: 'none',
+    });
+    // Check for updates in background
+    registration.update().catch(() => {});
+    return registration;
+  } catch (err) {
+    console.warn('[SW] Early registration note:', err);
+    return null;
+  }
 }
 
 /**
@@ -62,8 +81,12 @@ export async function registerPushNotifications(
     // 2. Register / Update Service Worker with root scope
     let registration: ServiceWorkerRegistration | undefined;
     try {
-      registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      registration = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/',
+        updateViaCache: 'none',
+      });
       await navigator.serviceWorker.ready;
+      registration.update().catch(() => {});
       console.log('[Push] Service Worker ready with scope:', registration.scope);
     } catch (swErr) {
       console.warn('[Push] Service worker registration note:', swErr);

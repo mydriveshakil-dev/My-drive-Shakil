@@ -153,6 +153,44 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
 
+  // Swipe right-to-left gesture detection to close Group Chat
+  const pageTouchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  const handlePageTouchStart = (e: React.TouchEvent) => {
+    if (isRecording || lightboxImage || showPushInfoModal) return;
+    const touch = e.touches[0];
+    pageTouchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now(),
+    };
+  };
+
+  const handlePageTouchEnd = (e: React.TouchEvent) => {
+    if (!pageTouchStartRef.current || isRecording || lightboxImage || showPushInfoModal) {
+      pageTouchStartRef.current = null;
+      return;
+    }
+
+    const touch = e.changedTouches[0];
+    const deltaX = pageTouchStartRef.current.x - touch.clientX; // positive when swiping right to left
+    const deltaY = Math.abs(pageTouchStartRef.current.y - touch.clientY);
+    const duration = Date.now() - pageTouchStartRef.current.time;
+
+    // Right-to-left swipe condition:
+    // 1. Swiped at least 55px towards left
+    // 2. Horizontal movement is dominant compared to vertical scroll (deltaX > deltaY * 1.1)
+    // 3. Deliberate gesture completed within 750ms
+    if (deltaX > 55 && deltaX > deltaY * 1.1 && duration < 750) {
+      if (onBack) {
+        triggerHaptic(hapticPatterns.click);
+        onBack();
+      }
+    }
+
+    pageTouchStartRef.current = null;
+  };
+
   // Clean up audio recording on unmount
   useEffect(() => {
     return () => {
@@ -681,6 +719,8 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
       onClick={() => {
         if (activeReactionMsgId) setActiveReactionMsgId(null);
       }}
+      onTouchStart={handlePageTouchStart}
+      onTouchEnd={handlePageTouchEnd}
       style={{
         height: viewportHeight,
         maxHeight: viewportHeight,

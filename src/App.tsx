@@ -131,7 +131,7 @@ export default function App() {
         // Fallback
       }
     }
-    return group.id === 'group-room-3' ? INITIAL_EXPENSES : [];
+    return group.id === INITIAL_GROUP.id ? INITIAL_EXPENSES : [];
   });
 
   const [utilities, setUtilities] = useState<UtilityBill[]>(() => {
@@ -145,7 +145,7 @@ export default function App() {
         // Fallback
       }
     }
-    return group.id === 'group-room-3' ? INITIAL_UTILITIES : [];
+    return group.id === INITIAL_GROUP.id ? INITIAL_UTILITIES : [];
   });
 
   const [rent, setRent] = useState<RentContribution>(() => {
@@ -174,7 +174,7 @@ export default function App() {
         // Fallback
       }
     }
-    return group.id === 'group-room-3' ? INITIAL_CHAT_MESSAGES.filter((m: ChatMessage) => getMessageTimestampMs(m) >= startOfMonthMs) : [];
+    return group.id === INITIAL_GROUP.id ? INITIAL_CHAT_MESSAGES.filter((m: ChatMessage) => getMessageTimestampMs(m) >= startOfMonthMs) : [];
   });
 
   const [payToTransactions, setPayToTransactions] = useState<PayToTransaction[]>(() => {
@@ -194,7 +194,6 @@ export default function App() {
   // Group Switch Reset Effect: Ensure strict data isolation whenever group.id changes
   useEffect(() => {
     if (!group.id) return;
-    const isCustomGroupWithoutCustomSheet = group.id !== 'group-room-3' && (!group.spreadsheetId || group.spreadsheetId === '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM');
 
     const expKey = `room_expenses_${group.id}`;
     const savedExp = localStorage.getItem(expKey);
@@ -202,10 +201,7 @@ export default function App() {
       try {
         let parsed = JSON.parse(savedExp);
         if (Array.isArray(parsed)) {
-          parsed = parsed.filter((e: Expense) => (e.groupId ? e.groupId === group.id : group.id === 'group-room-3'));
-          if (isCustomGroupWithoutCustomSheet) {
-            parsed = parsed.filter((e: Expense) => e.id.startsWith('exp-'));
-          }
+          parsed = parsed.filter((e: Expense) => (e.groupId ? e.groupId === group.id : group.id === INITIAL_GROUP.id));
           setExpenses(parsed);
         } else {
           setExpenses([]);
@@ -214,7 +210,7 @@ export default function App() {
         setExpenses([]);
       }
     } else {
-      setExpenses(group.id === 'group-room-3' ? INITIAL_EXPENSES : []);
+      setExpenses(group.id === INITIAL_GROUP.id ? INITIAL_EXPENSES : []);
     }
 
     const utilKey = `room_utilities_${group.id}`;
@@ -223,10 +219,7 @@ export default function App() {
       try {
         let parsed = JSON.parse(savedUtil);
         if (Array.isArray(parsed)) {
-          parsed = parsed.filter((u: UtilityBill) => (u.groupId ? u.groupId === group.id : group.id === 'group-room-3'));
-          if (isCustomGroupWithoutCustomSheet) {
-            parsed = parsed.filter((u: UtilityBill) => u.id.startsWith('util-'));
-          }
+          parsed = parsed.filter((u: UtilityBill) => (u.groupId ? u.groupId === group.id : group.id === INITIAL_GROUP.id));
           setUtilities(parsed);
         } else {
           setUtilities([]);
@@ -235,7 +228,7 @@ export default function App() {
         setUtilities([]);
       }
     } else {
-      setUtilities(group.id === 'group-room-3' ? INITIAL_UTILITIES : []);
+      setUtilities(group.id === INITIAL_GROUP.id ? INITIAL_UTILITIES : []);
     }
 
     const rentKey = `room_rent_${group.id}`;
@@ -261,7 +254,10 @@ export default function App() {
         setChatMessages([]);
       }
     } else {
-      setChatMessages(group.id === 'group-room-3' ? INITIAL_CHAT_MESSAGES.filter((m: ChatMessage) => getMessageTimestampMs(m) >= startOfMonthMs) : []);
+      const initialMsgs = group.id === INITIAL_GROUP.id
+        ? INITIAL_CHAT_MESSAGES.filter((m: ChatMessage) => getMessageTimestampMs(m) >= startOfMonthMs)
+        : [];
+      setChatMessages(initialMsgs);
     }
 
     const payToKey = `room_payto_${group.id}`;
@@ -407,17 +403,10 @@ export default function App() {
 
     // 2. Expenses subscription - Instant multi-device sync
     const unsubExp = subscribeToExpenses(group.id, (remoteExpenses) => {
-      const isCustomGroupWithoutCustomSheet = group.id !== 'group-room-3' && (!group.spreadsheetId || group.spreadsheetId === '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM');
-
-      let groupExp = (remoteExpenses || []).filter((e) => {
+      const groupExp = (remoteExpenses || []).filter((e) => {
         if (e.groupId) return e.groupId === group.id;
-        return group.id === 'group-room-3';
+        return group.id === INITIAL_GROUP.id;
       });
-
-      // Strict group data isolation: for custom groups, filter in memory
-      if (isCustomGroupWithoutCustomSheet) {
-        groupExp = groupExp.filter((e) => e.id.startsWith('exp-'));
-      }
 
       setExpenses(groupExp);
       localStorage.setItem(`room_expenses_${group.id}`, JSON.stringify(groupExp));
@@ -425,17 +414,10 @@ export default function App() {
 
     // 3. Utilities subscription - Instant multi-device sync
     const unsubUtil = subscribeToUtilities(group.id, (remoteUtilities) => {
-      const isCustomGroupWithoutCustomSheet = group.id !== 'group-room-3' && (!group.spreadsheetId || group.spreadsheetId === '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM');
-
-      let groupUtil = (remoteUtilities || []).filter((u) => {
+      const groupUtil = (remoteUtilities || []).filter((u) => {
         if (u.groupId) return u.groupId === group.id;
-        return group.id === 'group-room-3';
+        return group.id === INITIAL_GROUP.id;
       });
-
-      // Strict group data isolation: for custom groups, filter in memory
-      if (isCustomGroupWithoutCustomSheet) {
-        groupUtil = groupUtil.filter((u) => u.id.startsWith('util-'));
-      }
 
       setUtilities(groupUtil);
       localStorage.setItem(`room_utilities_${group.id}`, JSON.stringify(groupUtil));
@@ -929,46 +911,32 @@ export default function App() {
   }, [group, activeCycleId, activeCycleLabel]);
 
   const displayedExpenses = useMemo(() => {
-    const isCustomGroupWithoutCustomSheet = group.id !== 'group-room-3' && (!group.spreadsheetId || group.spreadsheetId === '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM');
-
     return expenses.filter((e) => {
       const itemGroupId = e.groupId;
       if (itemGroupId && itemGroupId !== group.id) return false;
-      if (!itemGroupId && group.id !== 'group-room-3') return false;
+      if (!itemGroupId && group.id !== INITIAL_GROUP.id) return false;
 
-      if (isCustomGroupWithoutCustomSheet) {
-        if (!e.id.startsWith('exp-')) {
-          return false;
-        }
-      }
       const expCycle = e.cycle || (e.date ? e.date.slice(0, 7) : '');
       if (expCycle) {
         return expCycle === activeCycleId;
       }
       return activeCycleId === currentCycleId;
     });
-  }, [expenses, activeCycleId, currentCycleId, group.id, group.spreadsheetId]);
+  }, [expenses, activeCycleId, currentCycleId, group.id]);
 
   const displayedUtilities = useMemo(() => {
-    const isCustomGroupWithoutCustomSheet = group.id !== 'group-room-3' && (!group.spreadsheetId || group.spreadsheetId === '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM');
-
     return utilities.filter((u) => {
       const itemGroupId = u.groupId;
       if (itemGroupId && itemGroupId !== group.id) return false;
-      if (!itemGroupId && group.id !== 'group-room-3') return false;
+      if (!itemGroupId && group.id !== INITIAL_GROUP.id) return false;
 
-      if (isCustomGroupWithoutCustomSheet) {
-        if (!u.id.startsWith('util-')) {
-          return false;
-        }
-      }
       const utilCycle = u.cycle || (u.date ? u.date.slice(0, 7) : '');
       if (utilCycle) {
         return utilCycle === activeCycleId;
       }
       return activeCycleId === currentCycleId;
     });
-  }, [utilities, activeCycleId, currentCycleId, group.id, group.spreadsheetId]);
+  }, [utilities, activeCycleId, currentCycleId, group.id]);
 
   const displayedRent = useMemo(() => {
     if (!rent) return rent;
@@ -1236,7 +1204,7 @@ export default function App() {
 
   const fetchFromSheet = async (silent = false) => {
     if (!silent) setIsSyncing(true);
-    const sheetId = group.spreadsheetId || (group.id === 'group-room-3' ? '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM' : '');
+    const sheetId = group.spreadsheetId || (group.id === INITIAL_GROUP.id ? '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM' : '');
     if (!sheetId) {
       if (!silent) {
         setIsSyncing(false);
@@ -1282,7 +1250,7 @@ export default function App() {
     customGroup?: Group
   ) => {
     const activeGroup = customGroup || groupRef.current;
-    const sheetId = activeGroup.spreadsheetId || (activeGroup.id === 'group-room-3' ? '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM' : '');
+    const sheetId = activeGroup.spreadsheetId || (activeGroup.id === INITIAL_GROUP.id ? '1-VBgqW-RrEXQrTXTxCjSvMPX5w_RlXiw1kM020mNPwM' : '');
     if (!sheetId) return;
 
     if (!silent) setIsSyncing(true);
@@ -1963,14 +1931,13 @@ export default function App() {
     localStorage.setItem('uae_user_auth', JSON.stringify(updatedUserAuth));
     saveUserProfileToFirestore(updatedUserAuth);
 
-    // Find and update matching member in current group
+    // Find and update matching member ONLY in the current active group
     const userMobile = userAuth.mobileNumber;
     const userEmail = userAuth.email;
     const memberIndex = group.members.findIndex(
       (m) =>
         (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase()) ||
-        (userMobile && (isPhoneMatch(m.phone, userMobile) || isPhoneMatch(m.mobileNumber, userMobile))) ||
-        (userAuth.name && m.name.toLowerCase().includes(userAuth.name.toLowerCase()))
+        (userMobile && (isPhoneMatch(m.phone, userMobile) || isPhoneMatch(m.mobileNumber, userMobile)))
     );
 
     let updatedMembers = [...group.members];
@@ -1978,14 +1945,21 @@ export default function App() {
       updatedMembers[memberIndex] = {
         ...updatedMembers[memberIndex],
         name: data.name || updatedMembers[memberIndex].name,
-        avatar: data.avatar || updatedMembers[memberIndex].avatar,
+        avatar: data.avatar !== undefined ? data.avatar : updatedMembers[memberIndex].avatar,
       };
     } else if (group.members.length > 0 && userAuth.role === 'admin') {
-      updatedMembers[0] = {
-        ...updatedMembers[0],
-        name: data.name || updatedMembers[0].name,
-        avatar: data.avatar || updatedMembers[0].avatar,
-      };
+      const adminIdx = group.members.findIndex(
+        (m) =>
+          (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase()) ||
+          (userMobile && (isPhoneMatch(m.phone, userMobile) || isPhoneMatch(m.mobileNumber, userMobile)))
+      );
+      if (adminIdx >= 0) {
+        updatedMembers[adminIdx] = {
+          ...updatedMembers[adminIdx],
+          name: data.name || updatedMembers[adminIdx].name,
+          avatar: data.avatar !== undefined ? data.avatar : updatedMembers[adminIdx].avatar,
+        };
+      }
     }
 
     const updatedGroup = {
@@ -1995,32 +1969,12 @@ export default function App() {
     setGroup(updatedGroup);
     saveGroupToFirestore(updatedGroup);
 
-    // Also update and save to all other room groups that contain this user
-    const updatedAll = allGroups.map((g) => {
-      if (g.id === group.id) return updatedGroup;
-      const memIdx = (g.members || []).findIndex(
-        (m) =>
-          (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase()) ||
-          (userMobile && (isPhoneMatch(m.phone, userMobile) || isPhoneMatch(m.mobileNumber, userMobile))) ||
-          (userAuth.name && m.name.toLowerCase().includes(userAuth.name.toLowerCase()))
-      );
-      if (memIdx >= 0) {
-        const mems = [...g.members];
-        mems[memIdx] = {
-          ...mems[memIdx],
-          name: data.name || mems[memIdx].name,
-          avatar: data.avatar !== undefined ? data.avatar : mems[memIdx].avatar,
-        };
-        const updatedG = { ...g, members: mems };
-        saveGroupToFirestore(updatedG);
-        return updatedG;
-      }
-      return g;
-    });
+    // Update ONLY the current active group in allGroups
+    const updatedAll = allGroups.map((g) => (g.id === group.id ? updatedGroup : g));
     setAllGroups(updatedAll);
     localStorage.setItem('all_room_groups', JSON.stringify(updatedAll));
 
-    setSyncNotification('Profile photo and details updated across the group!');
+    setSyncNotification('Profile photo and details updated successfully!');
     setTimeout(() => setSyncNotification(null), 3000);
   };
 

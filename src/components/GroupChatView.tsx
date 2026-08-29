@@ -178,10 +178,10 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
     const duration = Date.now() - pageTouchStartRef.current.time;
 
     // Right-to-left swipe condition:
-    // 1. Swiped at least 55px towards left
-    // 2. Horizontal movement is dominant compared to vertical scroll (deltaX > deltaY * 1.1)
-    // 3. Deliberate gesture completed within 750ms
-    if (deltaX > 55 && deltaX > deltaY * 1.1 && duration < 750) {
+    // 1. Swiped at least 45px towards left
+    // 2. Horizontal movement is dominant compared to vertical scroll (deltaX > deltaY * 1.05)
+    // 3. Deliberate gesture completed within 800ms
+    if (deltaX > 45 && deltaX > deltaY * 1.05 && duration < 800) {
       if (onBack) {
         triggerHaptic(hapticPatterns.click);
         onBack();
@@ -721,6 +721,9 @@ export const GroupChatView: React.FC<GroupChatViewProps> = ({
       }}
       onTouchStart={handlePageTouchStart}
       onTouchEnd={handlePageTouchEnd}
+      onTouchCancel={() => {
+        pageTouchStartRef.current = null;
+      }}
       style={{
         height: viewportHeight,
         maxHeight: viewportHeight,

@@ -175,7 +175,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       .filter((e) => {
         const itemGroupId = e.groupId;
         if (itemGroupId && itemGroupId !== group.id) return false;
-        if (!itemGroupId && group.id !== 'group-room-3') return false;
+        if (!itemGroupId && group.id !== 'group-room-1') return false;
         return true;
       })
       .map((e) => e.cycle || (e.date ? e.date.slice(0, 7) : ''))
@@ -188,7 +188,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return getPreviousCycleOptions(undefined, group?.createdAt || group?.cycleId, earliestExpenseCycle);
   }, [group?.createdAt, group?.cycleId, earliestExpenseCycle]);
 
-  const activeSelectedPreviousCycleId = selectedPreviousCycle || previousCycleOptions[0]?.cycleId || '2026-07';
+  const activeSelectedPreviousCycleId = selectedPreviousCycle || (previousCycleOptions.length > 0 ? previousCycleOptions[0].cycleId : (group.cycleId || '2026-07'));
 
   // Helper to calculate total expenses for a specific cycleId from allExpenses
   const getCycleTotalExpenses = (cId: string) => {
@@ -197,7 +197,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       .filter((e) => {
         const itemGroupId = e.groupId;
         if (itemGroupId && itemGroupId !== group.id) return false;
-        if (!itemGroupId && group.id !== 'group-room-3') return false;
+        if (!itemGroupId && group.id !== 'group-room-1') return false;
         const expCycle = e.cycle || (e.date ? e.date.slice(0, 7) : '');
         return expCycle === cId;
       })
@@ -315,24 +315,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {billingCycleType === 'previous' && (
             <div className="flex items-center gap-2 pt-0.5">
-              <select
-                value={activeSelectedPreviousCycleId}
-                onChange={(e) => {
-                  if (onSelectPreviousCycle) {
-                    onSelectPreviousCycle(e.target.value);
-                  }
-                }}
-                className="w-full bg-[#07193F] text-white font-bold text-xs px-3.5 py-2.5 rounded-xl border border-blue-400/30 focus:outline-none focus:border-[#0052FF] cursor-pointer shadow-sm"
-              >
-                {previousCycleOptions.map((opt) => {
-                  const cycleTotal = getCycleTotalExpenses(opt.cycleId);
-                  return (
-                    <option key={opt.cycleId} value={opt.cycleId} className="bg-[#07193F] text-white">
-                      {opt.label} • ({formatAmountNumber(cycleTotal)} {currencyDisplay})
-                    </option>
-                  );
-                })}
-              </select>
+              {previousCycleOptions.length > 0 ? (
+                <select
+                  value={activeSelectedPreviousCycleId}
+                  onChange={(e) => {
+                    if (onSelectPreviousCycle) {
+                      onSelectPreviousCycle(e.target.value);
+                    }
+                  }}
+                  className="w-full bg-[#07193F] text-white font-bold text-xs px-3.5 py-2.5 rounded-xl border border-blue-400/30 focus:outline-none focus:border-[#0052FF] cursor-pointer shadow-sm"
+                >
+                  {previousCycleOptions.map((opt) => {
+                    const cycleTotal = getCycleTotalExpenses(opt.cycleId);
+                    return (
+                      <option key={opt.cycleId} value={opt.cycleId} className="bg-[#07193F] text-white">
+                        {opt.label} • ({formatAmountNumber(cycleTotal)} {currencyDisplay})
+                      </option>
+                    );
+                  })}
+                </select>
+              ) : (
+                <div className="w-full bg-[#07193F] text-blue-200 text-xs px-3.5 py-2.5 rounded-xl border border-blue-400/30 font-medium text-center">
+                  No prior cycles available for this group yet (created in current cycle).
+                </div>
+              )}
             </div>
           )}
         </div>

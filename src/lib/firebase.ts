@@ -205,6 +205,21 @@ function removeUndefinedFields<T extends Record<string, any>>(obj: T): T {
   return cleanObj as T;
 }
 
+export function normalizePhoneNumber(p?: string): string {
+  if (!p) return '';
+  let digits = p.replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('00971')) {
+    digits = digits.slice(5);
+  } else if (digits.startsWith('971')) {
+    digits = digits.slice(3);
+  }
+  if (digits.startsWith('0') && digits.length === 10) {
+    digits = digits.slice(1);
+  }
+  return digits;
+}
+
 export function cleanPhoneDigits(p?: string): string {
   if (!p) return '';
   return p.replace(/\D/g, '');
@@ -217,16 +232,11 @@ export function isPhoneMatch(p1?: string, p2?: string): boolean {
   if (!s1 || !s2) return false;
   if (s1 === s2) return true;
 
-  const c1 = cleanPhoneDigits(p1);
-  const c2 = cleanPhoneDigits(p2);
-  if (!c1 || !c2) return false;
-  if (c1 === c2) return true;
-
-  if (c1.includes(c2) || c2.includes(c1)) return true;
-
-  const minLen = Math.min(c1.length, c2.length);
-  if (minLen >= 3) {
-    if (c1.endsWith(c2.slice(-minLen)) || c2.endsWith(c1.slice(-minLen))) {
+  const n1 = normalizePhoneNumber(p1);
+  const n2 = normalizePhoneNumber(p2);
+  if (n1 && n2) {
+    if (n1 === n2) return true;
+    if (n1.length >= 9 && n2.length >= 9 && n1.slice(-9) === n2.slice(-9)) {
       return true;
     }
   }
@@ -258,36 +268,34 @@ export async function saveUserProfileToFirestore(profile: UserAuthProfile) {
     const userRef = doc(db, 'users', cleanDocId);
     await setDoc(userRef, payload, { merge: true });
 
-    // Also sync updated avatar/name into any group members in Firestore
-    if (profile.avatar !== undefined || profile.name) {
+    // ONLY update member profile in the user's SPECIFIC linked group if provided!
+    // NEVER loop over or modify all groups globally, to prevent cross-group member contamination.
+    if (profile.linkedGroupId && (profile.avatar !== undefined || profile.name)) {
       try {
-        const groupsRef = collection(db, 'groups');
-        const groupsSnap = await getDocs(groupsRef);
-        if (!groupsSnap.empty) {
-          for (const gDoc of groupsSnap.docs) {
-            const gData = gDoc.data() as Group;
-            if (gData.members && Array.isArray(gData.members)) {
-              let hasChange = false;
-              const updatedMembers = gData.members.map((m) => {
-                const isMatch =
-                  (profile.email && m.email && m.email.toLowerCase() === profile.email.toLowerCase()) ||
-                  (profile.mobileNumber && (isPhoneMatch(m.mobileNumber, profile.mobileNumber) || isPhoneMatch(m.phone, profile.mobileNumber))) ||
-                  (profile.name && m.name && m.name.toLowerCase().trim() === profile.name.toLowerCase().trim());
+        const groupRef = doc(db, 'groups', profile.linkedGroupId);
+        const groupSnap = await getDoc(groupRef);
+        if (groupSnap.exists()) {
+          const gData = groupSnap.data() as Group;
+          if (gData.members && Array.isArray(gData.members)) {
+            let hasChange = false;
+            const updatedMembers = gData.members.map((m) => {
+              const isMatch =
+                (profile.email && m.email && m.email.toLowerCase() === profile.email.toLowerCase()) ||
+                (profile.mobileNumber && (isPhoneMatch(m.mobileNumber, profile.mobileNumber) || isPhoneMatch(m.phone, profile.mobileNumber)));
 
-                if (isMatch) {
-                  hasChange = true;
-                  return {
-                    ...m,
-                    name: profile.name || m.name,
-                    avatar: profile.avatar !== undefined ? profile.avatar : m.avatar,
-                  };
-                }
-                return m;
-              });
-
-              if (hasChange) {
-                await setDoc(doc(db, 'groups', gDoc.id), removeUndefinedFields({ ...gData, members: updatedMembers }), { merge: true });
+              if (isMatch) {
+                hasChange = true;
+                return {
+                  ...m,
+                  name: profile.name || m.name,
+                  avatar: profile.avatar !== undefined ? profile.avatar : m.avatar,
+                };
               }
+              return m;
+            });
+
+            if (hasChange) {
+              await setDoc(groupRef, removeUndefinedFields({ ...gData, members: updatedMembers }), { merge: true });
             }
           }
         }
@@ -304,29 +312,24 @@ export async function saveUserProfileToFirestore(profile: UserAuthProfile) {
 
 export async function deleteProfilePictureForUser(
   mobileOrPhone: string,
-  nameSearch?: string
+  targetGroupId?: string
 ): Promise<{ success: boolean; clearedCount: number; error?: string }> {
   if (isQuotaExceeded) return { success: false, clearedCount: 0 };
   let clearedCount = 0;
   const trimmed = (mobileOrPhone || '').trim();
-  const cleanDigits = cleanPhoneDigits(trimmed);
+  if (!trimmed) return { success: false, clearedCount: 0 };
 
   try {
-    // 1. Scan and update all groups in Firestore
-    const groupsRef = collection(db, 'groups');
-    const groupsSnap = await getDocs(groupsRef);
-
-    if (!groupsSnap.empty) {
-      for (const gDoc of groupsSnap.docs) {
-        const gData = gDoc.data() as Group;
+    // 1. Update in target group or matching group
+    if (targetGroupId) {
+      const groupRef = doc(db, 'groups', targetGroupId);
+      const gSnap = await getDoc(groupRef);
+      if (gSnap.exists()) {
+        const gData = gSnap.data() as Group;
         if (gData.members && Array.isArray(gData.members)) {
           let hasChange = false;
           const updatedMembers = gData.members.map((m) => {
-            const isMatch =
-              (trimmed && (isPhoneMatch(m.mobileNumber, trimmed) || isPhoneMatch(m.phone, trimmed) || isPhoneMatch(m.email, trimmed))) ||
-              (cleanDigits && (isPhoneMatch(m.mobileNumber, cleanDigits) || isPhoneMatch(m.phone, cleanDigits))) ||
-              (nameSearch && m.name && m.name.toLowerCase().trim().includes(nameSearch.toLowerCase().trim()));
-
+            const isMatch = isPhoneMatch(m.mobileNumber, trimmed) || isPhoneMatch(m.phone, trimmed) || (m.email && m.email.toLowerCase() === trimmed.toLowerCase());
             if (isMatch) {
               hasChange = true;
               clearedCount++;
@@ -339,44 +342,15 @@ export async function deleteProfilePictureForUser(
                   .substring(0, 2) || 'MB';
               return {
                 ...m,
-                avatar: initials, // Reset to standard text initials, removing picture
+                avatar: initials,
               };
             }
             return m;
           });
 
           if (hasChange) {
-            await setDoc(doc(db, 'groups', gDoc.id), removeUndefinedFields({ ...gData, members: updatedMembers }), { merge: true });
+            await setDoc(groupRef, removeUndefinedFields({ ...gData, members: updatedMembers }), { merge: true });
           }
-        }
-      }
-    }
-
-    // 2. Scan and update all users in Firestore 'users' collection
-    const usersRef = collection(db, 'users');
-    const usersSnap = await getDocs(usersRef);
-
-    if (!usersSnap.empty) {
-      for (const uDoc of usersSnap.docs) {
-        const uData = uDoc.data() as UserAuthProfile;
-        const isMatch =
-          (trimmed && (isPhoneMatch(uData.mobileNumber, trimmed) || isPhoneMatch(uData.email, trimmed) || isPhoneMatch(uData.cleanMobile, trimmed) || isPhoneMatch(uData.localMobile, trimmed))) ||
-          (cleanDigits && (isPhoneMatch(uData.mobileNumber, cleanDigits) || isPhoneMatch(uData.cleanMobile, cleanDigits) || isPhoneMatch(uData.localMobile, cleanDigits))) ||
-          (nameSearch && uData.name && uData.name.toLowerCase().trim().includes(nameSearch.toLowerCase().trim()));
-
-        if (isMatch) {
-          clearedCount++;
-          const updatedProfile: UserAuthProfile = {
-            ...uData,
-            avatar: '', // Clear profile picture
-            identity: uData.identity
-              ? {
-                  ...uData.identity,
-                  photoUrl: undefined,
-                }
-              : null,
-          };
-          await setDoc(doc(db, 'users', uDoc.id), removeUndefinedFields(updatedProfile), { merge: true });
         }
       }
     }
@@ -385,19 +359,6 @@ export async function deleteProfilePictureForUser(
   } catch (err: any) {
     console.warn('Error deleting user profile picture from Firestore:', err);
     return { success: false, clearedCount, error: err.message };
-  }
-}
-
-// Auto-run Wahad profile picture cleanup once on initialization
-if (typeof window !== 'undefined') {
-  const WAHAD_CLEANUP_KEY = 'wahad_pfp_cleaned_v1';
-  if (!localStorage.getItem(WAHAD_CLEANUP_KEY)) {
-    setTimeout(async () => {
-      try {
-        await deleteProfilePictureForUser('0555245482', 'Wahad');
-        localStorage.setItem(WAHAD_CLEANUP_KEY, 'true');
-      } catch (e) {}
-    }, 1500);
   }
 }
 

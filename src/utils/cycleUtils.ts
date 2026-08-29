@@ -95,18 +95,13 @@ export function getPreviousCycleOptions(
   // Calculate total months difference from creation month to current month
   const totalMonthsDiff = (currentYear - startYear) * 12 + (currentMonthIdx - startMonthIdx);
 
-  // Exact number of previous cycles: from the creation month up to the current month
-  let cycleCount: number;
-  if (totalMonthsDiff > 0) {
-    if (count !== undefined && count > 0) {
-      cycleCount = Math.min(totalMonthsDiff, count);
-    } else {
-      cycleCount = Math.min(totalMonthsDiff, 60);
-    }
-  } else {
-    // If created in current month, provide at least 1 previous cycle so dropdown remains functional
-    cycleCount = 1;
+  // If created in current month or future, there are no prior cycle months
+  if (totalMonthsDiff <= 0) {
+    return [];
   }
+
+  // Exact number of previous cycles: from the creation month up to the current month
+  const cycleCount = count !== undefined && count > 0 ? Math.min(totalMonthsDiff, count) : totalMonthsDiff;
 
   const options: { cycleId: string; label: string; fullLabel: string }[] = [];
   for (let i = 1; i <= cycleCount; i++) {
@@ -120,7 +115,7 @@ export function getPreviousCycleOptions(
 
     options.push({
       cycleId,
-      label: `${monthShortStr} ${year}${i === 1 ? ' (Previous Cycle)' : ''}`,
+      label: `${monthShortStr} ${year}${i === 1 ? ' (Previous Month)' : ''}`,
       fullLabel,
     });
   }

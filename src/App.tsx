@@ -953,11 +953,12 @@ export default function App() {
   }, [rent, activeCycleId]);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isNavExpanded, setIsNavExpanded] = useState(false);
+  const [navLastInteraction, setNavLastInteraction] = useState<number>(0);
   const [isArchGuideOpen, setIsArchGuideOpen] = useState(false);
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
   const [isInstallPwaOpen, setIsInstallPwaOpen] = useState(false);
 
-  // Auto-collapse expanded navigation bar back to initial state after 10 seconds
+  // Auto-collapse expanded navigation bar back to initial state after 10 seconds from the LAST click/interaction
   useEffect(() => {
     if (isNavExpanded) {
       const timer = setTimeout(() => {
@@ -965,7 +966,7 @@ export default function App() {
       }, 10000);
       return () => clearTimeout(timer);
     }
-  }, [isNavExpanded]);
+  }, [isNavExpanded, navLastInteraction]);
 
   // Auto-hide navigation bar and group chat button when typing in any input/textarea
   const [isTyping, setIsTyping] = useState(false);
@@ -2613,7 +2614,13 @@ export default function App() {
           isAddExpenseOpen={isAddExpenseOpen}
           isHidden={activeTab === 'chat' || isAddExpenseOpen || isTyping || isMandatoryProfileModalOpen}
           isExpanded={isNavExpanded}
-          onToggleExpand={() => setIsNavExpanded(true)}
+          onToggleExpand={() => {
+            setIsNavExpanded(true);
+            setNavLastInteraction(Date.now());
+          }}
+          onNavInteraction={() => {
+            setNavLastInteraction(Date.now());
+          }}
         />
       )}
 

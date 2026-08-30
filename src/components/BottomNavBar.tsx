@@ -12,6 +12,7 @@ interface BottomNavBarProps {
   isHidden?: boolean;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  onNavInteraction?: () => void;
 }
 
 export const BottomNavBar: React.FC<BottomNavBarProps> = ({
@@ -22,14 +23,21 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   isHidden = false,
   isExpanded = false,
   onToggleExpand,
+  onNavInteraction,
 }) => {
   const handleTabClick = (tabId: AppTabType) => {
     triggerHaptic(hapticPatterns.click);
+    if (onNavInteraction) {
+      onNavInteraction();
+    }
     onSelectTab(tabId);
   };
 
   const handleMainButtonClick = () => {
     triggerHaptic(hapticPatterns.click);
+    if (onNavInteraction) {
+      onNavInteraction();
+    }
     if (!isExpanded) {
       if (onToggleExpand) {
         onToggleExpand();
@@ -88,7 +96,14 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
           </svg>
 
           {/* Navigation Tabs Bar - shifted 5mm upwards from bottom */}
-          <div className="relative z-10 w-full h-[72px] sm:h-[76px] flex items-center justify-between px-3 sm:px-5">
+          <div
+            onClick={() => {
+              if (isExpanded && onNavInteraction) {
+                onNavInteraction();
+              }
+            }}
+            className="relative z-10 w-full h-[72px] sm:h-[76px] flex items-center justify-between px-3 sm:px-5"
+          >
             {/* Left Side: Dashboard & Bills/Rent */}
             <div
               className={`flex-1 flex justify-around items-center h-full pt-1.5 ${

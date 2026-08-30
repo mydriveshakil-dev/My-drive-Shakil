@@ -478,9 +478,17 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                         triggerHaptic(hapticPatterns.click);
                         setPublishScope('all');
                       }}
+                      style={
+                        publishScope === 'all'
+                          ? {
+                              background: 'linear-gradient(135deg, #071E55 0%, #0B2866 60%, #041029 100%)',
+                              color: '#ffffff',
+                            }
+                          : undefined
+                      }
                       className={`p-3 rounded-xl text-left transition-all cursor-pointer flex flex-col gap-1 ${
                         publishScope === 'all'
-                          ? 'bg-gradient-to-r from-blue-900 to-indigo-950 text-white neu-upper-sm'
+                          ? 'text-white shadow-md shadow-blue-950/30 ring-2 ring-[#0B2866]/50'
                           : 'neu-upper-btn text-slate-700'
                       }`}
                     >
@@ -577,13 +585,22 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                           triggerHaptic(hapticPatterns.click);
                           setSelectedDuration(opt.days);
                         }}
+                        style={
+                          isSelected
+                            ? {
+                                background: 'linear-gradient(135deg, #071E55 0%, #0B2866 50%, #041029 100%)',
+                                color: '#ffffff',
+                                boxShadow: '0 4px 14px 0 rgba(7, 30, 85, 0.4)',
+                              }
+                            : undefined
+                        }
                         className={`py-2.5 px-1 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
                           isSelected
-                            ? 'bg-[#071E55] text-white neu-upper-sm font-black'
-                            : 'neu-upper-btn text-slate-700 font-semibold'
+                            ? 'text-white font-black ring-2 ring-[#0B2866]/60 scale-[1.02]'
+                            : 'neu-upper-btn text-slate-700 font-semibold hover:border-blue-300'
                         }`}
                       >
-                        <span className="text-xs sm:text-sm tracking-tight">{opt.label}</span>
+                        <span className="text-xs sm:text-sm tracking-tight font-black">{opt.label}</span>
                       </button>
                     );
                   })}
@@ -613,7 +630,11 @@ export const GroupNoteModal: React.FC<GroupNoteModalProps> = ({
                 )}
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-[#071E55] via-[#0B2866] to-[#041029] hover:from-[#0a2973] hover:to-[#06183d] text-white font-black py-3.5 px-4 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 neu-upper-sm active:scale-95 transition-all cursor-pointer"
+                  style={{
+                    background: 'linear-gradient(90deg, #071E55 0%, #0B2866 50%, #041029 100%)',
+                    color: '#ffffff',
+                  }}
+                  className="flex-1 hover:brightness-110 text-white font-black py-3.5 px-4 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-950/30 active:scale-95 transition-all cursor-pointer"
                 >
                   <Send className="w-4 h-4 stroke-[2.5]" />
                   <span>

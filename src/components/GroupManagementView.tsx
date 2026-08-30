@@ -3,7 +3,7 @@ import { Group, Member, GoogleSheetsConfig, UserAuthProfile } from '../types';
 import { GlassContainer } from './GlassContainer';
 import { MemberAvatar } from './MemberAvatar';
 import { UserProfileModal } from './UserProfileModal';
-import { isPhoneMatch } from '../lib/firebase';
+import { isPhoneMatch, checkMobileNumberExistsAcrossSystem } from '../lib/firebase';
 import { triggerHaptic, hapticPatterns } from '../utils/haptics';
 import { compressProfileImage } from '../utils/imageCompressor';
 import { isProfileImageSet } from '../utils/permissionUtils';
@@ -114,6 +114,8 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   const [newMemberAvatar, setNewMemberAvatar] = useState('');
   const [isProcessingNewAvatar, setIsProcessingNewAvatar] = useState(false);
   const [newMemberCategories, setNewMemberCategories] = useState<string[]>(ALL_EXPENSE_OPTIONS.map((o) => o.id));
+  const [addMemberError, setAddMemberError] = useState<string | null>(null);
+  const [isCheckingMobile, setIsCheckingMobile] = useState(false);
 
   const newMemberCameraInputRef = useRef<HTMLInputElement>(null);
   const newMemberGalleryInputRef = useRef<HTMLInputElement>(null);
@@ -143,6 +145,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
   const [isProcessingEditAvatar, setIsProcessingEditAvatar] = useState(false);
   const [editMemberDays, setEditMemberDays] = useState(30);
   const [editMemberCategories, setEditMemberCategories] = useState<string[]>([]);
+  const [editMemberError, setEditMemberError] = useState<string | null>(null);
 
   const editMemberCameraInputRef = useRef<HTMLInputElement>(null);
   const editMemberGalleryInputRef = useRef<HTMLInputElement>(null);
@@ -222,11 +225,38 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
     setEditMemberAvatar(member.avatar || '');
     setEditMemberDays(member.daysPresent || 30);
     setEditMemberCategories(member.includedCategories || ALL_EXPENSE_OPTIONS.map((o) => o.id));
+    setEditMemberError(null);
   };
 
-  const handleSaveEditMemberSubmit = (e: React.FormEvent) => {
+  const handleSaveEditMemberSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMember) return;
+    setEditMemberError(null);
+
+    const trimmedPhone = editMemberPhone.trim();
+    const oldPhone = editingMember.mobileNumber || editingMember.phone || editingMember.email || '';
+
+    // Check unique mobile across all groups in the system if phone changed
+    if (trimmedPhone && !isPhoneMatch(trimmedPhone, oldPhone)) {
+      setIsCheckingMobile(true);
+      try {
+        const checkResult = await checkMobileNumberExistsAcrossSystem(
+          trimmedPhone,
+          editingMember.id,
+          group.id,
+          allGroups
+        );
+        if (checkResult.exists) {
+          setEditMemberError('Failed: A User ID with this mobile number already exists.');
+          setIsCheckingMobile(false);
+          triggerHaptic(hapticPatterns.error);
+          return;
+        }
+      } catch (err) {
+        console.warn('Edit member mobile validation warning:', err);
+      }
+      setIsCheckingMobile(false);
+    }
 
     const initials =
       editMemberName
@@ -245,9 +275,9 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
     const updated: Member = {
       ...editingMember,
       name: editMemberName.trim() || editingMember.name,
-      phone: editMemberPhone.trim() || editingMember.phone,
-      email: editMemberPhone.trim() || editingMember.email,
-      mobileNumber: editMemberPhone.trim() || editingMember.mobileNumber,
+      phone: trimmedPhone || editingMember.phone,
+      email: trimmedPhone || editingMember.email,
+      mobileNumber: trimmedPhone || editingMember.mobileNumber,
       password: editMemberPassword.trim() || editingMember.password || '',
       avatar: finalAvatar,
       daysPresent: editMemberDays,
@@ -259,6 +289,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
       onUpdateMemberDays(updated.id, editMemberDays);
     }
     setEditingMember(null);
+    setEditMemberError(null);
     triggerHaptic(hapticPatterns.success);
   };
 
@@ -271,9 +302,30 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
     triggerHaptic(hapticPatterns.success);
   };
 
-  const handleAddMemberSubmit = (e: React.FormEvent) => {
+  const handleAddMemberSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAddMemberError(null);
     if (!newMemberName.trim() || !newMemberPhone.trim()) return;
+
+    // Check unique mobile across all groups in the system before creation
+    setIsCheckingMobile(true);
+    try {
+      const checkResult = await checkMobileNumberExistsAcrossSystem(
+        newMemberPhone.trim(),
+        undefined,
+        group.id,
+        allGroups
+      );
+      if (checkResult.exists) {
+        setAddMemberError('Failed: A User ID with this mobile number already exists.');
+        setIsCheckingMobile(false);
+        triggerHaptic(hapticPatterns.error);
+        return;
+      }
+    } catch (err) {
+      console.warn('Add member mobile validation warning:', err);
+    }
+    setIsCheckingMobile(false);
 
     const initials =
       newMemberName
@@ -302,6 +354,7 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
     setNewMemberPassword('');
     setNewMemberAvatar('');
     setNewMemberCategories(ALL_EXPENSE_OPTIONS.map((o) => o.id));
+    setAddMemberError(null);
     setShowAddMember(false);
   };
 
@@ -1103,6 +1156,13 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             </div>
 
             <form onSubmit={handleAddMemberSubmit} className="space-y-4 text-xs">
+              {addMemberError && (
+                <div className="p-3 bg-rose-50 border border-rose-400 rounded-xl text-rose-700 font-bold text-xs flex items-center gap-2 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{addMemberError}</span>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
                   Member Full Name *
@@ -1112,21 +1172,28 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
                   required
                   placeholder="e.g. Mahfuzur Rahman"
                   value={newMemberName}
-                  onChange={(e) => setNewMemberName(e.target.value)}
+                  onChange={(e) => {
+                    setNewMemberName(e.target.value);
+                    if (addMemberError) setAddMemberError(null);
+                  }}
                   className="w-full px-4 py-3 neu-upper-sm rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-900 uppercase mb-1">
-                  Mobile Number (Login Credential) *
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1 flex items-center justify-between">
+                  <span>Mobile Number (Login Credential) *</span>
+                  <span className="text-[10px] text-slate-500 font-medium">Must be unique across all groups</span>
                 </label>
                 <input
                   type="tel"
                   required
                   placeholder="e.g. +971 50 123 4567"
                   value={newMemberPhone}
-                  onChange={(e) => setNewMemberPhone(e.target.value)}
+                  onChange={(e) => {
+                    setNewMemberPhone(e.target.value);
+                    if (addMemberError) setAddMemberError(null);
+                  }}
                   className="w-full px-4 py-3 neu-upper-sm rounded-2xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none"
                 />
               </div>
@@ -1311,6 +1378,13 @@ export const GroupManagementView: React.FC<GroupManagementViewProps> = ({
             </div>
 
             <form onSubmit={handleSaveEditMemberSubmit} className="space-y-4 text-xs">
+              {editMemberError && (
+                <div className="p-3 bg-rose-50 border border-rose-400 rounded-xl text-rose-700 font-bold text-xs flex items-center gap-2 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{editMemberError}</span>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-900 uppercase mb-1">

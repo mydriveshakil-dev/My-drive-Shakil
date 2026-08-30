@@ -957,6 +957,16 @@ export default function App() {
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
   const [isInstallPwaOpen, setIsInstallPwaOpen] = useState(false);
 
+  // Auto-collapse expanded navigation bar back to initial state after 10 seconds
+  useEffect(() => {
+    if (isNavExpanded) {
+      const timer = setTimeout(() => {
+        setIsNavExpanded(false);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [isNavExpanded]);
+
   // Auto-hide navigation bar and group chat button when typing in any input/textarea
   const [isTyping, setIsTyping] = useState(false);
 
@@ -1361,8 +1371,12 @@ export default function App() {
     const avatarToUse = data.senderAvatar || userAuth?.avatar || userAuth?.identity?.photoUrl || sender?.avatar || nameToUse.slice(0, 2).toUpperCase();
 
     const nowMs = Date.now();
+    const currentUserId = userAuth.id || userAuth.mobileNumber || userAuth.email || data.senderId || 'user';
     const newMsg: ChatMessage = {
       id: `msg-${nowMs}`,
+      Group_ID: group.id,
+      User_ID: currentUserId,
+      senderRole: userAuth.role || 'member',
       senderId: data.senderId || sender?.id || 'm1',
       senderName: nameToUse,
       senderAvatar: avatarToUse,

@@ -123,6 +123,95 @@ async function startServer() {
     });
   });
 
+  // Data Access Control & Group Isolation Check Middleware/Endpoint
+  app.post('/api/data/access-check', (req, res) => {
+    try {
+      const { userId, userRole, requestingGroupId, targetGroupId } = req.body;
+
+      if (!targetGroupId) {
+        return res.status(400).json({
+          allowed: false,
+          error: 'Target Group_ID is required for access verification.',
+        });
+      }
+
+      // Admins have system-wide oversight
+      if (userRole === 'admin') {
+        return res.json({ allowed: true, message: 'Admin authorized for target group.' });
+      }
+
+      // Non-admin regular users MUST be strictly bound to their own Group_ID
+      const effectiveUserGroupId = requestingGroupId;
+      if (!effectiveUserGroupId || effectiveUserGroupId !== targetGroupId) {
+        return res.status(403).json({
+          allowed: false,
+          error: 'Access Denied: Data isolation policy prevents cross-group data access.',
+        });
+      }
+
+      return res.json({ allowed: true, message: 'Group isolation verification passed.' });
+    } catch (err: any) {
+      return res.status(500).json({
+        allowed: false,
+        error: 'Access Denied: Data isolation policy prevents cross-group data access.',
+      });
+    }
+  });
+
+  // Unique Mobile Number Backend Validation Endpoint
+  app.post('/api/users/validate-mobile', (req, res) => {
+    try {
+      const { mobileNumber, existingMobileList } = req.body;
+
+      if (!mobileNumber || typeof mobileNumber !== 'string' || !mobileNumber.trim()) {
+        return res.status(400).json({
+          success: false,
+          error: 'Mobile number is required for user creation.',
+        });
+      }
+
+      const inputDigits = mobileNumber.replace(/\D/g, '');
+      if (inputDigits.length < 8) {
+        return res.status(400).json({
+          success: false,
+          error: 'Please enter a valid mobile number with at least 8 digits.',
+        });
+      }
+
+      // Check against existing system mobile numbers if provided in backend check
+      if (Array.isArray(existingMobileList)) {
+        const isDuplicate = existingMobileList.some((existing: string) => {
+          if (!existing) return false;
+          const existingDigits = existing.replace(/\D/g, '');
+          if (existingDigits === inputDigits) return true;
+          if (inputDigits.length >= 9 && existingDigits.length >= 9 && inputDigits.slice(-9) === existingDigits.slice(-9)) {
+            return true;
+          }
+          return false;
+        });
+
+        if (isDuplicate) {
+          return res.status(409).json({
+            success: false,
+            exists: true,
+            error: 'Failed: A User ID with this mobile number already exists.',
+          });
+        }
+      }
+
+      return res.json({
+        success: true,
+        exists: false,
+        message: 'Mobile number is unique and available for user registration.',
+      });
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        error: err.message || 'Error validating mobile number uniqueness.',
+      });
+    }
+  });
+
   // 1. Get VAPID Public Key for Client PushManager Subscription
   app.get('/api/push/vapid-public-key', (req, res) => {
     res.json({ publicKey: vapidPublicKey });

@@ -225,6 +225,119 @@ export function cleanPhoneDigits(p?: string): string {
   return p.replace(/\D/g, '');
 }
 
+/**
+ * Global Unique Mobile Number Policy Enforcement:
+ * Checks if a mobile number already exists across ANY user or member in the system.
+ * If found, returns exists: true and the standardized error message:
+ * "Failed: A User ID with this mobile number already exists."
+ */
+export async function checkMobileNumberExistsAcrossSystem(
+  mobileNumber: string,
+  excludeMemberId?: string,
+  excludeGroupId?: string,
+  localGroups?: Group[]
+): Promise<{ exists: boolean; message?: string; existingName?: string; existingGroupId?: string }> {
+  if (!mobileNumber || !mobileNumber.trim()) {
+    return { exists: false };
+  }
+
+  const trimmed = mobileNumber.trim();
+  const cleanDigits = cleanPhoneDigits(trimmed);
+
+  // 1. Fast Synchronous Check across localGroups / localStorage
+  const groupsToCheck: Group[] = localGroups && localGroups.length > 0 ? localGroups : [];
+  if (groupsToCheck.length === 0) {
+    try {
+      const saved = localStorage.getItem('all_room_groups');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) groupsToCheck.push(...parsed);
+      }
+    } catch {}
+  }
+
+  for (const g of groupsToCheck) {
+    if (g.members && Array.isArray(g.members)) {
+      for (const m of g.members) {
+        if (excludeMemberId && m.id === excludeMemberId) continue;
+        if (
+          isPhoneMatch(m.mobileNumber, trimmed) ||
+          isPhoneMatch(m.phone, trimmed) ||
+          isPhoneMatch(m.email, trimmed)
+        ) {
+          return {
+            exists: true,
+            message: 'Failed: A User ID with this mobile number already exists.',
+            existingName: m.name,
+            existingGroupId: g.id,
+          };
+        }
+      }
+    }
+  }
+
+  // 2. Cloud Check in Firestore 'users' collection
+  try {
+    const usersRef = collection(db, 'users');
+    if (cleanDigits) {
+      const qClean = query(usersRef, where('cleanMobile', '==', cleanDigits));
+      const snapClean = await getDocs(qClean);
+      if (!snapClean.empty) {
+        for (const docSnap of snapClean.docs) {
+          const u = docSnap.data() as UserAuthProfile;
+          if (excludeMemberId && u.email === excludeMemberId) continue;
+          return {
+            exists: true,
+            message: 'Failed: A User ID with this mobile number already exists.',
+            existingName: u.name,
+            existingGroupId: u.linkedGroupId || undefined,
+          };
+        }
+      }
+    }
+
+    const qMob = query(usersRef, where('mobileNumber', '==', trimmed));
+    const snapMob = await getDocs(qMob);
+    if (!snapMob.empty) {
+      return {
+        exists: true,
+        message: 'Failed: A User ID with this mobile number already exists.',
+        existingName: (snapMob.docs[0].data() as UserAuthProfile).name,
+      };
+    }
+
+    // 3. Cloud Check across all 'groups' in Firestore
+    const groupsRef = collection(db, 'groups');
+    const groupsSnap = await getDocs(groupsRef);
+    if (!groupsSnap.empty) {
+      for (const gDoc of groupsSnap.docs) {
+        const gData = gDoc.data() as Group;
+        if (gData.members && Array.isArray(gData.members)) {
+          for (const m of gData.members) {
+            if (excludeMemberId && m.id === excludeMemberId) continue;
+            if (
+              isPhoneMatch(m.mobileNumber, trimmed) ||
+              isPhoneMatch(m.phone, trimmed) ||
+              isPhoneMatch(m.email, trimmed)
+            ) {
+              return {
+                exists: true,
+                message: 'Failed: A User ID with this mobile number already exists.',
+                existingName: m.name,
+                existingGroupId: gData.id,
+              };
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Mobile uniqueness check note:', err);
+  }
+
+  return { exists: false };
+}
+
 export function isPhoneMatch(p1?: string, p2?: string): boolean {
   if (!p1 || !p2) return false;
   const s1 = p1.trim().toLowerCase();

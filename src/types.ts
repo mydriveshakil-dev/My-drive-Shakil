@@ -163,7 +163,10 @@ export interface UserAuthProfile {
 export interface ChatMessage {
   id: string;
   groupId?: string;
+  Group_ID?: string;
   senderId: string;
+  User_ID?: string;
+  senderRole?: 'admin' | 'user';
   senderName: string;
   senderAvatar: string;
   text: string;

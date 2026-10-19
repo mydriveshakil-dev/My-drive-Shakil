@@ -21,7 +21,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   onOpenAddExpense,
   isAddExpenseOpen = false,
   isHidden = false,
-  isExpanded = false,
+  isExpanded = true,
   onToggleExpand,
   onNavInteraction,
 }) => {
@@ -38,13 +38,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
     if (onNavInteraction) {
       onNavInteraction();
     }
-    if (!isExpanded) {
-      if (onToggleExpand) {
-        onToggleExpand();
-      }
-    } else {
-      onOpenAddExpense();
-    }
+    onOpenAddExpense();
   };
 
   const isDashboardActive = activeTab === 'dashboard' || activeTab === 'home';

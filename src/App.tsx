@@ -952,21 +952,9 @@ export default function App() {
     return rent;
   }, [rent, activeCycleId]);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
-  const [isNavExpanded, setIsNavExpanded] = useState(false);
-  const [navLastInteraction, setNavLastInteraction] = useState<number>(0);
   const [isArchGuideOpen, setIsArchGuideOpen] = useState(false);
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
   const [isInstallPwaOpen, setIsInstallPwaOpen] = useState(false);
-
-  // Auto-collapse expanded navigation bar back to initial state after 10 seconds from the LAST click/interaction
-  useEffect(() => {
-    if (isNavExpanded) {
-      const timer = setTimeout(() => {
-        setIsNavExpanded(false);
-      }, 10000);
-      return () => clearTimeout(timer);
-    }
-  }, [isNavExpanded, navLastInteraction]);
 
   // Auto-hide navigation bar and group chat button when typing in any input/textarea
   const [isTyping, setIsTyping] = useState(false);
@@ -2566,11 +2554,7 @@ export default function App() {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.92 }}
           onClick={() => setActiveTab('chat')}
-          className={`fixed right-4 sm:right-6 z-50 w-12 h-12 sm:w-13 sm:h-13 bg-[#07193F] hover:bg-[#0B2556] text-white rounded-full shadow-xl border border-slate-700/80 flex items-center justify-center cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ring-2 ring-white/50 ${
-            !isNavExpanded
-              ? 'bottom-3 sm:bottom-4'
-              : 'bottom-[108px] sm:bottom-[116px]'
-          } ${
+          className={`fixed right-4 sm:right-6 z-50 w-12 h-12 sm:w-13 sm:h-13 bg-[#07193F] hover:bg-[#0B2556] text-white rounded-full shadow-xl border border-slate-700/80 flex items-center justify-center cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ring-2 ring-white/50 bottom-[108px] sm:bottom-[116px] ${
             activeTab === 'chat' || isAddExpenseOpen || isTyping
               ? 'translate-y-36 opacity-0 pointer-events-none'
               : 'translate-y-0 opacity-100'
@@ -2613,14 +2597,7 @@ export default function App() {
           }}
           isAddExpenseOpen={isAddExpenseOpen}
           isHidden={activeTab === 'chat' || isAddExpenseOpen || isTyping || isMandatoryProfileModalOpen}
-          isExpanded={isNavExpanded}
-          onToggleExpand={() => {
-            setIsNavExpanded(true);
-            setNavLastInteraction(Date.now());
-          }}
-          onNavInteraction={() => {
-            setNavLastInteraction(Date.now());
-          }}
+          isExpanded={true}
         />
       )}
 
